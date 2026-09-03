@@ -1,0 +1,71 @@
+# Dependency Directories
+node_modules/
+*/node_modules/
+.pnp
+.pnp.js
+
+# Build Outputs & Bundles
+dist/
+*/dist/
+build/
+*/build/
+out/
+.next/
+.cache/
+
+# Test & Coverage
+coverage/
+*/coverage/
+.nyc_output/
+.pytest_cache/
+
+# Logs
+*.log
+*/logs/
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment & Sensitive Files
+.env
+.env.*
+!.env.example
+*.env
+*.env.*
+!.env.example
+
+# Local Database & Embedded Binaries
+.mongodb_data/
+*/.mongodb_data/
+*.sqlite
+*.sqlite3
+*.db
+
+# Python & AI Microservice Virtual Environments
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+*/.venv/
+venv/
+*/venv/
+env/
+*/env/
+ENV/
+*/ENV/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Editor & OS Artifacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*.tmp
+*.bak

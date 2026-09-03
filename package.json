@@ -1,0 +1,32 @@
+{
+  "name": "agromitra",
+  "version": "2.0.0",
+  "description": "AgroMitra — Intelligent Indian Agriculture Platform connecting Farmers, Agri Store Partners and Delivery Partners.",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "test:backend": "npm --prefix backend test",
+    "audit:master": "npm --prefix backend run audit:master"
+  },
+  "keywords": [
+    "agriculture",
+    "agromitra",
+    "farming",
+    "ai-leaf-scanner",
+    "mandi-prices",
+    "direct-upi-qr",
+    "crop-doctor",
+    "delivery-partner",
+    "agri-store-partner"
+  ],
+  "author": "AgroMitra Team",
+  "license": "ISC"
+}
