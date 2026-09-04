@@ -11,7 +11,7 @@ export const connectDB = async (): Promise<void> => {
   if (mongoUri && mongoUri.trim() !== '') {
     try {
       const conn = await mongoose.connect(mongoUri, {
-        serverSelectionTimeoutMS: 3000,
+        serverSelectionTimeoutMS: 15000,
       });
       console.log(`✅ [Database]: MongoDB Connected successfully to URI: ${conn.connection.host}`);
       // Auto-migrate any legacy plaintext passwords safely in background
@@ -21,7 +21,10 @@ export const connectDB = async (): Promise<void> => {
       return;
     } catch (error) {
       console.warn(`⚠️  [Database]: Could not connect to configured MONGODB_URI: ${error instanceof Error ? error.message : error}`);
-      console.log('🔄 [Database]: Initializing persistent local MongoDB instance for seamless data retention...');
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(`[Database]: Production MongoDB Atlas connection failed: ${error instanceof Error ? error.message : error}`);
+      }
+      console.log('🔄 [Database]: Initializing persistent local MongoDB instance for development/test suite...');
     }
   }
 

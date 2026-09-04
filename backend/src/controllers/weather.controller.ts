@@ -3,8 +3,8 @@ import { WeatherService } from '../services/weather.service';
 
 export const getLiveWeatherController = async (req: Request, res: Response): Promise<void> => {
   try {
-    const latStr = req.query.lat as string | undefined;
-    const lonStr = (req.query.lon || req.query.lng) as string | undefined;
+    const latStr = (req.query.lat || req.query.latitude) as string | undefined;
+    const lonStr = (req.query.lon || req.query.lng || req.query.longitude) as string | undefined;
     const city = (req.query.city || req.query.district || req.query.q) as string | undefined;
     const state = req.query.state as string | undefined;
 
@@ -49,8 +49,8 @@ export const getCurrentWeatherController = getLiveWeatherController;
 
 export const getWeatherForecastController = async (req: Request, res: Response): Promise<void> => {
   try {
-    const latStr = req.query.lat as string | undefined;
-    const lonStr = (req.query.lon || req.query.lng) as string | undefined;
+    const latStr = (req.query.lat || req.query.latitude) as string | undefined;
+    const lonStr = (req.query.lon || req.query.lng || req.query.longitude) as string | undefined;
     const city = (req.query.city || req.query.district || req.query.q) as string | undefined;
     const state = req.query.state as string | undefined;
 

@@ -443,21 +443,29 @@ export const getLiveWeatherApi = async (
 };
 
 export const getCurrentWeatherApi = async (
-  district?: string,
+  districtOrParams?: string | import('../types/weather').WeatherQueryParams,
   state?: string
 ): Promise<import('../types/weather').WeatherResponse> => {
+  const params =
+    typeof districtOrParams === 'object'
+      ? districtOrParams
+      : { district: districtOrParams, state };
   const response = await apiClient.get<import('../types/weather').WeatherResponse>('/weather/current', {
-    params: { district, state },
+    params,
   });
   return response.data;
 };
 
 export const getWeatherForecastApi = async (
-  district?: string,
+  districtOrParams?: string | import('../types/weather').WeatherQueryParams,
   state?: string
 ): Promise<import('../types/weather').WeatherResponse> => {
+  const params =
+    typeof districtOrParams === 'object'
+      ? districtOrParams
+      : { district: districtOrParams, state };
   const response = await apiClient.get<import('../types/weather').WeatherResponse>('/weather/forecast', {
-    params: { district, state },
+    params,
   });
   return response.data;
 };

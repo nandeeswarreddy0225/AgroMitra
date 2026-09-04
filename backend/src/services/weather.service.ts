@@ -227,13 +227,13 @@ export class WeatherService {
       console.warn(`[WeatherService] Geocoding API fallback for "${query}":`, err.message);
     }
 
-    // 3. Default fallback: Nagpur, Maharashtra
+    // 3. Fallback: preserve queried name at central Indian coordinates
     return {
-      city: 'Nagpur',
-      state: 'Maharashtra',
+      city: query || 'Farm Region',
+      state: undefined,
       country: 'India',
-      latitude: 21.1458,
-      longitude: 79.0882,
+      latitude: 20.5937,
+      longitude: 78.9629,
     };
   }
 
@@ -245,15 +245,30 @@ export class WeatherService {
     state?: string;
     country?: string;
   }> {
-    // Check local lookup by distance
+    // 1. Check local lookup by finding nearest Indian district
+    let closestDistrict: { city: string; state: string } | null = null;
+    let minDistance = Infinity;
+
     for (const val of Object.values(INDIAN_DISTRICT_COORDS)) {
-      const dLat = Math.abs(val.lat - lat);
-      const dLon = Math.abs(val.lon - lon);
-      if (dLat < 0.3 && dLon < 0.3) {
-        return { city: val.city, state: val.state, country: 'India' };
+      const dLat = val.lat - lat;
+      const dLon = val.lon - lon;
+      const dist = Math.sqrt(dLat * dLat + dLon * dLon);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestDistrict = { city: val.city, state: val.state };
       }
     }
 
+    // If within ~0.65 degrees (~70 km), use the closest Indian district
+    if (closestDistrict && minDistance <= 0.65) {
+      return {
+        city: closestDistrict.city,
+        state: closestDistrict.state,
+        country: 'India',
+      };
+    }
+
+    // 2. Open-Meteo / BigDataCloud reverse geocoding API
     try {
       const bdcRes = await axios.get('https://api.bigdatacloud.net/data/reverse-geocode-client', {
         params: { latitude: lat, longitude: lon, localityLanguage: 'en' },
@@ -262,13 +277,33 @@ export class WeatherService {
       if (bdcRes.data) {
         const city = bdcRes.data.city || bdcRes.data.locality || bdcRes.data.principalSubdivision;
         const state = bdcRes.data.principalSubdivision;
-        if (city) return { city, state, country: bdcRes.data.countryName || 'India' };
+        if (city) {
+          return {
+            city,
+            state: state || closestDistrict?.state,
+            country: bdcRes.data.countryName || 'India',
+          };
+        }
       }
     } catch {
-      // Fallback
+      // Ignore external reverse geocode failure
     }
 
-    return { city: 'Nagpur', state: 'Maharashtra', country: 'India' };
+    // 3. If closest district is within broader region (e.g. 2.5 degrees), use it
+    if (closestDistrict && minDistance <= 2.5) {
+      return {
+        city: closestDistrict.city,
+        state: closestDistrict.state,
+        country: 'India',
+      };
+    }
+
+    // 4. GPS Coordinates label (no hardcoded fake city)
+    return {
+      city: `GPS (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`,
+      state: closestDistrict?.state,
+      country: 'India',
+    };
   }
 
   /**

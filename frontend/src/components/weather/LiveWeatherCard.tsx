@@ -102,11 +102,15 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
         if (!isInitialAutoCheck) {
           setErrorMsg('Geolocation is not supported by your browser.');
         }
-        // Fallback to profile location
-        const userCity = user?.address?.city || initialCity || 'Kurnool';
-        const userState = user?.address?.state || initialState || 'Andhra Pradesh';
-        activeLocationRef.current = { city: userCity, state: userState };
-        fetchWeather({ city: userCity, state: userState }, 'saved_profile');
+        const profileCity = user?.address?.city || initialCity;
+        const profileState = user?.address?.state || initialState;
+        if (profileCity) {
+          activeLocationRef.current = { city: profileCity, state: profileState };
+          fetchWeather({ city: profileCity, state: profileState }, 'saved_profile');
+        } else {
+          activeLocationRef.current = { city: 'Nagpur', state: 'Maharashtra' };
+          fetchWeather({ city: 'Nagpur', state: 'Maharashtra' }, 'custom');
+        }
         return;
       }
 
@@ -131,16 +135,25 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
           console.warn('[LiveWeatherCard] Geolocation error or denied:', err.message);
 
           if (!isInitialAutoCheck) {
-            setErrorMsg('Location permission was denied or is unavailable. Switched to saved farm location.');
+            if (err.code === 1 /* PERMISSION_DENIED */) {
+              setErrorMsg('Location permission was denied. Please allow GPS location in your browser or search for your farm location below.');
+            } else {
+              setErrorMsg('GPS location is temporarily unavailable. Switched to farm location.');
+            }
           }
 
-          // Fallback to profile location
-          const userCity = user?.address?.city || initialCity || 'Kurnool';
-          const userState = user?.address?.state || initialState || 'Andhra Pradesh';
-          activeLocationRef.current = { city: userCity, state: userState };
-          fetchWeather({ city: userCity, state: userState }, 'saved_profile');
+          // Fallback to profile location if available
+          const profileCity = user?.address?.city || initialCity;
+          const profileState = user?.address?.state || initialState;
+          if (profileCity) {
+            activeLocationRef.current = { city: profileCity, state: profileState };
+            fetchWeather({ city: profileCity, state: profileState }, 'saved_profile');
+          } else {
+            activeLocationRef.current = { city: 'Nagpur', state: 'Maharashtra' };
+            fetchWeather({ city: 'Nagpur', state: 'Maharashtra' }, 'custom');
+          }
         },
-        { timeout: 8000, enableHighAccuracy: false }
+        { timeout: 10000, enableHighAccuracy: true, maximumAge: 60000 }
       );
     },
     [user?.address?.city, user?.address?.state, initialCity, initialState, fetchWeather]

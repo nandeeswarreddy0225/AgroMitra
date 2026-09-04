@@ -52,12 +52,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (data.success && data.user) {
             setUser(data.user);
             localStorage.setItem('agrimart_user', JSON.stringify(data.user));
-          } else {
-            logout();
           }
-        } catch {
-          // Token is expired or invalid
-          logout();
+        } catch (err: any) {
+          // Only log out if backend explicitly rejected the token with 401 Unauthorized
+          if (err?.response?.status === 401) {
+            logout();
+          } else {
+            console.warn('[AuthContext] Transient network/server error while syncing user state, preserving session.');
+          }
         }
       }
       setIsLoading(false);
