@@ -111,18 +111,12 @@ export const autoSeedDefaultData = async (): Promise<void> => {
       ];
 
       for (const acc of seedAccounts) {
-        let u = await User.findOne({ email: acc.email }).select('+password');
+        const u = await User.findOne({ email: acc.email });
         if (!u) {
           await User.create({
             ...acc,
             password: 'Password123',
           });
-        } else {
-          const isValid = await u.comparePassword('Password123');
-          if (!isValid) {
-            u.password = 'Password123';
-            await u.save();
-          }
         }
       }
     }

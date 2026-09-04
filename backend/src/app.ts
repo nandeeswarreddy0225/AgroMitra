@@ -66,6 +66,7 @@ app.use('/api/delivery', deliveryBoyRouter);
 app.use('/api/weather', weatherRouter);
 app.use('/api/crop-advisor', cropAdvisorRouter);
 app.use('/api/mandi-prices', mandiPriceRouter);
+app.use('/api/market-prices', mandiPriceRouter);
 app.use('/api/market', mandiPriceRouter);
 
 

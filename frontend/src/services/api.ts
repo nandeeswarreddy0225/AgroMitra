@@ -432,7 +432,7 @@ export const getGovernmentSchemesApi = getSchemesApi;
 export const getDeliveryBoyOrdersApi = getDeliveryBoyAssignedOrdersApi;
 export const getShopOwnerProductsApi = getMyProductsApi;
 
-// Live Weather API endpoint
+// Live Weather API endpoints
 export const getLiveWeatherApi = async (
   params?: import('../types/weather').WeatherQueryParams
 ): Promise<import('../types/weather').WeatherResponse> => {
@@ -441,6 +441,27 @@ export const getLiveWeatherApi = async (
   });
   return response.data;
 };
+
+export const getCurrentWeatherApi = async (
+  district?: string,
+  state?: string
+): Promise<import('../types/weather').WeatherResponse> => {
+  const response = await apiClient.get<import('../types/weather').WeatherResponse>('/weather/current', {
+    params: { district, state },
+  });
+  return response.data;
+};
+
+export const getWeatherForecastApi = async (
+  district?: string,
+  state?: string
+): Promise<import('../types/weather').WeatherResponse> => {
+  const response = await apiClient.get<import('../types/weather').WeatherResponse>('/weather/forecast', {
+    params: { district, state },
+  });
+  return response.data;
+};
+
 
 // Seasonal Crop Advisor API endpoints
 export const getSeasonalCropsApi = async (

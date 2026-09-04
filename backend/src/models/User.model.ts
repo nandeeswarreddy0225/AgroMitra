@@ -155,13 +155,53 @@ UserSchema.pre<IUser>('save', async function (next) {
   }
 });
 
-// Compare candidate plain-text password with stored bcrypt hash
+// Compare candidate plain-text password with stored bcrypt hash or legacy plaintext with auto-upgrade
 UserSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
   if (!this.password || typeof candidatePassword !== 'string') {
     return false;
   }
 
-  return bcrypt.compare(candidatePassword, this.password);
+  const stored = this.password;
+  const candidate = candidatePassword;
+  const trimmedCandidate = candidate.trim();
+
+  // 1. Direct plaintext equality check (for legacy unhashed accounts in DB)
+  if (stored === candidate || stored === trimmedCandidate) {
+    // Transparently upgrade plaintext password to bcrypt hash in background
+    try {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(stored, salt);
+      await mongoose.model('User').updateOne({ _id: this._id }, { $set: { password: hashedPassword } });
+    } catch (migrateErr) {
+      console.warn('⚠️ [Auth]: Non-fatal auto-hash migration error:', migrateErr);
+    }
+    return true;
+  }
+
+  // 2. Bcrypt comparison
+  const isBcrypt =
+    stored.length === 60 &&
+    (stored.startsWith('$2a$') ||
+      stored.startsWith('$2b$') ||
+      stored.startsWith('$2y$') ||
+      stored.startsWith('$2x$'));
+
+  if (isBcrypt) {
+    try {
+      const match = await bcrypt.compare(candidate, stored);
+      if (match) return true;
+
+      // Also try trimmed candidate in case client added accidental whitespace
+      if (candidate !== trimmedCandidate) {
+        const trimmedMatch = await bcrypt.compare(trimmedCandidate, stored);
+        if (trimmedMatch) return true;
+      }
+    } catch (bcryptErr) {
+      console.warn('⚠️ [Auth]: Bcrypt comparison error:', bcryptErr);
+    }
+  }
+
+  return false;
 };
 
 export const User: Model<IUser> = mongoose.model<IUser>('User', UserSchema);

@@ -14,6 +14,10 @@ export const connectDB = async (): Promise<void> => {
         serverSelectionTimeoutMS: 3000,
       });
       console.log(`✅ [Database]: MongoDB Connected successfully to URI: ${conn.connection.host}`);
+      // Auto-migrate any legacy plaintext passwords safely in background
+      import('../utils/migratePasswords')
+        .then(({ migratePlaintextPasswords }) => migratePlaintextPasswords())
+        .catch((err) => console.warn('⚠️ [Database]: Password migration background check:', err));
       return;
     } catch (error) {
       console.warn(`⚠️  [Database]: Could not connect to configured MONGODB_URI: ${error instanceof Error ? error.message : error}`);

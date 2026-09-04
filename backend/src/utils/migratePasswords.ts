@@ -14,13 +14,15 @@ export const migratePlaintextPasswords = async (): Promise<number> => {
     for (const user of usersWithPassword) {
       if (!user.password) continue;
 
-      const isBcryptHash = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(user.password);
+      const isBcryptHash =
+        user.password.length === 60 &&
+        /^\$2[abyx]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(user.password);
 
       if (!isBcryptHash) {
         // Plaintext detected: Hash securely with bcrypt
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
-        await user.save();
+        const hashedPassword = await bcrypt.hash(user.password, salt);
+        await User.updateOne({ _id: user._id }, { $set: { password: hashedPassword } });
         migratedCount++;
       }
     }

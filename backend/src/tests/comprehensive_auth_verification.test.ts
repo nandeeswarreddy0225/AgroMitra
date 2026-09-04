@@ -65,11 +65,11 @@ const runComprehensiveAuthTests = async () => {
 
   try {
     // 1. Existing Farmer Account Login (without resetting)
-    console.log('▶ [TEST 1]: Existing Farmer Login (PermanentFarmerPass2026!)...');
+    console.log('▶ [TEST 1]: Existing Farmer Login (Password123)...');
     const existingFarmer = await makeRequest({
       method: 'POST',
       path: '/api/auth/login',
-      body: { email: 'nandeeswarreddy2852@gmail.com', password: 'PermanentFarmerPass2026!' },
+      body: { email: 'nandeeswarreddy2852@gmail.com', password: 'Password123' },
     });
     if (existingFarmer.statusCode !== 200 || !existingFarmer.body.token) {
       throw new Error(`Test 1 Failed: ${JSON.stringify(existingFarmer.body)}`);

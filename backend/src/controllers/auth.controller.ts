@@ -121,8 +121,12 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Find user and explicitly select password field
-    const user = await User.findOne({ email: normalizedEmail }).select('+password');
+    // Find user and explicitly select password field (with case-insensitive fallback)
+    let user = await User.findOne({ email: normalizedEmail }).select('+password');
+    if (!user) {
+      const escapedEmail = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      user = (await User.findOne({ email: new RegExp(`^${escapedEmail}$`, 'i') }).select('+password')) as typeof user;
+    }
 
     if (!user) {
       console.warn(`🔒 [Auth]: Login failed - user with email '${normalizedEmail}' not found.`);
