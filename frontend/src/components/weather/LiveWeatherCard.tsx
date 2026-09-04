@@ -15,6 +15,7 @@ import {
   X,
   Sparkles,
   Navigation,
+  Calendar,
 } from 'lucide-react';
 import { getLiveWeatherApi } from '../../services/api';
 import { WeatherData } from '../../types/weather';
@@ -38,16 +39,17 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
   const { user } = useAuth();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLocatingGeo, setIsLocatingGeo] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [permissionNotice, setPermissionNotice] = useState<string | null>(null);
   const [lastFetchTime, setLastFetchTime] = useState<number | null>(null);
   const [timeAgoText, setTimeAgoText] = useState<string>('Just now');
-  const [locationMode, setLocationMode] = useState<LocationMode>('saved_profile');
+  const [locationMode, setLocationMode] = useState<LocationMode>('live_gps');
 
   // Custom location edit drawer
   const [isEditingLocation, setIsEditingLocation] = useState<boolean>(false);
   const [customCity, setCustomCity] = useState<string>('');
   const [customState, setCustomState] = useState<string>('');
-  const [isLocatingGeo, setIsLocatingGeo] = useState<boolean>(false);
 
   // Active query coords / city
   const activeLocationRef = useRef<{
@@ -94,6 +96,20 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
     [onWeatherLoaded]
   );
 
+  // Fallback to saved farm profile location
+  const fallbackToFarmProfile = useCallback(() => {
+    const profileCity = user?.address?.city || initialCity;
+    const profileState = user?.address?.state || initialState;
+
+    if (profileCity) {
+      const loc = { city: profileCity, state: profileState };
+      activeLocationRef.current = loc;
+      fetchWeather(loc, 'saved_profile');
+    } else {
+      activeLocationRef.current = {};
+      fetchWeather({}, 'custom');
+    }
+  }, [user?.address?.city, user?.address?.state, initialCity, initialState, fetchWeather]);
 
   // Browser Geolocation Function
   const handleUseBrowserLocation = useCallback(
@@ -102,22 +118,14 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
         if (!isInitialAutoCheck) {
           setErrorMsg('Geolocation is not supported by your browser. Please choose a location manually.');
         }
-        const profileCity = user?.address?.city || initialCity;
-        const profileState = user?.address?.state || initialState;
-        if (profileCity) {
-          activeLocationRef.current = { city: profileCity, state: profileState };
-          fetchWeather({ city: profileCity, state: profileState }, 'saved_profile');
-        } else {
-          activeLocationRef.current = {};
-          fetchWeather({}, 'custom');
-        }
+        fallbackToFarmProfile();
         return;
       }
 
       setIsLocatingGeo(true);
-      if (!isInitialAutoCheck) {
-        setIsLoading(true);
-      }
+      setIsLoading(true);
+      setErrorMsg(null);
+      setPermissionNotice(null);
 
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -126,7 +134,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
             lat: pos.coords.latitude,
             lon: pos.coords.longitude,
           };
-          console.log('[LiveWeatherCard] Actual Browser GPS coordinates received:', coords);
+          console.log('[LiveWeatherCard] Browser GPS coordinates acquired:', coords);
           activeLocationRef.current = coords;
           setIsEditingLocation(false);
           fetchWeather(coords, 'live_gps');
@@ -135,29 +143,24 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
           setIsLocatingGeo(false);
           console.warn('[LiveWeatherCard] Geolocation error or denied (code ' + err.code + '):', err.message);
 
-          if (!isInitialAutoCheck) {
-            if (err.code === 1 /* PERMISSION_DENIED */) {
-              setErrorMsg('Location permission denied. Please allow location access or choose a location manually.');
-            } else {
-              setErrorMsg('Unable to detect your location. Please choose a location manually.');
-            }
+          if (err.code === 1 /* PERMISSION_DENIED */) {
+            setPermissionNotice(
+              'Location permission was denied. You can allow location access or use your farm profile location.'
+            );
+          } else if (err.code === 2 /* POSITION_UNAVAILABLE */) {
+            setPermissionNotice('Device location unavailable. Using your farm profile location.');
+          } else if (err.code === 3 /* TIMEOUT */) {
+            setPermissionNotice('Location detection timed out. Using your farm profile location.');
+          } else {
+            setPermissionNotice('Unable to detect GPS location. Using your farm profile location.');
           }
 
-          // Fallback to saved profile location ONLY if farmer configured one
-          const profileCity = user?.address?.city || initialCity;
-          const profileState = user?.address?.state || initialState;
-          if (profileCity) {
-            activeLocationRef.current = { city: profileCity, state: profileState };
-            fetchWeather({ city: profileCity, state: profileState }, 'saved_profile');
-          } else {
-            activeLocationRef.current = {};
-            fetchWeather({}, 'custom');
-          }
+          fallbackToFarmProfile();
         },
         { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
       );
     },
-    [user?.address?.city, user?.address?.state, initialCity, initialState, fetchWeather]
+    [fallbackToFarmProfile, fetchWeather]
   );
 
   // On initial mount: Attempt current browser location FIRST
@@ -203,6 +206,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
     };
     activeLocationRef.current = newLoc;
     setIsEditingLocation(false);
+    setPermissionNotice(null);
     fetchWeather(newLoc, 'custom');
   };
 
@@ -253,11 +257,13 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
                   </span>
                 ) : locationMode === 'saved_profile' ? (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[10px] font-bold">
-                    <span>Using saved farm location</span>
+                    <MapPin className="w-2.5 h-2.5" />
+                    <span>Farm Profile Location</span>
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[10px] font-bold">
-                    <span>Custom search</span>
+                    <MapPin className="w-2.5 h-2.5" />
+                    <span>Selected Location</span>
                   </span>
                 )}
 
@@ -285,12 +291,12 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
             onClick={() => handleUseBrowserLocation(false)}
             disabled={isLocatingGeo || isLoading}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold transition-all shadow-xs disabled:opacity-50"
-            title="Detect and use current device location"
+            title="Detect and use current device GPS location"
           >
             {isLocatingGeo ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Detecting your current location...</span>
+                <span>Detecting your location...</span>
               </>
             ) : (
               <>
@@ -303,7 +309,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
           {/* Timestamp Indicator */}
           {lastFetchTime && (
             <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/60">
-              {weather?.cached ? `Cached • ${timeAgoText}` : `Updated ${timeAgoText}`}
+              {weather?.cached ? `Cached • ${timeAgoText}` : `Live • ${timeAgoText}`}
             </span>
           )}
 
@@ -319,6 +325,23 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Permission Notice Banner */}
+      {permissionNotice && (
+        <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-medium">
+            <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>{permissionNotice}</span>
+          </div>
+          <button
+            onClick={() => handleUseBrowserLocation(false)}
+            className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors self-start sm:self-auto"
+          >
+            <Compass className="w-3 h-3" />
+            <span>Enable GPS Access</span>
+          </button>
+        </div>
+      )}
 
       {/* 2. Change Location Drawer / Search Form */}
       {isEditingLocation && (
@@ -343,14 +366,14 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
             <input
               type="text"
               required
-              placeholder="City / Mandal / Town (e.g. Bengaluru, Kurnool, Guntur)"
+              placeholder="City / Mandal / Town (e.g. Bengaluru, Kurnool, Pune)"
               value={customCity}
               onChange={(e) => setCustomCity(e.target.value)}
               className="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
             <input
               type="text"
-              placeholder="State (e.g. Karnataka, Andhra Pradesh, Telangana)"
+              placeholder="State (e.g. Karnataka, Andhra Pradesh, Maharashtra)"
               value={customState}
               onChange={(e) => setCustomState(e.target.value)}
               className="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -367,7 +390,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
               {isLocatingGeo ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Detecting your current location...</span>
+                  <span>Detecting your location...</span>
                 </>
               ) : (
                 <>
@@ -399,11 +422,18 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
 
       {/* 3. Loading State */}
       {isLoading && !weather && (
-        <div className="py-12 flex flex-col items-center justify-center space-y-3">
-          <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-            {isLocatingGeo ? 'Detecting your current location...' : 'Loading live weather from meteorological sensors...'}
-          </p>
+        <div className="py-12 flex flex-col items-center justify-center space-y-3 text-center">
+          <Loader2 className="w-8 h-8 text-emerald-600 dark:text-emerald-400 animate-spin" />
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+              {isLocatingGeo ? 'Detecting your current location...' : 'Loading live weather from meteorological sensors...'}
+            </p>
+            {isLocatingGeo && (
+              <p className="text-xs text-slate-400">
+                Requesting high-accuracy GPS coordinates from device sensors...
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -424,7 +454,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
 
       {/* 5. Live Weather Data Display */}
       {weather && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Main Hero Weather Summary */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-amber-500/10 to-teal-500/10 border border-emerald-500/20">
             <div className="flex items-center gap-3.5">
@@ -457,9 +487,13 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
                 <span>Rain Probability: {weather.rainProbability}%</span>
               </span>
 
-              {weather.cached && (
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              {weather.cached ? (
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                   ⚡ Cached
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800">
+                  ● LIVE
                 </span>
               )}
             </div>
@@ -523,6 +557,66 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
               <span className="text-[10px] text-slate-400">10m surface wind</span>
             </div>
           </div>
+
+          {/* Dedicated 3-Day Forecast Section */}
+          {weather.forecast && weather.forecast.length > 0 && (
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-heading font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                    {weather.forecast.length}-Day Farm Forecast & Predictions
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium">
+                  Direct meteorological model
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {weather.forecast.map((day, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-2 hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                        {day.day} • {day.date}
+                      </span>
+                      <span className="text-xl" title={day.condition}>
+                        {day.icon || '⛅'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-heading font-extrabold text-slate-900 dark:text-white">
+                          {day.maxTemp}°C
+                        </span>
+                        <span className="text-xs text-slate-400 ml-1.5 font-medium">
+                          / {day.minTemp}°C
+                        </span>
+                      </div>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                          day.rainProbability >= 40
+                            ? 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                            : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                        }`}
+                      >
+                        <CloudRain className="w-2.5 h-2.5" />
+                        {day.rainProbability}%
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      {day.condition}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Dynamic Agronomic Advisory */}
           <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-900 dark:text-emerald-200 space-y-1">

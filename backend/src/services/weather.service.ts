@@ -361,7 +361,7 @@ export class WeatherService {
         countryName = geocoded.country || countryName;
       }
     } else {
-      const locationQuery = [cityName, stateName].filter(Boolean).join(', ') || 'Nagpur, Maharashtra';
+      const locationQuery = [cityName, stateName].filter(Boolean).join(', ') || 'Kurnool, Andhra Pradesh';
       const resolved = await this.geocodeLocation(locationQuery);
       lat = resolved.latitude;
       lon = resolved.longitude;
