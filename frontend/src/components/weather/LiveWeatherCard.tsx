@@ -100,7 +100,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
     (isInitialAutoCheck: boolean = false) => {
       if (!navigator.geolocation) {
         if (!isInitialAutoCheck) {
-          setErrorMsg('Geolocation is not supported by your browser.');
+          setErrorMsg('Geolocation is not supported by your browser. Please choose a location manually.');
         }
         const profileCity = user?.address?.city || initialCity;
         const profileState = user?.address?.state || initialState;
@@ -108,8 +108,8 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
           activeLocationRef.current = { city: profileCity, state: profileState };
           fetchWeather({ city: profileCity, state: profileState }, 'saved_profile');
         } else {
-          activeLocationRef.current = { city: 'Nagpur', state: 'Maharashtra' };
-          fetchWeather({ city: 'Nagpur', state: 'Maharashtra' }, 'custom');
+          activeLocationRef.current = {};
+          fetchWeather({}, 'custom');
         }
         return;
       }
@@ -126,34 +126,35 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
             lat: pos.coords.latitude,
             lon: pos.coords.longitude,
           };
+          console.log('[LiveWeatherCard] Actual Browser GPS coordinates received:', coords);
           activeLocationRef.current = coords;
           setIsEditingLocation(false);
           fetchWeather(coords, 'live_gps');
         },
         (err) => {
           setIsLocatingGeo(false);
-          console.warn('[LiveWeatherCard] Geolocation error or denied:', err.message);
+          console.warn('[LiveWeatherCard] Geolocation error or denied (code ' + err.code + '):', err.message);
 
           if (!isInitialAutoCheck) {
             if (err.code === 1 /* PERMISSION_DENIED */) {
-              setErrorMsg('Location permission was denied. Please allow GPS location in your browser or search for your farm location below.');
+              setErrorMsg('Location permission denied. Please allow location access or choose a location manually.');
             } else {
-              setErrorMsg('GPS location is temporarily unavailable. Switched to farm location.');
+              setErrorMsg('Unable to detect your location. Please choose a location manually.');
             }
           }
 
-          // Fallback to profile location if available
+          // Fallback to saved profile location ONLY if farmer configured one
           const profileCity = user?.address?.city || initialCity;
           const profileState = user?.address?.state || initialState;
           if (profileCity) {
             activeLocationRef.current = { city: profileCity, state: profileState };
             fetchWeather({ city: profileCity, state: profileState }, 'saved_profile');
           } else {
-            activeLocationRef.current = { city: 'Nagpur', state: 'Maharashtra' };
-            fetchWeather({ city: 'Nagpur', state: 'Maharashtra' }, 'custom');
+            activeLocationRef.current = {};
+            fetchWeather({}, 'custom');
           }
         },
-        { timeout: 10000, enableHighAccuracy: true, maximumAge: 60000 }
+        { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
       );
     },
     [user?.address?.city, user?.address?.state, initialCity, initialState, fetchWeather]
@@ -287,11 +288,16 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
             title="Detect and use current device location"
           >
             {isLocatingGeo ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Detecting your current location...</span>
+              </>
             ) : (
-              <Compass className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <>
+                <Compass className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Use Current Location</span>
+              </>
             )}
-            <span>Use Current Location</span>
           </button>
 
           {/* Timestamp Indicator */}
@@ -358,8 +364,17 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
               disabled={isLocatingGeo}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold hover:bg-emerald-100 transition-colors"
             >
-              {isLocatingGeo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Compass className="w-3.5 h-3.5" />}
-              <span>Detect My GPS Coordinates</span>
+              {isLocatingGeo ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Detecting your current location...</span>
+                </>
+              ) : (
+                <>
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>Detect My GPS Coordinates</span>
+                </>
+              )}
             </button>
 
             <div className="flex items-center gap-2">
@@ -387,7 +402,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
         <div className="py-12 flex flex-col items-center justify-center space-y-3">
           <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
           <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-            🌦️ Detecting location and loading live weather from meteorological sensors...
+            {isLocatingGeo ? 'Detecting your current location...' : 'Loading live weather from meteorological sensors...'}
           </p>
         </div>
       )}

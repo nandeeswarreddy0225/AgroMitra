@@ -238,14 +238,74 @@ export class WeatherService {
   }
 
   /**
-   * Reverse geocode coordinates to district / city
+   * Reverse geocode coordinates to district / city / locality
    */
   public static async reverseGeocode(lat: number, lon: number): Promise<{
     city: string;
     state?: string;
     country?: string;
   }> {
-    // 1. Check local lookup by finding nearest Indian district
+    // 1. Query free high-accuracy reverse geocoding API (BigDataCloud)
+    try {
+      const bdcRes = await axios.get('https://api.bigdatacloud.net/data/reverse-geocode-client', {
+        params: { latitude: lat, longitude: lon, localityLanguage: 'en' },
+        timeout: 4000,
+      });
+      if (bdcRes.data) {
+        const city =
+          bdcRes.data.city ||
+          bdcRes.data.locality ||
+          bdcRes.data.principalSubdivision;
+        const state = bdcRes.data.principalSubdivision;
+        if (city && city.trim() !== '') {
+          return {
+            city: city.trim(),
+            state: state ? state.trim() : undefined,
+            country: bdcRes.data.countryName || 'India',
+          };
+        }
+      }
+    } catch {
+      // Ignore external reverse geocode failure
+    }
+
+    // 2. Query OpenStreetMap Nominatim reverse geocoding fallback
+    try {
+      const osmRes = await axios.get('https://nominatim.openstreetmap.org/reverse', {
+        params: {
+          lat,
+          lon,
+          format: 'json',
+          zoom: 10,
+        },
+        headers: {
+          'User-Agent': 'AgroMitra-Agronomy-Weather/1.0',
+        },
+        timeout: 4000,
+      });
+      if (osmRes.data?.address) {
+        const addr = osmRes.data.address;
+        const city =
+          addr.city ||
+          addr.town ||
+          addr.district ||
+          addr.county ||
+          addr.state_district ||
+          addr.state;
+        const state = addr.state;
+        if (city && city.trim() !== '') {
+          return {
+            city: city.trim(),
+            state: state ? state.trim() : undefined,
+            country: addr.country || 'India',
+          };
+        }
+      }
+    } catch {
+      // Ignore Nominatim failure
+    }
+
+    // 3. Local lookup for nearest Indian district (strict radius <= 0.35 degrees ~38 km)
     let closestDistrict: { city: string; state: string } | null = null;
     let minDistance = Infinity;
 
@@ -259,8 +319,7 @@ export class WeatherService {
       }
     }
 
-    // If within ~0.65 degrees (~70 km), use the closest Indian district
-    if (closestDistrict && minDistance <= 0.65) {
+    if (closestDistrict && minDistance <= 0.35) {
       return {
         city: closestDistrict.city,
         state: closestDistrict.state,
@@ -268,37 +327,7 @@ export class WeatherService {
       };
     }
 
-    // 2. Open-Meteo / BigDataCloud reverse geocoding API
-    try {
-      const bdcRes = await axios.get('https://api.bigdatacloud.net/data/reverse-geocode-client', {
-        params: { latitude: lat, longitude: lon, localityLanguage: 'en' },
-        timeout: 4000,
-      });
-      if (bdcRes.data) {
-        const city = bdcRes.data.city || bdcRes.data.locality || bdcRes.data.principalSubdivision;
-        const state = bdcRes.data.principalSubdivision;
-        if (city) {
-          return {
-            city,
-            state: state || closestDistrict?.state,
-            country: bdcRes.data.countryName || 'India',
-          };
-        }
-      }
-    } catch {
-      // Ignore external reverse geocode failure
-    }
-
-    // 3. If closest district is within broader region (e.g. 2.5 degrees), use it
-    if (closestDistrict && minDistance <= 2.5) {
-      return {
-        city: closestDistrict.city,
-        state: closestDistrict.state,
-        country: 'India',
-      };
-    }
-
-    // 4. GPS Coordinates label (no hardcoded fake city)
+    // 4. Fallback to clean coordinates label (NEVER fake Nagpur)
     return {
       city: `GPS (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`,
       state: closestDistrict?.state,
@@ -399,9 +428,9 @@ export class WeatherService {
 
           const result: WeatherData = {
             location: {
-              city: cityName || res.data.location?.name || 'Nagpur',
-              district: cityName || res.data.location?.name || 'Nagpur',
-              state: stateName || res.data.location?.region || 'Maharashtra',
+              city: cityName || res.data.location?.name || 'GPS Location',
+              district: cityName || res.data.location?.name || 'GPS Location',
+              state: stateName || res.data.location?.region || undefined,
               country: countryName,
               latitude: Number(lat),
               longitude: Number(lon),
@@ -455,8 +484,8 @@ export class WeatherService {
 
           const result: WeatherData = {
             location: {
-              city: cityName || res.data.name || 'Nagpur',
-              district: cityName || res.data.name || 'Nagpur',
+              city: cityName || res.data.name || 'GPS Location',
+              district: cityName || res.data.name || 'GPS Location',
               state: stateName,
               country: countryName,
               latitude: Number(lat),
@@ -553,8 +582,8 @@ export class WeatherService {
 
         const weatherResult: WeatherData = {
           location: {
-            city: cityName || 'Nagpur',
-            district: cityName || 'Nagpur',
+            city: cityName || 'GPS Location',
+            district: cityName || 'GPS Location',
             state: stateName,
             country: countryName,
             latitude: Number(lat),
@@ -584,7 +613,7 @@ export class WeatherService {
 
     // --- TIER 4: Wttr.in Fallback (zero key, cloud-friendly) ---
     try {
-      const wttrCity = encodeURIComponent(cityName || 'Nagpur');
+      const wttrCity = encodeURIComponent(cityName || `${lat},${lon}`);
       const wttrRes = await axios.get(`https://wttr.in/${wttrCity}?format=j1`, { timeout: 7000 });
       if (wttrRes.data?.current_condition?.[0]) {
         const c = wttrRes.data.current_condition[0];
@@ -611,9 +640,9 @@ export class WeatherService {
 
         const result: WeatherData = {
           location: {
-            city: cityName || 'Nagpur',
-            district: cityName || 'Nagpur',
-            state: stateName || 'Maharashtra',
+            city: cityName || 'GPS Location',
+            district: cityName || 'GPS Location',
+            state: stateName,
             country: countryName,
             latitude: Number(lat),
             longitude: Number(lon),
@@ -667,9 +696,9 @@ export class WeatherService {
     const advisory = generateFarmAdvisory(baseTemp, baseHumidity, baseRain, 12);
     const fallbackResult: WeatherData = {
       location: {
-        city: cityName || 'Nagpur',
-        district: cityName || 'Nagpur',
-        state: stateName || 'Maharashtra',
+        city: cityName || 'GPS Location',
+        district: cityName || 'GPS Location',
+        state: stateName,
         country: countryName,
         latitude: Number(lat),
         longitude: Number(lon),

@@ -327,19 +327,20 @@ export const updateProfile = async (
       return;
     }
 
-    if (name && typeof name === 'string' && name.trim().length >= 2) {
+    if (name !== undefined && typeof name === 'string' && name.trim().length >= 2) {
       user.name = name.trim();
     }
-    if (phone && typeof phone === 'string' && phone.trim().length >= 8) {
+    if (phone !== undefined && typeof phone === 'string' && phone.trim().length >= 8) {
       user.phone = phone.trim();
     }
-    if (address && typeof address === 'object') {
+    if (address !== undefined && typeof address === 'object') {
       user.address = {
-        street: address.street?.trim() || user.address?.street || '',
-        city: address.city?.trim() || user.address?.city || '',
-        state: address.state?.trim() || user.address?.state || '',
-        pincode: address.pincode?.trim() || user.address?.pincode || '',
+        street: address.street !== undefined ? String(address.street).trim() : (user.address?.street || ''),
+        city: address.city !== undefined ? String(address.city).trim() : (user.address?.city || ''),
+        state: address.state !== undefined ? String(address.state).trim() : (user.address?.state || ''),
+        pincode: address.pincode !== undefined ? String(address.pincode).trim() : (user.address?.pincode || ''),
       };
+      user.markModified('address');
     }
     if (shopName !== undefined && typeof shopName === 'string') {
       user.shopName = shopName.trim();

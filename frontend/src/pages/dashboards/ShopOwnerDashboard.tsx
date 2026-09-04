@@ -14,7 +14,7 @@ import {
   Save,
 } from 'lucide-react';
 import QRCode from 'qrcode';
-import { updateProfileApi } from '../../services/api';
+import { updateProfileApi, getMeApi } from '../../services/api';
 
 export const ShopOwnerDashboard: React.FC = () => {
   const { user, updateUser } = useAuth();
@@ -36,6 +36,33 @@ export const ShopOwnerDashboard: React.FC = () => {
   // Dynamic QR Code Preview State
   const [previewQrDataUrl, setPreviewQrDataUrl] = useState<string | null>(null);
 
+  // 1. Fetch fresh profile directly from MongoDB on mount
+  useEffect(() => {
+    let isMounted = true;
+    const fetchFreshProfile = async () => {
+      try {
+        const res = await getMeApi();
+        if (isMounted && res.success && res.user) {
+          updateUser(res.user);
+          setShopName(res.user.shopName || res.user.name || '');
+          setUpiId(res.user.upiId || '');
+          setPhone(res.user.phone || '');
+          setStreet(res.user.address?.street || '');
+          setCity(res.user.address?.city || '');
+          setState(res.user.address?.state || '');
+          setPincode(res.user.address?.pincode || '');
+        }
+      } catch (err) {
+        console.warn('[ShopOwnerDashboard] Profile fetch warning:', err);
+      }
+    };
+    fetchFreshProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // 2. Synchronize form state whenever AuthContext user updates
   useEffect(() => {
     if (user) {
       setShopName(user.shopName || user.name || '');
