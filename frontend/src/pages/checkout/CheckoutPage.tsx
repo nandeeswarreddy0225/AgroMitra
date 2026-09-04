@@ -9,11 +9,14 @@ import {
   Loader2,
   Info,
   Building,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { createOrderApi } from '../../services/api';
 import axios from 'axios';
+
+import { PaymentMethod } from '../../types/order';
 
 export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -27,6 +30,7 @@ export const CheckoutPage: React.FC = () => {
     pincode: user?.address?.pincode || '',
   });
 
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('UPI_QR');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -62,12 +66,18 @@ export const CheckoutPage: React.FC = () => {
     try {
       const res = await createOrderApi({
         deliveryAddress: address,
+        paymentMethod,
       });
 
       if (res.success && res.order) {
         // Clear local cart context as well
         await clearCart();
-        navigate(`/orders/${res.order.id || res.order._id}/payment`, { state: { newOrderNumber: res.order.orderNumber } });
+        navigate(`/orders/${res.order.id || res.order._id}/payment`, {
+          state: {
+            newOrderNumber: res.order.orderNumber,
+            paymentMethod,
+          },
+        });
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.data?.message) {
@@ -213,6 +223,107 @@ export const CheckoutPage: React.FC = () => {
                   />
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Payment Method Selection */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4 shadow-sm transition-colors">
+            <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Select Payment Method</span>
+            </h3>
+
+            <div className="space-y-3">
+              {/* UPI / QR Payment */}
+              <label
+                onClick={() => setPaymentMethod('UPI_QR')}
+                className={`p-4 rounded-xl border flex items-start gap-3.5 cursor-pointer transition-all ${
+                  paymentMethod === 'UPI_QR'
+                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-100 ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="UPI_QR"
+                  checked={paymentMethod === 'UPI_QR'}
+                  onChange={() => setPaymentMethod('UPI_QR')}
+                  className="mt-1 text-emerald-600 focus:ring-emerald-500"
+                />
+                <div className="space-y-0.5 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-heading font-bold text-sm text-slate-900 dark:text-white">
+                      Direct Agri Store Partner UPI QR
+                    </span>
+                    <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                      Recommended
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Scan dealer's merchant QR via PhonePe, Google Pay, Paytm, BHIM, or any UPI app with zero transaction surcharge.
+                  </p>
+                </div>
+              </label>
+
+              {/* Razorpay Online Gateway */}
+              <label
+                onClick={() => setPaymentMethod('RAZORPAY')}
+                className={`p-4 rounded-xl border flex items-start gap-3.5 cursor-pointer transition-all ${
+                  paymentMethod === 'RAZORPAY'
+                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-100 ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="RAZORPAY"
+                  checked={paymentMethod === 'RAZORPAY'}
+                  onChange={() => setPaymentMethod('RAZORPAY')}
+                  className="mt-1 text-emerald-600 focus:ring-emerald-500"
+                />
+                <div className="space-y-0.5 flex-1">
+                  <span className="font-heading font-bold text-sm text-slate-900 dark:text-white block">
+                    Razorpay Online Gateway
+                  </span>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Pay securely using Debit/Credit Cards, NetBanking, UPI, or Digital Wallets with instant verification.
+                  </p>
+                </div>
+              </label>
+
+              {/* Cash on Delivery */}
+              <label
+                onClick={() => setPaymentMethod('CASH_ON_DELIVERY')}
+                className={`p-4 rounded-xl border flex items-start gap-3.5 cursor-pointer transition-all ${
+                  paymentMethod === 'CASH_ON_DELIVERY'
+                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-100 ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="CASH_ON_DELIVERY"
+                  checked={paymentMethod === 'CASH_ON_DELIVERY'}
+                  onChange={() => setPaymentMethod('CASH_ON_DELIVERY')}
+                  className="mt-1 text-emerald-600 focus:ring-emerald-500"
+                />
+                <div className="space-y-0.5 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-heading font-bold text-sm text-slate-900 dark:text-white">
+                      Cash on Delivery (COD)
+                    </span>
+                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      Doorstep
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Pay in cash directly to the delivery partner upon arrival at your farm/doorstep.
+                  </p>
+                </div>
+              </label>
             </div>
           </div>
         </div>

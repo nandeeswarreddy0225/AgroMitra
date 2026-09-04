@@ -95,6 +95,10 @@ export interface IStatusTimeline {
   message?: string;
 }
 
+export type PaymentMethod = 'UPI_QR' | 'RAZORPAY' | 'CASH_ON_DELIVERY';
+
+export const PAYMENT_METHODS: PaymentMethod[] = ['UPI_QR', 'RAZORPAY', 'CASH_ON_DELIVERY'];
+
 export interface IOrder extends Document {
   _id: Types.ObjectId;
   orderNumber: string;
@@ -104,6 +108,7 @@ export interface IOrder extends Document {
   deliveryAddress: IOrderAddress;
   status: OrderStatus;
   paymentStatus: OrderPaymentStatus;
+  paymentMethod?: PaymentMethod;
   payment?: Types.ObjectId;
   rejectionReason?: string;
   statusTimeline: IStatusTimeline[];
@@ -237,6 +242,12 @@ const OrderSchema = new Schema<IOrder>(
       type: String,
       enum: ORDER_PAYMENT_STATUSES,
       default: 'PENDING',
+      index: true,
+    },
+    paymentMethod: {
+      type: String,
+      enum: PAYMENT_METHODS,
+      default: 'UPI_QR',
       index: true,
     },
     payment: {

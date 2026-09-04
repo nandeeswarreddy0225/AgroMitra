@@ -90,6 +90,12 @@ export const createOrder = async (
       });
     }
 
+    // Extract payment method preference
+    const rawPaymentMethod = req.body.paymentMethod;
+    const paymentMethod = ['UPI_QR', 'RAZORPAY', 'CASH_ON_DELIVERY'].includes(rawPaymentMethod)
+      ? rawPaymentMethod
+      : 'UPI_QR';
+
     // Generate unique order number
     const uniqueSuffix = Math.floor(1000 + Math.random() * 9000);
     const orderNumber = `AGM-${Date.now().toString().slice(-6)}-${uniqueSuffix}`;
@@ -102,6 +108,18 @@ export const createOrder = async (
       totalAmount,
       deliveryAddress,
       status: 'PENDING',
+      paymentStatus: 'PENDING',
+      paymentMethod,
+      statusTimeline: [
+        {
+          status: 'PENDING',
+          timestamp: new Date(),
+          message:
+            paymentMethod === 'CASH_ON_DELIVERY'
+              ? 'Order placed by farmer (Cash on Delivery)'
+              : 'Order placed by farmer',
+        },
+      ],
     });
 
     // Clear Farmer Cart
@@ -207,6 +225,7 @@ export const getShopOwnerOrders = async (
           orderNumber: order.orderNumber,
           status: order.status,
           paymentStatus: order.paymentStatus || 'PENDING',
+          paymentMethod: order.paymentMethod || 'UPI_QR',
           rejectionReason: order.rejectionReason,
           statusTimeline: order.statusTimeline || [],
           farmer: order.farmer,
@@ -447,6 +466,12 @@ export const updateOrderStatus = async (
 
     if (status === 'REJECTED' && rejectionReason) {
       order.rejectionReason = rejectionReason;
+    }
+
+    if (req.body.paymentStatus && ['PENDING', 'PAID', 'FAILED', 'REFUNDED'].includes(req.body.paymentStatus)) {
+      order.paymentStatus = req.body.paymentStatus;
+    } else if (status === 'DELIVERED' && order.paymentMethod === 'CASH_ON_DELIVERY') {
+      order.paymentStatus = 'PAID';
     }
 
     order.status = status;

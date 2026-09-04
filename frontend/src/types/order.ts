@@ -68,6 +68,8 @@ export interface OrderDeliveryAddress {
   pincode: string;
 }
 
+export type PaymentMethod = 'UPI_QR' | 'RAZORPAY' | 'CASH_ON_DELIVERY';
+
 export interface Order {
   _id?: string;
   id: string;
@@ -85,6 +87,7 @@ export interface Order {
   deliveryAddress: OrderDeliveryAddress;
   status: OrderStatus;
   paymentStatus: OrderPaymentStatus;
+  paymentMethod?: PaymentMethod;
   payment?: string;
   rejectionReason?: string;
   statusTimeline?: StatusTimelineItem[];
@@ -108,6 +111,7 @@ export interface ShopOwnerOrderView {
   orderNumber: string;
   status: OrderStatus;
   paymentStatus: OrderPaymentStatus;
+  paymentMethod?: PaymentMethod;
   rejectionReason?: string;
   statusTimeline?: StatusTimelineItem[];
   farmer: {
@@ -156,4 +160,5 @@ export interface SingleOrderResponse {
 
 export interface CreateOrderInput {
   deliveryAddress?: Partial<OrderDeliveryAddress>;
+  paymentMethod?: PaymentMethod;
 }

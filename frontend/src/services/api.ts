@@ -15,7 +15,16 @@ import {
   SingleOrderResponse,
 } from '../types/order';
 
-const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5000/api';
+const getApiBaseUrl = (): string => {
+  const envUrl = (import.meta.env?.VITE_API_URL || '').trim();
+  if (!envUrl) {
+    return 'http://localhost:5000/api';
+  }
+  const cleanUrl = envUrl.replace(/\/+$/, '');
+  return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -230,12 +239,14 @@ export const updateOrderStatusApi = async (
   id: string,
   status: import('../types/order').OrderStatus,
   rejectionReason?: string,
-  message?: string
+  message?: string,
+  paymentStatus?: import('../types/order').OrderPaymentStatus
 ): Promise<SingleOrderResponse> => {
   const response = await apiClient.put<SingleOrderResponse>(`/orders/${id}/status`, {
     status,
     rejectionReason,
     message,
+    paymentStatus,
   });
   return response.data;
 };

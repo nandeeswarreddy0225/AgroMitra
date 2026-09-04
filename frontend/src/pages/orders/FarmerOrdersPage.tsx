@@ -340,7 +340,7 @@ export const FarmerOrdersPage: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* Payment Status */}
+                    {/* Payment Status & Method */}
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] text-slate-400 font-bold uppercase hidden sm:inline">Payment:</span>
                       <span
@@ -350,6 +350,15 @@ export const FarmerOrdersPage: React.FC = () => {
                       >
                         {order.paymentStatus === 'PAID' && <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />}
                         <span>{order.paymentStatus || 'PENDING'}</span>
+                      </span>
+
+                      {/* Payment Method Badge */}
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        {order.paymentMethod === 'CASH_ON_DELIVERY'
+                          ? 'Cash on Delivery'
+                          : order.paymentMethod === 'RAZORPAY'
+                          ? 'Razorpay'
+                          : 'Direct UPI QR'}
                       </span>
                     </div>
 
