@@ -2,7 +2,7 @@
 
 **Smart Farming. Better Decisions. Stronger Connections.**
 
-AgroMitra is a modern, full-stack digital agriculture platform built to connect and empower the three foundational stakeholders of the agricultural supply chain:
+AgroMitra is a modern, full-stack digital agriculture platform designed to connect three foundational stakeholders of the agricultural supply chain:
 - **🌾 Farmers** — Accessing AI crop diagnostics, live weather advisories, national mandi price intelligence, verified government welfare schemes, and direct input procurement.
 - **🏪 Agri Store Partners** — Managing digital catalogs, inventory pricing, direct merchant UPI QR payment collection, and delivery partner dispatch.
 - **🚚 Delivery Partners** — Handling real-time assignment requests, pickup routing, 4-stage delivery status progression, and doorstep confirmation.
@@ -16,15 +16,15 @@ AgroMitra is a modern, full-stack digital agriculture platform built to connect 
 - Unified farmer dashboard aggregating recent orders, weather alerts, quick-access agricultural tools, and crop advisory insights.
 
 ### 2. 🛒 Agricultural Marketplace
-- Verified catalog of genuine agricultural inputs including certified seeds, crop protection, bio-products, and farming equipment (with strict removal of unverified/fertilizer listings).
-- Instant multi-field search (by product name, brand, category, and description), category filter chips, and dynamic sorting (price, newest arrivals).
+- Catalog of agricultural inputs including certified seeds, crop protection, bio-products, and farming equipment.
+- Multi-field search (by product name, brand, category, and description), category filter chips, and dynamic sorting (price, newest arrivals).
 
 ### 3. 🛍️ Cart & Multi-Step Checkout
 - Persistent cart state across sessions with real-time stock limits and quantity management.
 - Multi-address checkout flow supporting customized delivery addresses and billing summaries.
 
 ### 4. 💳 Dual Payment Pipeline
-- **Direct Agri Store Partner UPI QR**: Dynamically generated merchant UPI QR code encoding the store's verified VPA, exact payable amount, and unique order reference for transparent direct payment with UTR tracking.
+- **Direct Agri Store Partner UPI QR**: Dynamically generated merchant UPI QR code encoding the store's verified VPA, exact payable amount, and unique order reference for direct payment with UTR tracking.
 - **Razorpay Online Gateway**: Integrated card, net banking, and UPI checkout with server-side cryptographic HMAC-SHA256 signature verification.
 
 ### 5. 🏪 Agri Store Partner Workflow
@@ -34,27 +34,27 @@ AgroMitra is a modern, full-stack digital agriculture platform built to connect 
 ### 6. 🚚 Delivery Partner Dispatch & Tracking
 - Dedicated delivery partner dashboard displaying pending assignments, store pickups, and customer destinations.
 - 4-stage persisted delivery progression: `ASSIGNED` → `ACCEPTED` → `OUT_FOR_DELIVERY` → `DELIVERED`.
-- Live order status synchronization visible to farmers in real time.
+- Order status synchronization visible to farmers in real time.
 
 ### 7. 🌦️ Hyperlocal Live Agro Weather
 - Coordinate-based live weather feeds displaying temperature, humidity, wind velocity, precipitation likelihood, and tailored agricultural spraying/harvesting guidance.
 
 ### 8. 📊 Mandi / Market Price Intelligence
-- Real-time APMC wholesale mandi spot prices across Indian agricultural commodity markets.
-- AI market intelligence module providing modal price trend analysis and historical context.
+- APMC wholesale mandi spot prices across Indian agricultural commodity markets.
+- Market intelligence module providing modal price trend analysis and historical context.
 
 ### 9. 🏛️ Government Schemes Portal
-- Searchable catalog of 17+ verified Central and State agricultural subsidy and welfare schemes (PM-KISAN, PMFBY, AIF, PKVY, etc.) with official application links and eligibility criteria.
+- Searchable catalog of 17+ Central and State agricultural subsidy and welfare schemes (PM-KISAN, PMFBY, AIF, PKVY, etc.) with official application links and eligibility criteria.
 
 ### 10. 🧪 Seasonal Soil-to-Crop Advisor
-- Intelligent recommendation engine evaluating soil texture, seasonal calendar (Kharif, Rabi, Zaid), and regional climate to suggest optimal crops, expected yields, and cultivation practices.
+- Agronomic recommendation engine evaluating soil texture, seasonal calendar (Kharif, Rabi, Zaid), and regional climate to suggest suitable crops, expected yields, and cultivation practices.
 
 ### 11. 🔬 AI Crop Disease & Leaf Scanner
 - Deep-learning plant pathology diagnostic engine powered by FastAPI and PyTorch.
-- Analyzes uploaded leaf imagery to detect crop diseases, assess confidence levels, detect low-confidence uncertainty, and provide actionable chemical and organic treatment remedies.
+- Analyzes uploaded leaf imagery to detect crop diseases, assess confidence levels, flag low-confidence predictions, and provide actionable chemical and organic treatment remedies.
 
 ### 12. 🌐 Multi-Language & Theme Support
-- Dynamic on-the-fly language switching across 6 regional Indian languages: **English**, **Telugu (తెలుగు)**, **Hindi (हिन्दी)**, **Kannada (ಕನ್ನಡ)**, **Tamil (தமிழ்)**, and **Marathi (मराठी)**.
+- Dynamic language switching across 6 regional Indian languages: **English**, **Telugu (తెలుగు)**, **Hindi (हिन्दी)**, **Kannada (ಕನ್ನಡ)**, **Tamil (தமிழ்)**, and **Marathi (मराठी)**.
 - High-contrast **Light Mode** and battery-efficient **Dark Mode** optimized for outdoor daylight conditions and low-light environments.
 
 ---
@@ -190,7 +190,7 @@ cp ai-service/.env.example ai-service/.env
 ```
 
 > [!IMPORTANT]
-> Fill in your actual local configuration values in each `.env` file. Never commit `.env` files to source control.
+> Supply your local configuration values in each `.env` file. Never commit `.env` files to source control.
 
 ---
 
@@ -240,22 +240,22 @@ npm run dev
 
 ## 🔒 Security & Safe Coding Practices
 
-- **Strict Environment Isolation**: All database connection strings, JWT signing keys, and payment credentials are read strictly from runtime environment variables.
-- **Git Security**: Comprehensive `.gitignore` rules prevent `.env`, `.env.*`, `node_modules/`, `dist/`, `build/`, `.venv/`, `.mongodb_data/`, and runtime logs from ever entering Git history.
-- **Input Sanitization & HMAC Verification**: All payments and form inputs undergo backend validation, cryptographic signature checking, and role-based access verification.
+- **Environment Isolation**: Database connection strings, JWT signing keys, and payment credentials are read strictly from runtime environment variables.
+- **Git Security**: Comprehensive `.gitignore` rules prevent `.env`, `.env.*`, `node_modules/`, `dist/`, `build/`, `.venv/`, `.mongodb_data/`, and runtime logs from entering Git history.
+- **Input Validation & HMAC Verification**: Payment signatures and request payloads undergo backend validation, cryptographic signature checking, and role-based access verification.
 
 ---
 
-## 📊 Project Status & Verification
+## 📊 Project Status & Testing
 
-AgroMitra is fully implemented, operational, and verified across all production checkpoints:
-- ✅ **Authentication & Role Authorization**: Multi-tenant guards strictly enforced.
-- ✅ **Marketplace & Cart**: Clean non-fertilizer catalog with live stock handling.
-- ✅ **Dual Payment Integration**: Direct store UPI QR & Razorpay gateway operational.
-- ✅ **Delivery Lifecycle**: 4-stage real-time progression persisted in MongoDB.
-- ✅ **AI Leaf Scanner**: PyTorch vision model serving real-time disease classifications and treatments.
-- ✅ **APMC Mandi & Agro Weather**: Real-time market observations and coordinate-based forecasts.
-- ✅ **Multilingual & Theme Engine**: Verified across all 6 supported languages in Light & Dark modes.
+The platform includes automated testing and integration coverage across key modules:
+- **Authentication & Authorization**: Role-based access control for Farmers, Agri Store Partners, and Delivery Partners.
+- **Marketplace & Cart**: Product discovery, multi-field search, filtering, and stock-aware checkout.
+- **Dual Payment Pipeline**: Direct store UPI QR generation with reference tracking and Razorpay gateway integration.
+- **Delivery Workflow**: Multi-stage state machine tracking order progression to completion.
+- **AI Diagnostics**: PyTorch vision model serving real-time disease classifications and treatment advisories.
+- **APMC Mandi & Weather Services**: Integrated live market observation feeds and coordinate-based forecasts.
+- **Multilingual & Theme Engine**: Verified translations across 6 languages in Light & Dark modes.
 
 ---
 
