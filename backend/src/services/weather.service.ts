@@ -354,12 +354,10 @@ export class WeatherService {
     const hasExplicitCoords = lat !== undefined && lon !== undefined && !isNaN(lat) && !isNaN(lon);
 
     if (hasExplicitCoords) {
-      if (!cityName || cityName === 'Local Farm' || cityName === 'Current Location') {
-        const geocoded = await this.reverseGeocode(lat!, lon!);
-        cityName = geocoded.city;
-        stateName = geocoded.state || stateName;
-        countryName = geocoded.country || countryName;
-      }
+      const geocoded = await this.reverseGeocode(lat!, lon!);
+      cityName = geocoded.city;
+      stateName = geocoded.state || stateName;
+      countryName = geocoded.country || countryName;
     } else {
       const locationQuery = [cityName, stateName].filter(Boolean).join(', ') || 'Kurnool, Andhra Pradesh';
       const resolved = await this.geocodeLocation(locationQuery);

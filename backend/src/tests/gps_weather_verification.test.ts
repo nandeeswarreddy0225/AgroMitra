@@ -1,3 +1,4 @@
+```ts
 import axios from 'axios';
 
 async function testWeather() {
@@ -31,20 +32,77 @@ async function testWeather() {
 
   console.log('\n=== TEST 3: Coordinate Isolation & Distinct Caching ===');
   const isCityDistinct = hydCurrent.data.location.city !== puneCurrent.data.location.city;
-  const isCoordDistinct = hydCurrent.data.location.latitude !== puneCurrent.data.location.latitude;
-  console.log('Hyderabad != Pune City:', isCityDistinct, `("${hydCurrent.data.location.city}" vs "${puneCurrent.data.location.city}")`);
+  const isCoordDistinct =
+    hydCurrent.data.location.latitude !== puneCurrent.data.location.latitude;
+
+  console.log(
+    'Hyderabad != Pune City:',
+    isCityDistinct,
+    `("${hydCurrent.data.location.city}" vs "${puneCurrent.data.location.city}")`
+  );
   console.log('Hyderabad != Pune Coords:', isCoordDistinct);
 
   if (!isCityDistinct || !isCoordDistinct) {
     throw new Error('Coordinate isolation failed! Both returned the same location.');
   }
 
+  console.log(
+    '\n=== TEST 4: GPS Overrides Extraneous Query City (lat/lon = Bengaluru, query city = Nagpur) ==='
+  );
+
+  const bngOverridden = await axios.get(
+    `${BASE_URL}/weather/current?lat=12.9716&lon=77.5946&city=Nagpur`
+  );
+
+  console.log(
+    'Resolved Location:',
+    JSON.stringify(bngOverridden.data.location)
+  );
+
+  if (bngOverridden.data.location.city.toLowerCase() === 'nagpur') {
+    throw new Error(
+      'FAILURE: GPS coordinates were overridden by query city parameter!'
+    );
+  }
+
+  console.log(
+    'Passed: Resolved to genuine GPS location:',
+    bngOverridden.data.location.city
+  );
+
+  console.log(
+    '\n=== TEST 5: Andhra Pradesh GPS Coordinates (lat=15.8281, lon=78.0373 -> Kurnool) ==='
+  );
+
+  const knlCurrent = await axios.get(
+    `${BASE_URL}/weather/current?lat=15.8281&lon=78.0373`
+  );
+
+  console.log(
+    'Kurnool Location:',
+    JSON.stringify(knlCurrent.data.location)
+  );
+
+  console.log(
+    `Kurnool Temp: ${knlCurrent.data.temperature}°C, Rain: ${knlCurrent.data.rainProbability}%`
+  );
+
+  if (!knlCurrent.data.location.city.toLowerCase().includes('kurnool')) {
+    throw new Error(
+      'FAILURE: Expected Kurnool for coordinates 15.8281, 78.0373'
+    );
+  }
+
   console.log('\n====================================================');
   console.log('  🎉 GPS WEATHER & FORECAST VERIFICATION PASSED!     ');
-  console.log('====================================================\n');
+  console.log('====================================================');
 }
 
 testWeather().catch((err) => {
-  console.error('Weather Test Failed:', err.response?.data || err.message);
+  console.error(
+    'Weather Test Failed:',
+    err.response?.data || err.message
+  );
   process.exit(1);
 });
+```

@@ -78,12 +78,19 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
           if (modeOverride) {
             setLocationMode(modeOverride);
           }
-          activeLocationRef.current = {
-            lat: res.weather.location.latitude,
-            lon: res.weather.location.longitude,
-            city: res.weather.location.city,
-            state: res.weather.location.state,
-          };
+          const effectiveMode = modeOverride || locationMode;
+          activeLocationRef.current =
+            effectiveMode === 'live_gps'
+              ? {
+                  lat: res.weather.location.latitude,
+                  lon: res.weather.location.longitude,
+                }
+              : {
+                  lat: res.weather.location.latitude,
+                  lon: res.weather.location.longitude,
+                  city: res.weather.location.city,
+                  state: res.weather.location.state,
+                };
         } else {
           setErrorMsg(res.message || 'Unable to load live weather right now.');
         }
