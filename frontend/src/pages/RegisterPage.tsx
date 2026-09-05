@@ -22,6 +22,13 @@ export const RegisterPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Field unlock tracking: keeps fields readOnly on initial render to block Chrome auto-injection
+  const [unlockedFields, setUnlockedFields] = useState<Record<string, boolean>>({});
+
+  const unlockField = (fieldKey: string) => {
+    setUnlockedFields((prev) => (prev[fieldKey] ? prev : { ...prev, [fieldKey]: true }));
+  };
+
   const { register, getRoleDashboardPath } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -37,6 +44,7 @@ export const RegisterPage: React.FC = () => {
     setCity('');
     setState('');
     setPincode('');
+    setUnlockedFields({});
     setErrorMsg(null);
   }, []);
 
@@ -100,6 +108,7 @@ export const RegisterPage: React.FC = () => {
       setCity('');
       setState('');
       setPincode('');
+      setUnlockedFields({});
 
       const destination = getRoleDashboardPath(authenticatedUser.role);
       navigate(destination, { replace: true });
@@ -204,7 +213,7 @@ export const RegisterPage: React.FC = () => {
             {/* Basic Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="reg_name" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label htmlFor="agri_reg_fullname" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   {t('fullNameLabel', 'Full Name / Business Name')} <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative rounded-xl shadow-sm">
@@ -212,10 +221,13 @@ export const RegisterPage: React.FC = () => {
                     <UserIcon className="h-4 w-4" />
                   </div>
                   <input
-                    id="reg_name"
-                    name="reg_name"
+                    id="agri_reg_fullname"
+                    name="agri_reg_fullname"
                     type="text"
                     autoComplete="off"
+                    readOnly={!unlockedFields['name']}
+                    onFocus={() => unlockField('name')}
+                    onPointerDown={() => unlockField('name')}
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -226,7 +238,7 @@ export const RegisterPage: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="reg_phone" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label htmlFor="agri_reg_phone" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   {t('phoneLabel', 'Phone Number')} <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative rounded-xl shadow-sm">
@@ -234,10 +246,13 @@ export const RegisterPage: React.FC = () => {
                     <Phone className="h-4 w-4" />
                   </div>
                   <input
-                    id="reg_phone"
-                    name="reg_phone"
+                    id="agri_reg_phone"
+                    name="agri_reg_phone"
                     type="tel"
                     autoComplete="off"
+                    readOnly={!unlockedFields['phone']}
+                    onFocus={() => unlockField('phone')}
+                    onPointerDown={() => unlockField('phone')}
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -249,7 +264,7 @@ export const RegisterPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="reg_email" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="agri_reg_email" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 {t('emailLabel', 'Email Address')} <span className="text-rose-500">*</span>
               </label>
               <div className="relative rounded-xl shadow-sm">
@@ -257,10 +272,13 @@ export const RegisterPage: React.FC = () => {
                   <Mail className="h-4 w-4" />
                 </div>
                 <input
-                  id="reg_email"
-                  name="reg_email"
+                  id="agri_reg_email"
+                  name="agri_reg_email"
                   type="email"
                   autoComplete="off"
+                  readOnly={!unlockedFields['email']}
+                  onFocus={() => unlockField('email')}
+                  onPointerDown={() => unlockField('email')}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -272,14 +290,17 @@ export const RegisterPage: React.FC = () => {
 
             {/* Address Details */}
             <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <label htmlFor="reg_street" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+              <label htmlFor="agri_reg_street" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                 {t('addressDetails', 'Address Details (Village / Town / City)')}
               </label>
               <input
-                id="reg_street"
-                name="reg_street"
+                id="agri_reg_street"
+                name="agri_reg_street"
                 type="text"
                 autoComplete="off"
+                readOnly={!unlockedFields['street']}
+                onFocus={() => unlockField('street')}
+                onPointerDown={() => unlockField('street')}
                 value={street}
                 onChange={(e) => setStreet(e.target.value)}
                 placeholder="Street / Farm Location / Landmark"
@@ -287,12 +308,15 @@ export const RegisterPage: React.FC = () => {
               />
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label htmlFor="reg_city" className="sr-only">City / District</label>
+                  <label htmlFor="agri_reg_city" className="sr-only">City / District</label>
                   <input
-                    id="reg_city"
-                    name="reg_city"
+                    id="agri_reg_city"
+                    name="agri_reg_city"
                     type="text"
                     autoComplete="off"
+                    readOnly={!unlockedFields['city']}
+                    onFocus={() => unlockField('city')}
+                    onPointerDown={() => unlockField('city')}
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="City / District"
@@ -300,12 +324,15 @@ export const RegisterPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="reg_state" className="sr-only">State</label>
+                  <label htmlFor="agri_reg_state" className="sr-only">State</label>
                   <input
-                    id="reg_state"
-                    name="reg_state"
+                    id="agri_reg_state"
+                    name="agri_reg_state"
                     type="text"
                     autoComplete="off"
+                    readOnly={!unlockedFields['state']}
+                    onFocus={() => unlockField('state')}
+                    onPointerDown={() => unlockField('state')}
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                     placeholder="State"
@@ -313,12 +340,15 @@ export const RegisterPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="reg_pincode" className="sr-only">Pincode</label>
+                  <label htmlFor="agri_reg_pincode" className="sr-only">Pincode</label>
                   <input
-                    id="reg_pincode"
-                    name="reg_pincode"
+                    id="agri_reg_pincode"
+                    name="agri_reg_pincode"
                     type="text"
                     autoComplete="off"
+                    readOnly={!unlockedFields['pincode']}
+                    onFocus={() => unlockField('pincode')}
+                    onPointerDown={() => unlockField('pincode')}
                     value={pincode}
                     onChange={(e) => setPincode(e.target.value)}
                     placeholder="Pincode"
@@ -331,7 +361,7 @@ export const RegisterPage: React.FC = () => {
             {/* Passwords */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
               <div>
-                <label htmlFor="reg_password" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label htmlFor="agri_reg_password" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   {t('passwordLabel', 'Password')} <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative rounded-xl shadow-sm">
@@ -339,10 +369,13 @@ export const RegisterPage: React.FC = () => {
                     <Lock className="h-4 w-4" />
                   </div>
                   <input
-                    id="reg_password"
-                    name="reg_password"
+                    id="agri_reg_password"
+                    name="agri_reg_password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="new-password"
+                    readOnly={!unlockedFields['password']}
+                    onFocus={() => unlockField('password')}
+                    onPointerDown={() => unlockField('password')}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -361,7 +394,7 @@ export const RegisterPage: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="reg_confirm_password" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label htmlFor="agri_reg_confirm_password" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   {t('confirmPasswordLabel', 'Confirm Password')} <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative rounded-xl shadow-sm">
@@ -369,10 +402,13 @@ export const RegisterPage: React.FC = () => {
                     <Lock className="h-4 w-4" />
                   </div>
                   <input
-                    id="reg_confirm_password"
-                    name="reg_confirm_password"
+                    id="agri_reg_confirm_password"
+                    name="agri_reg_confirm_password"
                     type={showConfirmPassword ? 'text' : 'password'}
                     autoComplete="new-password"
+                    readOnly={!unlockedFields['confirmPassword']}
+                    onFocus={() => unlockField('confirmPassword')}
+                    onPointerDown={() => unlockField('confirmPassword')}
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
