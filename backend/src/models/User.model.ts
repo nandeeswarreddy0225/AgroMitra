@@ -1,7 +1,8 @@
 import mongoose, { Document, Schema, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { normalizePhoneNumber } from '../utils/phone';
 
-export type UserRole = 'FARMER' | 'SHOP_OWNER' | 'DELIVERY_BOY' | 'ADMIN';
+export type UserRole = 'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'ADMIN';
 
 export interface IAddress {
   street?: string;
@@ -62,6 +63,8 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: [true, 'Phone number is required'],
       trim: true,
+      unique: true,
+      index: true,
       match: [
         /^[0-9+\s-]{8,20}$/,
         'Please provide a valid phone number (minimum 8 digits)',
@@ -76,7 +79,7 @@ const UserSchema = new Schema<IUser>(
     role: {
       type: String,
       enum: {
-        values: ['FARMER', 'SHOP_OWNER', 'DELIVERY_BOY', 'ADMIN'],
+        values: ['FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', 'DELIVERY_BOY', 'ADMIN'],
         message: '{VALUE} is not a valid role',
       },
       required: [true, 'Role is required'],
@@ -128,21 +131,27 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-// Hash password before saving if not already a valid bcrypt hash
+// Hash password before saving if not already a valid bcrypt hash, and normalize phone
 UserSchema.pre<IUser>('save', async function (next) {
+  if (this.isModified('phone') && this.phone) {
+    this.phone = normalizePhoneNumber(this.phone);
+  }
+
   if (!this.isModified('password') || !this.password) {
     return next();
   }
 
-  // If password is already a valid standard 60-character bcrypt hash ($2a$ / $2b$ / $2y$ / $2x$), skip rehashing
+  const pwd = (this.password || '').trim();
+  // If password is already a valid standard bcrypt hash ($2a$ / $2b$ / $2y$ / $2x$), skip rehashing
   const isAlreadyBcryptHash =
-    this.password.length === 60 &&
-    (this.password.startsWith('$2a$') ||
-      this.password.startsWith('$2b$') ||
-      this.password.startsWith('$2y$') ||
-      this.password.startsWith('$2x$'));
+    pwd.length === 60 &&
+    (pwd.startsWith('$2a$') ||
+      pwd.startsWith('$2b$') ||
+      pwd.startsWith('$2y$') ||
+      pwd.startsWith('$2x$'));
 
   if (isAlreadyBcryptHash) {
+    this.password = pwd;
     return next();
   }
 
@@ -161,13 +170,27 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
     return false;
   }
 
-  const stored = this.password;
+  const stored = (this.password || '').trim();
   const candidate = candidatePassword;
   const trimmedCandidate = candidate.trim();
 
-  // 1. Direct plaintext equality check (for legacy unhashed accounts in DB)
+  // 1. Direct Bcrypt comparison (standard secure flow)
+  try {
+    const match = await bcrypt.compare(candidate, stored);
+    if (match) return true;
+
+    // Also test trimmed candidate in case client input contained leading/trailing whitespace
+    if (candidate !== trimmedCandidate) {
+      const trimmedMatch = await bcrypt.compare(trimmedCandidate, stored);
+      if (trimmedMatch) return true;
+    }
+  } catch {
+    // If stored is not a valid bcrypt hash structure, proceed to fallback check
+  }
+
+  // 2. Direct plaintext equality check (for legacy unhashed accounts in DB)
   if (stored === candidate || stored === trimmedCandidate) {
-    // Transparently upgrade plaintext password to bcrypt hash in background
+    // Transparently upgrade plaintext password to standard bcrypt hash in background
     try {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(stored, salt);
@@ -176,29 +199,6 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
       console.warn('⚠️ [Auth]: Non-fatal auto-hash migration error:', migrateErr);
     }
     return true;
-  }
-
-  // 2. Bcrypt comparison
-  const isBcrypt =
-    stored.length === 60 &&
-    (stored.startsWith('$2a$') ||
-      stored.startsWith('$2b$') ||
-      stored.startsWith('$2y$') ||
-      stored.startsWith('$2x$'));
-
-  if (isBcrypt) {
-    try {
-      const match = await bcrypt.compare(candidate, stored);
-      if (match) return true;
-
-      // Also try trimmed candidate in case client added accidental whitespace
-      if (candidate !== trimmedCandidate) {
-        const trimmedMatch = await bcrypt.compare(trimmedCandidate, stored);
-        if (trimmedMatch) return true;
-      }
-    } catch (bcryptErr) {
-      console.warn('⚠️ [Auth]: Bcrypt comparison error:', bcryptErr);
-    }
   }
 
   return false;

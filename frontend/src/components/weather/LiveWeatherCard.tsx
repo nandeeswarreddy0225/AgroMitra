@@ -45,6 +45,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
   const [lastFetchTime, setLastFetchTime] = useState<number | null>(null);
   const [timeAgoText, setTimeAgoText] = useState<string>('Just now');
   const [locationMode, setLocationMode] = useState<LocationMode>('live_gps');
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
 
   // Custom location edit drawer
   const [isEditingLocation, setIsEditingLocation] = useState<boolean>(false);
@@ -77,6 +78,9 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
           setLastFetchTime(Date.now());
           if (modeOverride) {
             setLocationMode(modeOverride);
+            if (modeOverride !== 'live_gps') {
+              setGpsAccuracy(null);
+            }
           }
           const effectiveMode = modeOverride || locationMode;
           activeLocationRef.current =
@@ -100,11 +104,12 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
         setIsLoading(false);
       }
     },
-    [onWeatherLoaded]
+    [onWeatherLoaded, locationMode]
   );
 
   // Fallback to saved farm profile location
   const fallbackToFarmProfile = useCallback(() => {
+    setGpsAccuracy(null);
     const profileCity = user?.address?.city || initialCity;
     const profileState = user?.address?.state || initialState;
 
@@ -118,7 +123,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
     }
   }, [user?.address?.city, user?.address?.state, initialCity, initialState, fetchWeather]);
 
-  // Browser Geolocation Function
+  // Browser Geolocation Function with High-Accuracy GPS
   const handleUseBrowserLocation = useCallback(
     (isInitialAutoCheck: boolean = false) => {
       if (!navigator.geolocation) {
@@ -137,34 +142,54 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setIsLocatingGeo(false);
+          const { latitude, longitude, accuracy } = pos.coords;
+          const roundedAccuracy = typeof accuracy === 'number' && !isNaN(accuracy) ? Math.round(accuracy) : null;
+          setGpsAccuracy(roundedAccuracy);
+
+          // Preserve full precision coordinates
           const coords = {
-            lat: pos.coords.latitude,
-            lon: pos.coords.longitude,
+            lat: latitude,
+            lon: longitude,
           };
-          console.log('[LiveWeatherCard] Browser GPS coordinates acquired:', coords);
+          console.log(`[LiveWeatherCard] High-accuracy GPS acquired: lat=${latitude}, lon=${longitude}, accuracy=±${roundedAccuracy}m`);
           activeLocationRef.current = coords;
           setIsEditingLocation(false);
           fetchWeather(coords, 'live_gps');
         },
         (err) => {
           setIsLocatingGeo(false);
-          console.warn('[LiveWeatherCard] Geolocation error or denied (code ' + err.code + '):', err.message);
+          setGpsAccuracy(null);
+          console.warn(`[LiveWeatherCard] Geolocation error (code ${err.code}):`, err.message);
 
           if (err.code === 1 /* PERMISSION_DENIED */) {
             setPermissionNotice(
-              'Location permission was denied. You can allow location access or use your farm profile location.'
+              'Location permission was denied. Please enable GPS/location permissions in your browser to get real-time farm weather.'
             );
+            if (!isInitialAutoCheck) {
+              setErrorMsg('Location permission denied by browser. Please enable location access or select a location manually.');
+            }
           } else if (err.code === 2 /* POSITION_UNAVAILABLE */) {
-            setPermissionNotice('Device location unavailable. Using your farm profile location.');
+            setPermissionNotice('Device GPS position unavailable. Please ensure device location is enabled.');
+            if (!isInitialAutoCheck) {
+              setErrorMsg('GPS sensor position unavailable. Please check your device location settings.');
+            }
           } else if (err.code === 3 /* TIMEOUT */) {
-            setPermissionNotice('Location detection timed out. Using your farm profile location.');
+            setPermissionNotice('High-accuracy GPS request timed out (15s). Please retry in an open area.');
+            if (!isInitialAutoCheck) {
+              setErrorMsg('GPS positioning timed out. Please click "Use Current Location" to retry.');
+            }
           } else {
-            setPermissionNotice('Unable to detect GPS location. Using your farm profile location.');
+            setPermissionNotice('Unable to acquire GPS coordinates.');
+            if (!isInitialAutoCheck) {
+              setErrorMsg('Unable to detect high-accuracy GPS position.');
+            }
           }
 
-          fallbackToFarmProfile();
+          if (isInitialAutoCheck) {
+            fallbackToFarmProfile();
+          }
         },
-        { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
+        { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
       );
     },
     [fallbackToFarmProfile, fetchWeather]
@@ -258,9 +283,17 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
 
                 {/* Source Badge */}
                 {locationMode === 'live_gps' ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold">
-                    <Navigation className="w-2.5 h-2.5" />
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold"
+                    title={gpsAccuracy !== null ? `High-accuracy GPS fix (±${gpsAccuracy} m)` : 'Live device GPS location'}
+                  >
+                    <Navigation className="w-2.5 h-2.5 shrink-0" />
                     <span>Live GPS Location</span>
+                    {gpsAccuracy !== null && (
+                      <span className="font-mono text-[9px] bg-emerald-100 dark:bg-emerald-900/60 px-1 py-0.2 rounded text-emerald-800 dark:text-emerald-300">
+                        ±{gpsAccuracy}m
+                      </span>
+                    )}
                   </span>
                 ) : locationMode === 'saved_profile' ? (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[10px] font-bold">

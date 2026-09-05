@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogIn, Lock, Mail, Sprout, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { LogIn, Lock, Phone, Sprout, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
+import { TurnstileCaptcha } from '../components/auth/TurnstileCaptcha';
 import axios from 'axios';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,14 +23,24 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!email.trim() || !password) {
-      setErrorMsg('Please provide both email and password.');
+    const cleanPhone = phone.trim();
+    if (!cleanPhone || !password) {
+      setErrorMsg('Please provide both your phone number and password.');
+      return;
+    }
+
+    if (!captchaToken) {
+      setErrorMsg('Please complete the security CAPTCHA verification before signing in.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const authenticatedUser = await login({ email: email.trim(), password });
+      const authenticatedUser = await login({
+        phone: cleanPhone,
+        password,
+        captchaToken,
+      });
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
       const destination = from || getRoleDashboardPath(authenticatedUser.role);
       navigate(destination, { replace: true });
@@ -38,7 +50,7 @@ export const LoginPage: React.FC = () => {
       } else if (err instanceof Error) {
         setErrorMsg(err.message);
       } else {
-        setErrorMsg('Invalid email or password.');
+        setErrorMsg('Invalid phone number or password.');
       }
     } finally {
       setIsSubmitting(false);
@@ -74,32 +86,40 @@ export const LoginPage: React.FC = () => {
           )}
 
           <form className="space-y-5" onSubmit={handleSubmit}>
+            {/* Phone Number with +91 Country Indicator */}
             <div>
-              <label htmlFor="email" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                {t('emailLabel', 'Email Address')}
+              <label htmlFor="phone" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                {t('phoneLabel', 'Phone Number')} <span className="text-rose-500">*</span>
               </label>
-              <div className="relative rounded-xl shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Mail className="h-4 w-4" />
+              <div className="relative rounded-xl shadow-sm flex">
+                <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs">
+                  🇮🇳 +91
+                </span>
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    autoComplete="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="9876543210"
+                    maxLength={15}
+                    className="block w-full pl-9 pr-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-r-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                  />
                 </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="farmer@agromitra.in"
-                  className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                />
               </div>
             </div>
 
+            {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label htmlFor="password" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  {t('passwordLabel', 'Password')}
+                  {t('passwordLabel', 'Password')} <span className="text-rose-500">*</span>
                 </label>
                 <Link
                   to="/forgot-password"
@@ -134,6 +154,20 @@ export const LoginPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Cloudflare Turnstile Security Verification */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                Security Verification <span className="text-rose-500">*</span>
+              </label>
+              <TurnstileCaptcha
+                onVerify={(token) => {
+                  setCaptchaToken(token);
+                  setErrorMsg(null);
+                }}
+                onExpire={() => setCaptchaToken('')}
+              />
+            </div>
+
             <div className="pt-2">
               <button
                 type="submit"
@@ -148,7 +182,7 @@ export const LoginPage: React.FC = () => {
                 ) : (
                   <>
                     <LogIn className="w-4 h-4" />
-                    <span>{t('navSignIn', 'Sign In')}</span>
+                    <span>{t('navSignIn', 'Sign In with Phone')}</span>
                   </>
                 )}
               </button>

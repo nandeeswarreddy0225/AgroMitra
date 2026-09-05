@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, KeyRound, AlertCircle, CheckCircle2, Loader2, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
+import { Phone, KeyRound, AlertCircle, CheckCircle2, Loader2, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import { forgotPasswordApi, ForgotPasswordResponse } from '../services/api';
 import { useTranslation } from '../context/LanguageContext';
 import axios from 'axios';
 
 export const ForgotPasswordPage: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<ForgotPasswordResponse | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,21 +18,24 @@ export const ForgotPasswordPage: React.FC = () => {
     setErrorMsg(null);
     setSuccessData(null);
 
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      setErrorMsg('Please enter your registered email address.');
+    const trimmed = identifier.trim();
+    if (!trimmed) {
+      setErrorMsg('Please enter your registered 10-digit phone number or email address.');
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      setErrorMsg(t('invalidEmailError', 'Please enter a valid email address format (e.g. name@example.com).'));
+    const cleanPhone = trimmed.replace(/^(\+91|0)/, '').replace(/\s+/g, '');
+    const isPhone = /^[6-9]\d{9}$/.test(cleanPhone);
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+
+    if (!isPhone && !isEmail) {
+      setErrorMsg('Please enter a valid 10-digit Indian phone number (e.g. 9876543210) or registered email address.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const res = await forgotPasswordApi(trimmedEmail);
+      const res = await forgotPasswordApi(isPhone ? cleanPhone : trimmed);
       if (res.success) {
         setSuccessData(res);
       } else {
@@ -63,7 +66,7 @@ export const ForgotPasswordPage: React.FC = () => {
           {t('forgotPasswordLink', 'Forgot Password')}
         </h2>
         <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-          Enter your registered email to receive a secure password reset token
+          Enter your registered phone number or email to receive a secure password reset token
         </p>
       </div>
 
@@ -86,7 +89,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <div className="space-y-1">
                 <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white">Reset Token Generated</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  A secure 15-minute password reset token has been generated for <strong>{email}</strong>.
+                  A secure 15-minute password reset token has been generated for <strong>{identifier}</strong>.
                 </p>
               </div>
 
@@ -99,7 +102,7 @@ export const ForgotPasswordPage: React.FC = () => {
                   </div>
                   
                   <Link
-                    to={`/reset-password?token=${successData.resetToken}&email=${encodeURIComponent(email)}`}
+                    to={`/reset-password?token=${successData.resetToken}&phone=${encodeURIComponent(identifier)}`}
                     className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
                   >
                     <span>Proceed to Set New Password</span>
@@ -113,34 +116,33 @@ export const ForgotPasswordPage: React.FC = () => {
                   type="button"
                   onClick={() => {
                     setSuccessData(null);
-                    setEmail('');
+                    setIdentifier('');
                   }}
                   className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                 >
-                  Request for a different email
+                  Request for a different account
                 </button>
               </div>
             </div>
           ) : (
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="email" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  {t('emailLabel', 'Registered Account Email')}
+                <label htmlFor="identifier" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Phone Number or Email
                 </label>
                 <div className="relative rounded-xl shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Mail className="h-4 w-4" />
+                    <Phone className="h-4 w-4" />
                   </div>
                   <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
+                    id="identifier"
+                    name="identifier"
+                    type="text"
+                    autoComplete="tel"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. farmer@agromitra.in"
-
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="10-digit mobile number or email"
                     className="block w-full pl-10 pr-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                   />
                 </div>

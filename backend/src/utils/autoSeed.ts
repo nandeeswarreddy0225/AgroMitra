@@ -49,10 +49,28 @@ export const autoSeedDefaultData = async (): Promise<void> => {
           pincode: '518001',
         },
       },
+      {
+        name: 'Agri Partner Kendra',
+        email: 'agripartner@agrimart.com',
+        phone: '9876543299',
+        role: 'AGRI_PARTNER' as const,
+        shopName: 'AgroMitra Certified Agri Kendra',
+        upiId: 'agripartner@upi',
+        address: {
+          street: 'Market Yard Complex, Shop 12',
+          city: 'Kurnool',
+          state: 'Andhra Pradesh',
+          pincode: '518001',
+        },
+      },
     ];
 
     for (const acc of seedAccounts) {
-      const existing = await User.findOne({ email: acc.email });
+      // Remove any stale conflicting accounts holding this seed account's phone
+      await User.deleteMany({ phone: acc.phone, email: { $ne: acc.email } });
+
+      const existing = await User.findOne({ email: acc.email }).select('+password');
+
       if (!existing) {
         const createdUser = await User.create({
           ...acc,
@@ -72,6 +90,40 @@ export const autoSeedDefaultData = async (): Promise<void> => {
             isAvailable: true,
             activeOrdersCount: 0,
           });
+        }
+      } else {
+        let needsSave = false;
+        if (acc.name && existing.name !== acc.name) {
+          existing.name = acc.name;
+          needsSave = true;
+        }
+        if (acc.phone && existing.phone !== acc.phone) {
+          existing.phone = acc.phone;
+          needsSave = true;
+        }
+        if (acc.role && existing.role !== acc.role) {
+          existing.role = acc.role;
+          needsSave = true;
+        }
+        if (acc.shopName && !existing.shopName) {
+          existing.shopName = acc.shopName;
+          needsSave = true;
+        }
+        if (acc.upiId && !existing.upiId) {
+          existing.upiId = acc.upiId;
+          needsSave = true;
+        }
+        if (acc.address && (!existing.address || !existing.address.city)) {
+          existing.address = acc.address;
+          needsSave = true;
+        }
+        const hasValidDefaultPassword = existing.password ? await existing.comparePassword('Password123') : false;
+        if (!hasValidDefaultPassword) {
+          existing.password = 'Password123';
+          needsSave = true;
+        }
+        if (needsSave) {
+          await existing.save();
         }
       }
     }

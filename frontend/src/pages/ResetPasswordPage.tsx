@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   KeyRound,
   Lock,
-  Mail,
+  Phone,
   Eye,
   EyeOff,
   AlertCircle,
@@ -18,10 +18,11 @@ import axios from 'axios';
 export const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const tokenParam = searchParams.get('token') || '';
+  const phoneParam = searchParams.get('phone') || '';
   const emailParam = searchParams.get('email') || '';
 
   const [token, setToken] = useState(tokenParam);
-  const [email, setEmail] = useState(emailParam);
+  const [identifier, setIdentifier] = useState(phoneParam || emailParam);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -34,8 +35,8 @@ export const ResetPasswordPage: React.FC = () => {
 
   useEffect(() => {
     if (tokenParam) setToken(tokenParam);
-    if (emailParam) setEmail(emailParam);
-  }, [tokenParam, emailParam]);
+    if (phoneParam || emailParam) setIdentifier(phoneParam || emailParam);
+  }, [tokenParam, phoneParam, emailParam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,10 +44,10 @@ export const ResetPasswordPage: React.FC = () => {
     setSuccessMsg(null);
 
     const trimmedToken = token.trim();
-    const trimmedEmail = email.trim();
+    const trimmedId = identifier.trim();
 
-    if (!trimmedToken && !trimmedEmail) {
-      setErrorMsg('Please provide either a reset token or your registered account email.');
+    if (!trimmedToken && !trimmedId) {
+      setErrorMsg('Please provide either a reset token or your registered phone number / email.');
       return;
     }
 
@@ -65,11 +66,15 @@ export const ResetPasswordPage: React.FC = () => {
       return;
     }
 
+    const cleanPhone = trimmedId.replace(/^(\+91|0)/, '').replace(/\s+/g, '');
+    const isPhone = /^[6-9]\d{9}$/.test(cleanPhone);
+
     setIsSubmitting(true);
     try {
       const res = await resetPasswordApi({
         token: trimmedToken || undefined,
-        email: trimmedEmail || undefined,
+        phone: isPhone ? cleanPhone : undefined,
+        email: !isPhone && trimmedId ? trimmedId : undefined,
         newPassword,
       });
 
@@ -138,22 +143,21 @@ export const ResetPasswordPage: React.FC = () => {
               </div>
             ) : (
               <div>
-                <label htmlFor="email" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  {t('emailLabel', 'Account Email Address')}
+                <label htmlFor="identifier" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Phone Number or Email
                 </label>
                 <div className="relative rounded-xl shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Mail className="h-4 w-4" />
+                    <Phone className="h-4 w-4" />
                   </div>
                   <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. farmer@agromitra.in"
-
+                    id="identifier"
+                    name="identifier"
+                    type="text"
+                    autoComplete="tel"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="10-digit mobile number or email"
                     className="block w-full pl-10 pr-3.5 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                   />
                 </div>

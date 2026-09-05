@@ -31,6 +31,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     switch (targetRole) {
       case 'FARMER':
         return '/dashboard';
+      case 'AGRI_PARTNER':
       case 'SHOP_OWNER':
         return '/shop-owner/dashboard';
       case 'DELIVERY_BOY':

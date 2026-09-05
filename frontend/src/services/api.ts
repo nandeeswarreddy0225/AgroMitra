@@ -106,11 +106,24 @@ export interface ForgotPasswordResponse {
   resetToken?: string;
   resetLink?: string;
   expiresInMinutes?: number;
-  smtpConfigured?: boolean;
+  smsConfigured?: boolean;
 }
 
-export const forgotPasswordApi = async (email: string): Promise<ForgotPasswordResponse> => {
-  const response = await apiClient.post<ForgotPasswordResponse>('/auth/forgot-password', { email });
+export const forgotPasswordApi = async (
+  identifier: string | { email?: string; phone?: string }
+): Promise<ForgotPasswordResponse> => {
+  let payload: { email?: string; phone?: string };
+  if (typeof identifier === 'string') {
+    const clean = identifier.trim().replace(/^(\+91|0)/, '');
+    if (/^\d{10}$/.test(clean)) {
+      payload = { phone: clean };
+    } else {
+      payload = { email: identifier.trim() };
+    }
+  } else {
+    payload = identifier;
+  }
+  const response = await apiClient.post<ForgotPasswordResponse>('/auth/forgot-password', payload);
   return response.data;
 };
 
@@ -118,6 +131,7 @@ export interface ResetPasswordPayload {
   token?: string;
   newPassword: string;
   email?: string;
+  phone?: string;
 }
 
 export const resetPasswordApi = async (
@@ -126,7 +140,12 @@ export const resetPasswordApi = async (
 ): Promise<{ success: boolean; message: string }> => {
   let body: ResetPasswordPayload;
   if (typeof payload === 'string') {
-    body = { email: payload, newPassword: legacyNewPassword || '' };
+    const clean = payload.trim().replace(/^(\+91|0)/, '');
+    if (/^\d{10}$/.test(clean)) {
+      body = { phone: clean, newPassword: legacyNewPassword || '' };
+    } else {
+      body = { email: payload, newPassword: legacyNewPassword || '' };
+    }
   } else {
     body = payload;
   }

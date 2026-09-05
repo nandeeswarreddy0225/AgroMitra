@@ -5,16 +5,28 @@ import { User, UserRole, IUser } from '../models/User.model';
 import { DeliveryBoy } from '../models/DeliveryBoy.model';
 import { generateToken } from '../utils/jwt';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { normalizePhoneNumber, isValidIndianPhoneNumber } from '../utils/phone';
+import { CaptchaService } from '../services/captcha.service';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, email, phone, password, role = 'FARMER', address } = req.body;
+    const { name, phone, password, role = 'FARMER', email, address } = req.body;
 
     // Validate presence of required fields
-    if (!name || !email || !phone || !password) {
+    if (!name || !phone || !password) {
       res.status(400).json({
         success: false,
-        message: 'Name, email, phone number, and password are required.',
+        message: 'Name, phone number, and password are required.',
+      });
+      return;
+    }
+
+    // Phone number validation
+    const normalizedPhone = normalizePhoneNumber(phone);
+    if (!isValidIndianPhoneNumber(phone)) {
+      res.status(400).json({
+        success: false,
+        message: 'Please provide a valid 10-digit Indian phone number.',
       });
       return;
     }
@@ -29,10 +41,10 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     }
 
     const normalizedRole = (role as string).toUpperCase() as UserRole;
-    if (!['FARMER', 'SHOP_OWNER', 'DELIVERY_BOY'].includes(normalizedRole)) {
+    if (!['FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', 'DELIVERY_BOY'].includes(normalizedRole)) {
       res.status(400).json({
         success: false,
-        message: `Invalid role '${role}'. Allowed registration roles are 'FARMER', 'SHOP_OWNER', and 'DELIVERY_BOY'.`,
+        message: `Invalid role '${role}'. Allowed registration roles are 'FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', and 'DELIVERY_BOY'.`,
       });
       return;
     }
@@ -46,24 +58,38 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       return;
     }
 
-    // Normalize email
-    const normalizedEmail = email.toLowerCase().trim();
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: normalizedEmail });
-    if (existingUser) {
+    // Check if phone number is already registered
+    const existingPhoneUser = await User.findOne({ phone: normalizedPhone });
+    if (existingPhoneUser) {
       res.status(409).json({
         success: false,
-        message: 'An account with this email address is already registered.',
+        message: 'An account with this phone number is already registered.',
       });
       return;
+    }
+
+    // Normalize email if provided
+    let normalizedEmail = '';
+    if (email && typeof email === 'string' && email.trim()) {
+      normalizedEmail = email.toLowerCase().trim();
+      const existingEmailUser = await User.findOne({ email: normalizedEmail });
+      if (existingEmailUser) {
+        res.status(409).json({
+          success: false,
+          message: 'An account with this email address is already registered.',
+        });
+        return;
+      }
+    } else {
+      // Default placeholder email derived from phone if none supplied
+      normalizedEmail = `${normalizedPhone}@agromitra.local`;
     }
 
     // Create new user (password is automatically hashed in pre-save hook)
     const user = new User({
       name: name.trim(),
+      phone: normalizedPhone,
       email: normalizedEmail,
-      phone: phone.trim(),
       password,
       role: normalizedRole,
       address: address || {},
@@ -109,49 +135,66 @@ export const register = async (req: Request, res: Response, next: NextFunction):
 
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { phone, email, password, captchaToken } = req.body;
 
-    if (!email || !password) {
+    // Identifier check
+    const identifier = phone || email;
+    if (!identifier || !password) {
       res.status(400).json({
         success: false,
-        message: 'Please provide both email and password.',
+        message: 'Please provide your phone number, password, and security CAPTCHA verification.',
       });
       return;
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
-
-    // Find user and explicitly select password field (with case-insensitive fallback)
-    let user = await User.findOne({ email: normalizedEmail }).select('+password');
-    if (!user) {
-      const escapedEmail = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      user = (await User.findOne({ email: new RegExp(`^${escapedEmail}$`, 'i') }).select('+password')) as typeof user;
+    // 1. Server-Side CAPTCHA Verification
+    const captchaResult = await CaptchaService.verifyCaptchaToken(captchaToken, req.ip);
+    if (!captchaResult.success) {
+      res.status(400).json({
+        success: false,
+        message: captchaResult.message || 'CAPTCHA security verification failed. Please try again.',
+      });
+      return;
     }
 
+    // 2. Query user by normalized Phone Number (with email fallback)
+    let user: IUser | null = null;
+
+    if (phone && typeof phone === 'string') {
+      const normalizedPhone = normalizePhoneNumber(phone);
+      user = await User.findOne({ phone: normalizedPhone }).select('+password');
+    }
+
+    if (!user && email && typeof email === 'string') {
+      const normalizedEmail = email.toLowerCase().trim();
+      user = await User.findOne({ email: normalizedEmail }).select('+password');
+    }
+
+    // Generic error for security (do not disclose whether account exists)
     if (!user) {
-      console.warn(`🔒 [Auth]: Login failed - user with email '${normalizedEmail}' not found.`);
+      console.warn(`🔒 [Auth]: Login failed - user identifier not found.`);
       res.status(401).json({
         success: false,
-        message: 'Invalid email or password.',
+        message: 'Invalid phone number or password.',
       });
       return;
     }
 
-    // Verify password with bcrypt / auto-migrated comparison
+    // 3. Verify password with bcrypt
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
-      console.warn(`🔒 [Auth]: Login failed - incorrect password for user '${normalizedEmail}'.`);
+      console.warn(`🔒 [Auth]: Login failed - incorrect password for user ID '${user._id}'.`);
       res.status(401).json({
         success: false,
-        message: 'Invalid email or password.',
+        message: 'Invalid phone number or password.',
       });
       return;
     }
 
-    console.log(`✅ [Auth]: Login successful for user '${normalizedEmail}' (${user.role}).`);
+    console.log(`✅ [Auth]: Login successful for user '${user.phone || user.email}' (${user.role}).`);
 
-    // Generate JWT
+    // 4. Generate JWT
     const token = generateToken({
       id: user._id.toString(),
       role: user.role,
@@ -170,38 +213,35 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
 
 export const forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email } = req.body;
-    if (!email || typeof email !== 'string') {
+    const { phone, email } = req.body;
+    if (!phone && !email) {
       res.status(400).json({
         success: false,
-        message: 'Please provide a valid registered email address.',
+        message: 'Please provide your registered phone number or email address.',
       });
       return;
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(normalizedEmail)) {
-      res.status(400).json({
-        success: false,
-        message: 'Please provide a valid email address format.',
-      });
-      return;
+    let user: IUser | null = null;
+    if (phone && typeof phone === 'string') {
+      const normalizedPhone = normalizePhoneNumber(phone);
+      user = await User.findOne({ phone: normalizedPhone });
     }
 
-    const user = await User.findOne({ email: normalizedEmail });
+    if (!user && email && typeof email === 'string') {
+      user = await User.findOne({ email: email.toLowerCase().trim() });
+    }
+
     if (!user) {
-      // Do not fake or accept an unregistered email as successful
       res.status(404).json({
         success: false,
-        message: 'No account found with this email address. Please check your email or register.',
+        message: 'No account found with the provided phone number or email.',
       });
       return;
     }
 
     // Generate secure 32-byte cryptographic random token
     const rawResetToken = crypto.randomBytes(32).toString('hex');
-    // Hash token for secure storage in MongoDB
     const hashedToken = crypto.createHash('sha256').update(rawResetToken).digest('hex');
 
     // Store hashed token with 15-minute expiration
@@ -209,17 +249,17 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
-    const resetLink = `http://localhost:5173/reset-password?token=${rawResetToken}&email=${encodeURIComponent(user.email)}`;
+    const resetLink = `http://localhost:5173/reset-password?token=${rawResetToken}&phone=${encodeURIComponent(user.phone || '')}`;
 
-    console.log(`🔑 [Auth]: Password reset token generated for '${user.email}': ${rawResetToken}`);
+    console.log(`🔑 [Auth]: Password reset token generated for '${user.phone || user.email}': ${rawResetToken}`);
 
     res.status(200).json({
       success: true,
-      message: 'Password reset token generated successfully. (Email/SMTP service is not configured in local environment; token link is provided).',
+      message: 'Password reset token generated successfully. (Note: SMS/OTP gateway is not configured in this environment; token link is provided for recovery).',
       resetToken: rawResetToken,
       resetLink,
       expiresInMinutes: 15,
-      smtpConfigured: false,
+      smsConfigured: false,
     });
   } catch (error) {
     next(error);
@@ -228,7 +268,7 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 
 export const resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { token, newPassword, email } = req.body;
+    const { token, newPassword, email, phone } = req.body;
 
     if (!newPassword || typeof newPassword !== 'string') {
       res.status(400).json({
@@ -263,6 +303,17 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
         });
         return;
       }
+    } else if (phone && typeof phone === 'string' && phone.trim()) {
+      const normalizedPhone = normalizePhoneNumber(phone);
+      user = await User.findOne({ phone: normalizedPhone });
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'No account found with this phone number.',
+        });
+        return;
+      }
     } else if (email && typeof email === 'string' && email.trim()) {
       // Direct email reset fallback (for admin/direct reset scenarios)
       const normalizedEmail = email.toLowerCase().trim();
@@ -278,7 +329,7 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
     } else {
       res.status(400).json({
         success: false,
-        message: 'Password reset token or registered account email is required.',
+        message: 'Password reset token or registered account phone number/email is required.',
       });
       return;
     }

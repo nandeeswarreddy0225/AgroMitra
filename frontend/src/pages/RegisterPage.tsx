@@ -6,7 +6,7 @@ import { useTranslation } from '../context/LanguageContext';
 import axios from 'axios';
 
 export const RegisterPage: React.FC = () => {
-  const [role, setRole] = useState<'FARMER' | 'SHOP_OWNER' | 'DELIVERY_BOY'>('FARMER');
+  const [role, setRole] = useState<'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY'>('FARMER');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -144,17 +144,16 @@ export const RegisterPage: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => setRole('SHOP_OWNER')}
+                  onClick={() => setRole('AGRI_PARTNER')}
                   className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border-2 transition-all ${
-                    role === 'SHOP_OWNER'
+                    role === 'AGRI_PARTNER' || role === 'SHOP_OWNER'
                       ? 'border-amber-600 bg-amber-50 dark:bg-amber-950/70 text-amber-950 dark:text-amber-200 font-bold shadow-sm'
                       : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  <Store className={`w-5 h-5 mb-1 ${role === 'SHOP_OWNER' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
+                  <Store className={`w-5 h-5 mb-1 ${role === 'AGRI_PARTNER' || role === 'SHOP_OWNER' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
                   <span className="text-xs font-bold text-center">{t('rolePartner', 'Agri Store Partner')}</span>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
-
                     {t('rolePartnerDesc', 'Sell farm inputs & fulfill orders')}
                   </span>
                 </button>

@@ -8,6 +8,10 @@ import { User } from '../models/User.model';
  */
 export const migratePlaintextPasswords = async (): Promise<number> => {
   try {
+    const mongoose = await import('mongoose');
+    if (mongoose.default.connection.readyState !== 1) {
+      return 0;
+    }
     const usersWithPassword = await User.find({}).select('+password');
     let migratedCount = 0;
 
@@ -32,7 +36,10 @@ export const migratePlaintextPasswords = async (): Promise<number> => {
     }
 
     return migratedCount;
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.name === 'MongoTopologyClosedError' || error?.message?.includes('Topology is closed')) {
+      return 0;
+    }
     console.error('⚠️ [Security]: Error during password hash migration:', error);
     return 0;
   }

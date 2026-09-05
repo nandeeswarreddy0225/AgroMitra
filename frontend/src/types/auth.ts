@@ -1,4 +1,4 @@
-export type UserRole = 'FARMER' | 'SHOP_OWNER' | 'DELIVERY_BOY' | 'ADMIN';
+export type UserRole = 'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'ADMIN';
 
 export interface UserAddress {
   street?: string;
@@ -31,8 +31,10 @@ export interface UpdateProfileData {
 }
 
 export interface LoginCredentials {
-  email: string;
+  phone?: string;
+  email?: string;
   password: string;
+  captchaToken?: string;
 }
 
 export interface RegisterData {
@@ -40,7 +42,7 @@ export interface RegisterData {
   email: string;
   phone: string;
   password: string;
-  role: 'FARMER' | 'SHOP_OWNER' | 'DELIVERY_BOY';
+  role: 'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY';
   address?: UserAddress;
 }
 
@@ -53,6 +55,7 @@ export interface AuthResponse {
 
 export const getRoleDisplayName = (role?: UserRole | string): string => {
   switch (role) {
+    case 'AGRI_PARTNER':
     case 'SHOP_OWNER':
       return 'Agri Store Partner';
 

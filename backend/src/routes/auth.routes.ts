@@ -49,6 +49,19 @@ router.get(
 );
 
 router.get(
+  '/agri-partner-only',
+  authenticate,
+  authorize('AGRI_PARTNER'),
+  (req: AuthenticatedRequest, res: Response) => {
+    res.status(200).json({
+      success: true,
+      message: 'Welcome to Agri Partner Protected API',
+      user: req.user,
+    });
+  }
+);
+
+router.get(
   '/admin-only',
   authenticate,
   authorize('ADMIN'),
