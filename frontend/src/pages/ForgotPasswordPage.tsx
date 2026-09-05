@@ -10,8 +10,17 @@ export const ForgotPasswordPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<ForgotPasswordResponse | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFieldUnlocked, setIsFieldUnlocked] = useState(false);
 
   const { t } = useTranslation();
+
+  // Ensure field starts completely blank on mount
+  React.useEffect(() => {
+    setIdentifier('');
+    setErrorMsg(null);
+    setSuccessData(null);
+    setIsFieldUnlocked(false);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +126,7 @@ export const ForgotPasswordPage: React.FC = () => {
                   onClick={() => {
                     setSuccessData(null);
                     setIdentifier('');
+                    setIsFieldUnlocked(false);
                   }}
                   className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                 >
@@ -125,9 +135,9 @@ export const ForgotPasswordPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <form className="space-y-5" onSubmit={handleSubmit}>
+            <form className="space-y-5" onSubmit={handleSubmit} autoComplete="off">
               <div>
-                <label htmlFor="identifier" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                <label htmlFor="agri_forgot_identifier" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                   Phone Number or Email
                 </label>
                 <div className="relative rounded-xl shadow-sm">
@@ -135,10 +145,13 @@ export const ForgotPasswordPage: React.FC = () => {
                     <Phone className="h-4 w-4" />
                   </div>
                   <input
-                    id="identifier"
-                    name="identifier"
+                    id="agri_forgot_identifier"
+                    name="agri_forgot_identifier"
                     type="text"
-                    autoComplete="tel"
+                    autoComplete="off"
+                    readOnly={!isFieldUnlocked}
+                    onFocus={() => setIsFieldUnlocked(true)}
+                    onPointerDown={() => setIsFieldUnlocked(true)}
                     required
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
