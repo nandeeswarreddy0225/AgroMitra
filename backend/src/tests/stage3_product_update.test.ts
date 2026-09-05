@@ -338,7 +338,7 @@ const runAllProductUpdateTests = async () => {
       throw new Error(`TEST 10 FAILED: Status: ${resMarket.statusCode}`);
     }
     const p = resMarket.body.product;
-    if (p.name !== 'Updated Product Name Pro' || p.price !== 1200 || p.stock !== 100 || p.category !== 'Organic Fertilizers' || p.unit !== '50kg bag') {
+    if (p.name !== 'Updated Product Name Pro' || p.price !== 1200 || p.stock !== 100 || p.category !== 'Bio Products' || p.unit !== '50kg bag') {
       throw new Error(`TEST 10 FAILED: Stale values returned in marketplace: ${JSON.stringify(p)}`);
     }
     console.log(`  ✅ TEST 10 PASSED: Farmer views exact updated values:`);
@@ -392,7 +392,7 @@ const runAllProductUpdateTests = async () => {
     }
 
     // ---------------------------------------------------------
-    // TEST 13: Input validation check (negative price, negative stock, invalid category)
+    // TEST 13: Input validation check (negative price, negative stock, empty category)
     // ---------------------------------------------------------
     console.log('\n▶ [TEST 13]: Validation checks for invalid inputs...');
     const resInvalidPrice = await makeRequest({
@@ -411,11 +411,11 @@ const runAllProductUpdateTests = async () => {
       method: 'PUT',
       path: `/api/products/${targetProductId}`,
       token: tokenShopA,
-      body: { category: 'InvalidCategoryXYZ' },
+      body: { category: ' ' },
     });
 
     if (resInvalidPrice.statusCode === 400 && resInvalidStock.statusCode === 400 && resInvalidCategory.statusCode === 400) {
-      console.log('  ✅ TEST 13 PASSED: Invalid price (-50), invalid stock (-10), and invalid category all rejected with HTTP 400.');
+      console.log('  ✅ TEST 13 PASSED: Invalid price (-50), invalid stock (-10), and empty category all rejected with HTTP 400.');
     } else {
       throw new Error(`TEST 13 FAILED: Invalid inputs not rejected properly with 400`);
     }

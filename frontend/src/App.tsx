@@ -140,10 +140,11 @@ export const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               />
+              {/* Product Management Routes (Shop Owner & Admin) */}
               <Route
                 path="shop-owner/products"
                 element={
-                  <ProtectedRoute allowedRoles={['SHOP_OWNER']}>
+                  <ProtectedRoute allowedRoles={['SHOP_OWNER', 'ADMIN']}>
                     <ShopOwnerProductsPage />
                   </ProtectedRoute>
                 }
@@ -151,7 +152,15 @@ export const App: React.FC = () => {
               <Route
                 path="inventory"
                 element={
-                  <ProtectedRoute allowedRoles={['SHOP_OWNER']}>
+                  <ProtectedRoute allowedRoles={['SHOP_OWNER', 'ADMIN']}>
+                    <ShopOwnerProductsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/products"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'SHOP_OWNER']}>
                     <ShopOwnerProductsPage />
                   </ProtectedRoute>
                 }
@@ -175,7 +184,7 @@ export const App: React.FC = () => {
               <Route
                 path="shop/products"
                 element={
-                  <ProtectedRoute allowedRoles={['SHOP_OWNER']}>
+                  <ProtectedRoute allowedRoles={['SHOP_OWNER', 'ADMIN']}>
                     <ShopOwnerProductsPage />
                   </ProtectedRoute>
                 }

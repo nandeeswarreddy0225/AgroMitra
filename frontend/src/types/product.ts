@@ -1,5 +1,9 @@
 export const PRODUCT_CATEGORIES = [
   'Seeds',
+  'Fertilizers',
+  'Bio-Fertilizers',
+  'Soil Conditioners',
+  'Growth Promoters',
   'Pesticides',
   'Insecticides',
   'Fungicides',
@@ -7,10 +11,13 @@ export const PRODUCT_CATEGORIES = [
   'Bio Products',
   'Crop Protection Products',
   'Agricultural Equipment',
+  'Irrigation Equipment',
+  'Tools & Machinery',
+  'Animal Feed',
 ] as const;
 
-
-export type ProductCategory = typeof PRODUCT_CATEGORIES[number];
+export type StandardProductCategory = (typeof PRODUCT_CATEGORIES)[number];
+export type ProductCategory = StandardProductCategory | string;
 
 export interface ProductAddress {
   street?: string;

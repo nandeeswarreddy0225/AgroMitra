@@ -13,12 +13,12 @@ const router = Router();
 
 // Public / Authenticated marketplace routes
 router.get('/', getProducts);
-router.get('/my', authenticate, authorize('SHOP_OWNER'), getMyProducts);
+// Product management routes (Shop Owner & Admin)
+router.get('/my', authenticate, authorize('SHOP_OWNER', 'ADMIN'), getMyProducts);
 router.get('/:id', getProductById);
 
-// Shop Owner product management routes
-router.post('/', authenticate, authorize('SHOP_OWNER'), createProduct);
-router.put('/:id', authenticate, authorize('SHOP_OWNER'), updateProduct);
-router.delete('/:id', authenticate, authorize('SHOP_OWNER'), deleteProduct);
+router.post('/', authenticate, authorize('SHOP_OWNER', 'ADMIN'), createProduct);
+router.put('/:id', authenticate, authorize('SHOP_OWNER', 'ADMIN'), updateProduct);
+router.delete('/:id', authenticate, authorize('SHOP_OWNER', 'ADMIN'), deleteProduct);
 
 export default router;

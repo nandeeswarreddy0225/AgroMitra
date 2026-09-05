@@ -2,6 +2,10 @@ import mongoose, { Document, Schema, Model } from 'mongoose';
 
 export const PRODUCT_CATEGORIES = [
   'Seeds',
+  'Fertilizers',
+  'Bio-Fertilizers',
+  'Soil Conditioners',
+  'Growth Promoters',
   'Pesticides',
   'Insecticides',
   'Fungicides',
@@ -9,10 +13,13 @@ export const PRODUCT_CATEGORIES = [
   'Bio Products',
   'Crop Protection Products',
   'Agricultural Equipment',
+  'Irrigation Equipment',
+  'Tools & Machinery',
+  'Animal Feed',
 ] as const;
 
-
-export type ProductCategory = typeof PRODUCT_CATEGORIES[number];
+export type StandardProductCategory = (typeof PRODUCT_CATEGORIES)[number];
+export type ProductCategory = StandardProductCategory | string;
 
 export interface IProductAddress {
   street?: string;
@@ -25,7 +32,7 @@ export interface IProduct extends Document {
   _id: mongoose.Types.ObjectId;
   name: string;
   description: string;
-  category: ProductCategory;
+  category: string;
   brand: string;
   price: number;
   unit: string;
@@ -65,10 +72,9 @@ const ProductSchema = new Schema<IProduct>(
     category: {
       type: String,
       required: [true, 'Product category is required'],
-      enum: {
-        values: PRODUCT_CATEGORIES,
-        message: '{VALUE} is not a supported product category',
-      },
+      trim: true,
+      minlength: [2, 'Product category must be at least 2 characters long'],
+      maxlength: [100, 'Product category cannot exceed 100 characters'],
       index: true,
     },
     brand: {

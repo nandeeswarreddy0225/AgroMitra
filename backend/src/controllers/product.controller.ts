@@ -28,11 +28,11 @@ export const createProduct = async (
       return;
     }
 
-    // Category validation
-    if (!PRODUCT_CATEGORIES.includes(category as ProductCategory)) {
+    // Category validation - accepts any non-empty valid category string (e.g. Fertilizers, Seeds, Equipment, or custom category)
+    if (!category || typeof category !== 'string' || category.trim().length < 2) {
       res.status(400).json({
         success: false,
-        message: `Invalid category '${category}'. Supported categories: ${PRODUCT_CATEGORIES.join(', ')}`,
+        message: 'Product category is required and must be at least 2 characters long.',
       });
       return;
     }
@@ -191,7 +191,11 @@ export const getMyProducts = async (
       return;
     }
 
-    const products = await Product.find({ shopOwner: req.user._id }).sort({ createdAt: -1 });
+    // If Admin, return all products; if Shop Owner, return their own products
+    const query = req.user.role === 'ADMIN' ? {} : { shopOwner: req.user._id };
+    const products = await Product.find(query)
+      .populate('shopOwner', 'name email phone address')
+      .sort({ createdAt: -1 });
 
     // Guarantee distinct products
     const seenIds = new Set<string>();
@@ -273,8 +277,8 @@ export const updateProduct = async (
       return;
     }
 
-    // Security Check: Only the product's shopOwner can update it
-    if (product.shopOwner.toString() !== req.user?._id.toString()) {
+    // Security Check: Only the product's shopOwner or ADMIN can update it
+    if (product.shopOwner.toString() !== req.user?._id.toString() && req.user?.role !== 'ADMIN') {
       res.status(403).json({
         success: false,
         message: 'Forbidden: You are not authorized to update this product.',
@@ -322,14 +326,14 @@ export const updateProduct = async (
     }
 
     if (category !== undefined) {
-      if (!PRODUCT_CATEGORIES.includes(category as ProductCategory)) {
+      if (typeof category !== 'string' || category.trim().length < 2) {
         res.status(400).json({
           success: false,
-          message: `Invalid category '${category}'. Supported categories: ${PRODUCT_CATEGORIES.join(', ')}`,
+          message: 'Product category must be at least 2 characters long.',
         });
         return;
       }
-      product.category = category as ProductCategory;
+      product.category = category.trim();
     }
 
     if (price !== undefined) {

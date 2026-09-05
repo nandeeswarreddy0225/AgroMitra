@@ -18,11 +18,15 @@ import {
   updateProductApi,
   deleteProductApi,
 } from '../../services/api';
-import { Product, ProductCategory, CreateProductData, PRODUCT_CATEGORIES } from '../../types/product';
+import { Product, CreateProductData, PRODUCT_CATEGORIES } from '../../types/product';
+import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 
 
 export const ShopOwnerProductsPage: React.FC = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +38,10 @@ export const ShopOwnerProductsPage: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Custom Category State
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [customCategoryText, setCustomCategoryText] = useState('');
+
   // Delete Confirmation Modal State
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
@@ -42,7 +50,6 @@ export const ShopOwnerProductsPage: React.FC = () => {
     name: '',
     category: 'Seeds',
     brand: '',
-
     price: 0,
     unit: 'kg',
     stock: 0,
@@ -91,11 +98,12 @@ export const ShopOwnerProductsPage: React.FC = () => {
 
   const openAddModal = () => {
     setEditingProduct(null);
+    setIsCustomCategory(false);
+    setCustomCategoryText('');
     setFormData({
       name: '',
       category: 'Seeds',
       brand: '',
-
       price: 0,
       unit: 'kg',
       stock: 0,
@@ -113,6 +121,9 @@ export const ShopOwnerProductsPage: React.FC = () => {
 
   const openEditModal = (product: Product) => {
     setEditingProduct(product);
+    const isStandard = (PRODUCT_CATEGORIES as readonly string[]).includes(product.category);
+    setIsCustomCategory(!isStandard);
+    setCustomCategoryText(!isStandard ? product.category : '');
     setFormData({
       name: product.name,
       category: product.category,
@@ -138,19 +149,32 @@ export const ShopOwnerProductsPage: React.FC = () => {
     setSuccessMsg(null);
     setIsSubmitting(true);
 
+    const finalCategory = isCustomCategory ? customCategoryText.trim() : formData.category.trim();
+    if (!finalCategory) {
+      setErrorMsg('Product category is required.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    const payload: CreateProductData = {
+      ...formData,
+      category: finalCategory,
+      brand: formData.brand?.trim() || 'Generic',
+    };
+
     try {
       if (editingProduct) {
         const prodId = (editingProduct.id || editingProduct._id) as string;
-        const res = await updateProductApi(prodId, formData);
+        const res = await updateProductApi(prodId, payload);
         if (res.success) {
-          setSuccessMsg(`Successfully updated "${formData.name}" in your inventory.`);
+          setSuccessMsg(`Successfully updated "${payload.name}" in catalog.`);
           setIsAddModalOpen(false);
           await fetchProducts();
         }
       } else {
-        const res = await createProductApi(formData);
+        const res = await createProductApi(payload);
         if (res.success) {
-          setSuccessMsg(`Successfully added "${formData.name}" to your inventory.`);
+          setSuccessMsg(`Successfully added "${payload.name}" to catalog.`);
           setIsAddModalOpen(false);
           await fetchProducts();
         }
@@ -198,12 +222,13 @@ export const ShopOwnerProductsPage: React.FC = () => {
         <div>
           <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white flex items-center gap-2.5">
             <Package className="w-8 h-8 text-amber-600 dark:text-amber-400" />
-            <span>My Product Inventory</span>
+            <span>{isAdmin ? 'AgroMitra Product Catalog Management' : 'My Product Inventory'}</span>
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Manage your certified seed, crop protection, and agricultural equipment catalog with real-time database pricing and stock.
+            {isAdmin
+              ? 'Administrator Catalog Control: Create, edit, and manage all agricultural products, inventory stock, and dynamic pricing across the platform.'
+              : 'Manage your certified seed, crop protection, and agricultural equipment catalog with real-time database pricing and stock.'}
           </p>
-
         </div>
 
         <button
@@ -443,8 +468,16 @@ export const ShopOwnerProductsPage: React.FC = () => {
                     Category <span className="text-rose-500">*</span>
                   </label>
                   <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value as ProductCategory })}
+                    value={isCustomCategory ? 'OTHER' : formData.category}
+                    onChange={(e) => {
+                      if (e.target.value === 'OTHER') {
+                        setIsCustomCategory(true);
+                        setCustomCategoryText(formData.category || '');
+                      } else {
+                        setIsCustomCategory(false);
+                        setFormData({ ...formData, category: e.target.value });
+                      }
+                    }}
                     className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
                     {PRODUCT_CATEGORIES.map((cat) => (
@@ -452,7 +485,27 @@ export const ShopOwnerProductsPage: React.FC = () => {
                         {cat}
                       </option>
                     ))}
+                    {formData.category && !(PRODUCT_CATEGORIES as readonly string[]).includes(formData.category) && (
+                      <option value={formData.category}>{formData.category}</option>
+                    )}
+                    <option value="OTHER">+ Other / Custom Agricultural Category...</option>
                   </select>
+
+                  {isCustomCategory && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        required
+                        placeholder="Enter custom agricultural category (e.g. Bio-Fertilizers, Soil Conditioners)"
+                        value={customCategoryText}
+                        onChange={(e) => {
+                          setCustomCategoryText(e.target.value);
+                          setFormData({ ...formData, category: e.target.value });
+                        }}
+                        className="block w-full px-3 py-2 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-600 text-slate-900 dark:text-white placeholder-slate-400 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
