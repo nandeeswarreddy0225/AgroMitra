@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus, Lock, Mail, User as UserIcon, Phone, Sprout, Store, Truck, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +25,20 @@ export const RegisterPage: React.FC = () => {
   const { register, getRoleDashboardPath } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Ensure all form fields are completely empty whenever RegisterPage is mounted
+  useEffect(() => {
+    setName('');
+    setEmail('');
+    setPhone('');
+    setPassword('');
+    setConfirmPassword('');
+    setStreet('');
+    setCity('');
+    setState('');
+    setPincode('');
+    setErrorMsg(null);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +90,17 @@ export const RegisterPage: React.FC = () => {
         },
       });
 
+      // Clear the form fields upon successful registration
+      setName('');
+      setEmail('');
+      setPhone('');
+      setPassword('');
+      setConfirmPassword('');
+      setStreet('');
+      setCity('');
+      setState('');
+      setPincode('');
+
       const destination = getRoleDashboardPath(authenticatedUser.role);
       navigate(destination, { replace: true });
     } catch (err: unknown) {
@@ -119,7 +144,7 @@ export const RegisterPage: React.FC = () => {
             </div>
           )}
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit} autoComplete="off">
             {/* Account Role Selector */}
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
@@ -179,7 +204,7 @@ export const RegisterPage: React.FC = () => {
             {/* Basic Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label htmlFor="reg_name" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   {t('fullNameLabel', 'Full Name / Business Name')} <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative rounded-xl shadow-sm">
@@ -187,18 +212,21 @@ export const RegisterPage: React.FC = () => {
                     <UserIcon className="h-4 w-4" />
                   </div>
                   <input
+                    id="reg_name"
+                    name="reg_name"
                     type="text"
+                    autoComplete="off"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder={role === 'SHOP_OWNER' ? 'e.g. Sri Venkateswara Krishi Seva' : 'e.g. Ramesh Reddy'}
+                    placeholder={role === 'SHOP_OWNER' || role === 'AGRI_PARTNER' ? 'e.g. Sri Venkateswara Krishi Seva' : 'e.g. Ramesh Reddy'}
                     className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label htmlFor="reg_phone" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   {t('phoneLabel', 'Phone Number')} <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative rounded-xl shadow-sm">
@@ -206,7 +234,10 @@ export const RegisterPage: React.FC = () => {
                     <Phone className="h-4 w-4" />
                   </div>
                   <input
+                    id="reg_phone"
+                    name="reg_phone"
                     type="tel"
+                    autoComplete="off"
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -218,7 +249,7 @@ export const RegisterPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label htmlFor="reg_email" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 {t('emailLabel', 'Email Address')} <span className="text-rose-500">*</span>
               </label>
               <div className="relative rounded-xl shadow-sm">
@@ -226,7 +257,10 @@ export const RegisterPage: React.FC = () => {
                   <Mail className="h-4 w-4" />
                 </div>
                 <input
+                  id="reg_email"
+                  name="reg_email"
                   type="email"
+                  autoComplete="off"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -238,45 +272,66 @@ export const RegisterPage: React.FC = () => {
 
             {/* Address Details */}
             <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+              <label htmlFor="reg_street" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                 {t('addressDetails', 'Address Details (Village / Town / City)')}
               </label>
               <input
+                id="reg_street"
+                name="reg_street"
                 type="text"
+                autoComplete="off"
                 value={street}
                 onChange={(e) => setStreet(e.target.value)}
                 placeholder="Street / Farm Location / Landmark"
                 className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
               <div className="grid grid-cols-3 gap-2">
-                <input
-                  type="text"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="City / District"
-                  className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-                <input
-                  type="text"
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  placeholder="State"
-                  className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-                <input
-                  type="text"
-                  value={pincode}
-                  onChange={(e) => setPincode(e.target.value)}
-                  placeholder="Pincode"
-                  className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+                <div>
+                  <label htmlFor="reg_city" className="sr-only">City / District</label>
+                  <input
+                    id="reg_city"
+                    name="reg_city"
+                    type="text"
+                    autoComplete="off"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="City / District"
+                    className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="reg_state" className="sr-only">State</label>
+                  <input
+                    id="reg_state"
+                    name="reg_state"
+                    type="text"
+                    autoComplete="off"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    placeholder="State"
+                    className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="reg_pincode" className="sr-only">Pincode</label>
+                  <input
+                    id="reg_pincode"
+                    name="reg_pincode"
+                    type="text"
+                    autoComplete="off"
+                    value={pincode}
+                    onChange={(e) => setPincode(e.target.value)}
+                    placeholder="Pincode"
+                    className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Passwords */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label htmlFor="reg_password" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   {t('passwordLabel', 'Password')} <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative rounded-xl shadow-sm">
@@ -284,7 +339,10 @@ export const RegisterPage: React.FC = () => {
                     <Lock className="h-4 w-4" />
                   </div>
                   <input
+                    id="reg_password"
+                    name="reg_password"
                     type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -295,6 +353,7 @@ export const RegisterPage: React.FC = () => {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                    aria-label="Toggle password visibility"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -302,7 +361,7 @@ export const RegisterPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label htmlFor="reg_confirm_password" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   {t('confirmPasswordLabel', 'Confirm Password')} <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative rounded-xl shadow-sm">
@@ -310,7 +369,10 @@ export const RegisterPage: React.FC = () => {
                     <Lock className="h-4 w-4" />
                   </div>
                   <input
+                    id="reg_confirm_password"
+                    name="reg_confirm_password"
                     type={showConfirmPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -321,6 +383,7 @@ export const RegisterPage: React.FC = () => {
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                    aria-label="Toggle confirm password visibility"
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
