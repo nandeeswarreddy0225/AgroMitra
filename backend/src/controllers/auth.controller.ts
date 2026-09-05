@@ -5,7 +5,7 @@ import { User, UserRole, IUser } from '../models/User.model';
 import { DeliveryBoy } from '../models/DeliveryBoy.model';
 import { generateToken } from '../utils/jwt';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
-import { normalizePhoneNumber, isValidIndianPhoneNumber } from '../utils/phone';
+import { normalizePhoneNumber, isValidIndianPhoneNumber, buildPhoneVariants } from '../utils/phone';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -57,8 +57,14 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       return;
     }
 
-    // Check if phone number is already registered
-    const existingPhoneUser = await User.findOne({ phone: normalizedPhone });
+    // Check if phone number is already registered across any format variant (+91, local, etc.)
+    const phoneVariants = buildPhoneVariants(phone);
+    const existingPhoneUser = await User.findOne({
+      $or: [
+        { phone: { $in: phoneVariants } },
+        { phone: new RegExp(`${normalizedPhone}$`) },
+      ],
+    });
     if (existingPhoneUser) {
       res.status(409).json({
         success: false,
@@ -136,8 +142,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
   try {
     const { phone, email, password } = req.body;
 
-    // Identifier check
-    const identifier = phone || email;
+    const identifier = (phone || email || '').toString().trim();
     if (!identifier || !password) {
       res.status(400).json({
         success: false,
@@ -146,17 +151,32 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       return;
     }
 
-    // 1. Query user by normalized Phone Number (with email fallback)
+    // 1. Query user by phone (all variants) or email
     let user: IUser | null = null;
 
-    if (phone && typeof phone === 'string') {
-      const normalizedPhone = normalizePhoneNumber(phone);
-      user = await User.findOne({ phone: normalizedPhone }).select('+password');
+    // A. Check if identifier is an email (contains '@')
+    if (identifier.includes('@')) {
+      user = await User.findOne({ email: identifier.toLowerCase() }).select('+password');
     }
 
+    // B. Check if identifier or phone field is a phone number (all variants)
+    if (!user) {
+      const phoneInput = phone || identifier;
+      const normalizedPhone = normalizePhoneNumber(phoneInput);
+      if (normalizedPhone) {
+        const phoneVariants = buildPhoneVariants(phoneInput);
+        user = await User.findOne({
+          $or: [
+            { phone: { $in: phoneVariants } },
+            { phone: new RegExp(`${normalizedPhone}$`) },
+          ],
+        }).select('+password');
+      }
+    }
+
+    // C. Fallback: check email field explicitly if provided separately
     if (!user && email && typeof email === 'string') {
-      const normalizedEmail = email.toLowerCase().trim();
-      user = await User.findOne({ email: normalizedEmail }).select('+password');
+      user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
     }
 
     // Generic error for security (do not disclose whether account exists)
@@ -181,6 +201,19 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       return;
     }
 
+    // Auto-normalize stored phone number if it had legacy non-standard formatting (+91 etc.)
+    if (user.phone && typeof user.phone === 'string') {
+      const canonicalPhone = normalizePhoneNumber(user.phone);
+      if (canonicalPhone && user.phone !== canonicalPhone) {
+        try {
+          await User.updateOne({ _id: user._id }, { $set: { phone: canonicalPhone } });
+          user.phone = canonicalPhone;
+        } catch (phoneMigrateErr) {
+          console.warn('⚠️ [Auth]: Non-fatal phone normalization update error:', phoneMigrateErr);
+        }
+      }
+    }
+
     console.log(`✅ [Auth]: Login successful for user '${user.phone || user.email}' (${user.role}).`);
 
     // 3. Generate JWT
@@ -203,7 +236,8 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
 export const forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { phone, email } = req.body;
-    if (!phone && !email) {
+    const identifier = (phone || email || '').toString().trim();
+    if (!identifier) {
       res.status(400).json({
         success: false,
         message: 'Please provide your registered phone number or email address.',
@@ -212,11 +246,28 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     }
 
     let user: IUser | null = null;
-    if (phone && typeof phone === 'string') {
-      const normalizedPhone = normalizePhoneNumber(phone);
-      user = await User.findOne({ phone: normalizedPhone });
+
+    // A. Check if identifier contains '@' (email)
+    if (identifier.includes('@')) {
+      user = await User.findOne({ email: identifier.toLowerCase() });
     }
 
+    // B. Check phone variants
+    if (!user) {
+      const phoneInput = phone || identifier;
+      const normalizedPhone = normalizePhoneNumber(phoneInput);
+      if (normalizedPhone) {
+        const phoneVariants = buildPhoneVariants(phoneInput);
+        user = await User.findOne({
+          $or: [
+            { phone: { $in: phoneVariants } },
+            { phone: new RegExp(`${normalizedPhone}$`) },
+          ],
+        });
+      }
+    }
+
+    // C. Fallback direct email match
     if (!user && email && typeof email === 'string') {
       user = await User.findOne({ email: email.toLowerCase().trim() });
     }
@@ -292,35 +343,45 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
         });
         return;
       }
-    } else if (phone && typeof phone === 'string' && phone.trim()) {
-      const normalizedPhone = normalizePhoneNumber(phone);
-      user = await User.findOne({ phone: normalizedPhone });
-
-      if (!user) {
-        res.status(404).json({
-          success: false,
-          message: 'No account found with this phone number.',
-        });
-        return;
-      }
-    } else if (email && typeof email === 'string' && email.trim()) {
-      // Direct email reset fallback (for admin/direct reset scenarios)
-      const normalizedEmail = email.toLowerCase().trim();
-      user = await User.findOne({ email: normalizedEmail });
-
-      if (!user) {
-        res.status(404).json({
-          success: false,
-          message: 'No account found with this email address.',
-        });
-        return;
-      }
     } else {
-      res.status(400).json({
-        success: false,
-        message: 'Password reset token or registered account phone number/email is required.',
-      });
-      return;
+      const identifier = (phone || email || '').toString().trim();
+      if (!identifier) {
+        res.status(400).json({
+          success: false,
+          message: 'Password reset token or registered account phone number/email is required.',
+        });
+        return;
+      }
+
+      if (identifier.includes('@')) {
+        user = await User.findOne({ email: identifier.toLowerCase() });
+      }
+
+      if (!user) {
+        const phoneInput = phone || identifier;
+        const normalizedPhone = normalizePhoneNumber(phoneInput);
+        if (normalizedPhone) {
+          const phoneVariants = buildPhoneVariants(phoneInput);
+          user = await User.findOne({
+            $or: [
+              { phone: { $in: phoneVariants } },
+              { phone: new RegExp(`${normalizedPhone}$`) },
+            ],
+          });
+        }
+      }
+
+      if (!user && email && typeof email === 'string') {
+        user = await User.findOne({ email: email.toLowerCase().trim() });
+      }
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'No account found with this phone number or email.',
+        });
+        return;
+      }
     }
 
     // Update password and clear reset token & expiry in MongoDB

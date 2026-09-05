@@ -65,6 +65,7 @@ const UserSchema = new Schema<IUser>(
       trim: true,
       unique: true,
       index: true,
+      sparse: true,
       match: [
         /^[0-9+\s-]{8,20}$/,
         'Please provide a valid phone number (minimum 8 digits)',
