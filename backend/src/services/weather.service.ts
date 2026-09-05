@@ -355,7 +355,7 @@ export class WeatherService {
 
     if (hasExplicitCoords) {
       const geocoded = await this.reverseGeocode(lat!, lon!);
-      cityName = geocoded.city;
+      cityName = geocoded.city || 'Current Location';
       stateName = geocoded.state || stateName;
       countryName = geocoded.country || countryName;
     } else {

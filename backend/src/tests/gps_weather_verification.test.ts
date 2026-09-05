@@ -1,8 +1,13 @@
-```ts
 import axios from 'axios';
+import app from '../app';
+import { Server } from 'http';
 
 async function testWeather() {
-  const BASE_URL = 'http://localhost:5000/api';
+  const PORT = 5099;
+  const server: Server = app.listen(PORT);
+  const BASE_URL = `http://localhost:${PORT}/api`;
+
+  try {
 
   console.log('=== TEST 1: Hyderabad Coordinates (lat=17.3850, lon=78.4867) ===');
   const hydCurrent = await axios.get(`${BASE_URL}/weather/current?lat=17.3850&lon=78.4867`);
@@ -93,9 +98,35 @@ async function testWeather() {
     );
   }
 
+  console.log(
+    '\n=== TEST 6: User Production Coordinates (lat=13.284643749274364, lon=77.59594301752281) ==='
+  );
+
+  const prodCurrent = await axios.get(
+    `${BASE_URL}/weather?lat=13.284643749274364&lon=77.59594301752281`
+  );
+
+  console.log('Production Coords Resolved Location:', JSON.stringify(prodCurrent.data.location));
+  console.log(`Production Coords Temp: ${prodCurrent.data.temperature}°C, Condition: ${prodCurrent.data.condition}`);
+
+  if (prodCurrent.data.location.city.toLowerCase() === 'nagpur') {
+    throw new Error(
+      'FAILURE: User coordinates (13.28, 77.59) were incorrectly forced to Nagpur!'
+    );
+  }
+
+  console.log(
+    'Passed: Resolved to genuine GPS location (NOT Nagpur):',
+    prodCurrent.data.location.city,
+    prodCurrent.data.location.state
+  );
+
   console.log('\n====================================================');
   console.log('  🎉 GPS WEATHER & FORECAST VERIFICATION PASSED!     ');
-  console.log('====================================================');
+  console.log('====================================================\n');
+  } finally {
+    server.close();
+  }
 }
 
 testWeather().catch((err) => {
@@ -105,4 +136,3 @@ testWeather().catch((err) => {
   );
   process.exit(1);
 });
-```
