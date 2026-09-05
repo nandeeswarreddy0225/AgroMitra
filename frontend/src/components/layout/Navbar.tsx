@@ -59,6 +59,7 @@ export const Navbar: React.FC = () => {
       case 'ADMIN':
         return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800';
       case 'SHOP_OWNER':
+      case 'AGRI_PARTNER':
         return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800';
       case 'DELIVERY_BOY':
         return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800';
@@ -71,8 +72,8 @@ export const Navbar: React.FC = () => {
   const getRoleShortLabel = (role?: string) => {
     switch (role) {
       case 'SHOP_OWNER':
+      case 'AGRI_PARTNER':
         return t('rolePartner', 'Agri Store Partner');
-
       case 'DELIVERY_BOY':
         return t('roleDelivery', 'Delivery Partner');
       case 'FARMER':
@@ -180,8 +181,7 @@ export const Navbar: React.FC = () => {
                 )}
 
                 {/* Agri Store Partner Navigation */}
-                {user.role === 'SHOP_OWNER' && (
-
+                {(user.role === 'SHOP_OWNER' || user.role === 'AGRI_PARTNER') && (
                   <>
                     <Link
                       to="/shop/products"
@@ -458,7 +458,7 @@ export const Navbar: React.FC = () => {
                   </>
                 )}
 
-                {user.role === 'SHOP_OWNER' && (
+                {(user.role === 'SHOP_OWNER' || user.role === 'AGRI_PARTNER') && (
                   <>
                     <Link
                       to="/shop/orders"
@@ -466,7 +466,6 @@ export const Navbar: React.FC = () => {
                       className="block px-3 py-2 rounded-xl text-sm font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40"
                     >
                       Store Partner Orders
-
                     </Link>
                     <Link
                       to="/shop/products"

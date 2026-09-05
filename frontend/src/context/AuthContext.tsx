@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, LoginCredentials, RegisterData } from '../types/auth';
+import { User, LoginCredentials, RegisterData, getRoleDashboardPath as getRoleDashboardPathHelper } from '../types/auth';
 import { loginApi, registerApi, getMeApi } from '../services/api';
 
 interface AuthContextType {
@@ -27,20 +27,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const getRoleDashboardPath = (role?: string): string => {
-    const targetRole = role || user?.role;
-    switch (targetRole) {
-      case 'FARMER':
-        return '/dashboard';
-      case 'AGRI_PARTNER':
-      case 'SHOP_OWNER':
-        return '/shop-owner/dashboard';
-      case 'DELIVERY_BOY':
-        return '/delivery/dashboard';
-      case 'ADMIN':
-        return '/admin/dashboard';
-      default:
-        return '/';
-    }
+    return getRoleDashboardPathHelper(role || user?.role);
   };
 
   // Check and sync user state with backend on mount

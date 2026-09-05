@@ -439,7 +439,7 @@ export const HomePage: React.FC = () => {
             </div>
 
             <Link
-              to={isAuthenticated && user?.role === 'SHOP_OWNER' ? '/shop/orders' : '/register'}
+              to={isAuthenticated && (user?.role === 'SHOP_OWNER' || user?.role === 'AGRI_PARTNER') ? '/shop/orders' : '/register'}
               className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
             >
               <span>{t('partnerCta', 'Manage Your Store')}</span>

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LogIn, Lock, Phone, Sprout, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
+import { getPostLoginRedirectPath } from '../types/auth';
 import axios from 'axios';
 
 export const LoginPage: React.FC = () => {
@@ -12,7 +13,7 @@ export const LoginPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login, getRoleDashboardPath } = useAuth();
+  const { login } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,7 +35,7 @@ export const LoginPage: React.FC = () => {
         password,
       });
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
-      const destination = from || getRoleDashboardPath(authenticatedUser.role);
+      const destination = getPostLoginRedirectPath(from, authenticatedUser.role);
       navigate(destination, { replace: true });
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.data?.message) {
