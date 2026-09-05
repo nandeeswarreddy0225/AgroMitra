@@ -6,7 +6,6 @@ import { DeliveryBoy } from '../models/DeliveryBoy.model';
 import { generateToken } from '../utils/jwt';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { normalizePhoneNumber, isValidIndianPhoneNumber } from '../utils/phone';
-import { CaptchaService } from '../services/captcha.service';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -135,29 +134,19 @@ export const register = async (req: Request, res: Response, next: NextFunction):
 
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { phone, email, password, captchaToken } = req.body;
+    const { phone, email, password } = req.body;
 
     // Identifier check
     const identifier = phone || email;
     if (!identifier || !password) {
       res.status(400).json({
         success: false,
-        message: 'Please provide your phone number, password, and security CAPTCHA verification.',
+        message: 'Please provide your registered phone number (or email) and password.',
       });
       return;
     }
 
-    // 1. Server-Side CAPTCHA Verification
-    const captchaResult = await CaptchaService.verifyCaptchaToken(captchaToken, req.ip);
-    if (!captchaResult.success) {
-      res.status(400).json({
-        success: false,
-        message: captchaResult.message || 'CAPTCHA security verification failed. Please try again.',
-      });
-      return;
-    }
-
-    // 2. Query user by normalized Phone Number (with email fallback)
+    // 1. Query user by normalized Phone Number (with email fallback)
     let user: IUser | null = null;
 
     if (phone && typeof phone === 'string') {
@@ -180,7 +169,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       return;
     }
 
-    // 3. Verify password with bcrypt
+    // 2. Verify password with bcrypt
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
@@ -194,7 +183,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
 
     console.log(`✅ [Auth]: Login successful for user '${user.phone || user.email}' (${user.role}).`);
 
-    // 4. Generate JWT
+    // 3. Generate JWT
     const token = generateToken({
       id: user._id.toString(),
       role: user.role,

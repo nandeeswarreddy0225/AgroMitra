@@ -3,13 +3,11 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LogIn, Lock, Phone, Sprout, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
-import { TurnstileCaptcha } from '../components/auth/TurnstileCaptcha';
 import axios from 'axios';
 
 export const LoginPage: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [captchaToken, setCaptchaToken] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,17 +27,11 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
-    if (!captchaToken) {
-      setErrorMsg('Please complete the security CAPTCHA verification before signing in.');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const authenticatedUser = await login({
         phone: cleanPhone,
         password,
-        captchaToken,
       });
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
       const destination = from || getRoleDashboardPath(authenticatedUser.role);
@@ -152,20 +144,6 @@ export const LoginPage: React.FC = () => {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-            </div>
-
-            {/* Cloudflare Turnstile Security Verification */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                Security Verification <span className="text-rose-500">*</span>
-              </label>
-              <TurnstileCaptcha
-                onVerify={(token) => {
-                  setCaptchaToken(token);
-                  setErrorMsg(null);
-                }}
-                onExpire={() => setCaptchaToken('')}
-              />
             </div>
 
             <div className="pt-2">

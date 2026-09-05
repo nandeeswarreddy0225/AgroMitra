@@ -7,7 +7,6 @@ import { connectDB, disconnectDB } from '../config/db';
 import { autoSeedDefaultData } from '../utils/autoSeed';
 import { User } from '../models/User.model';
 import { verifyToken } from '../utils/jwt';
-import { CaptchaService } from '../services/captcha.service';
 
 const TEST_PORT = 5089;
 let server: http.Server;
@@ -70,7 +69,7 @@ const makeRequest = (options: RequestOptions): Promise<ResponseResult> => {
 
 const runComprehensiveAuthTestSuite = async () => {
   console.log('\n================================================================');
-  console.log('   AGRIMART COMPREHENSIVE PHONE + CAPTCHA + PASSWORD TEST SUITE ');
+  console.log('       AGRIMART COMPREHENSIVE PHONE + PASSWORD TEST SUITE       ');
   console.log('================================================================\n');
 
   try {
@@ -80,9 +79,6 @@ const runComprehensiveAuthTestSuite = async () => {
 
     server = app.listen(TEST_PORT);
     await new Promise((res) => setTimeout(res, 300));
-
-    const validCaptchaToken = '1x0000000000000000000000000000000AA'; // Cloudflare Turnstile official test pass token
-    const invalidCaptchaToken = '2x0000000000000000000000000000000AA'; // Cloudflare Turnstile official test fail token
 
     const timestamp = Date.now();
     const uniquePartnerPhone = `98${String(timestamp).slice(-8)}`;
@@ -144,16 +140,15 @@ const runComprehensiveAuthTestSuite = async () => {
     console.log('  ✅ TEST 3 PASSED: User profile updated without double-hashing password.');
 
     // ------------------------------------------------------------------------
-    // TEST 4: Valid Phone + Valid CAPTCHA + Correct Password -> AGRI_PARTNER Login
+    // TEST 4: Valid Phone + Correct Password -> AGRI_PARTNER Login
     // ------------------------------------------------------------------------
-    console.log('\n▶ [TEST 4]: Logging in AGRI_PARTNER with Phone + CAPTCHA + Password...');
+    console.log('\n▶ [TEST 4]: Logging in AGRI_PARTNER with Phone + Password...');
     const loginPartnerRes = await makeRequest({
       method: 'POST',
       path: '/api/auth/login',
       body: {
         phone: uniquePartnerPhone,
         password: partnerPassword,
-        captchaToken: validCaptchaToken,
       },
     });
 
@@ -189,68 +184,28 @@ const runComprehensiveAuthTestSuite = async () => {
     console.log(`  ✅ TEST 5 PASSED: Session user verified. Role: ${meRes.body.user.role}`);
 
     // ------------------------------------------------------------------------
-    // TEST 6: Rejection on Invalid CAPTCHA Token (HTTP 400)
+    // TEST 6: Rejection on Incorrect Password (HTTP 401)
     // ------------------------------------------------------------------------
-    console.log('\n▶ [TEST 6]: Verifying invalid CAPTCHA rejection (HTTP 400)...');
-    const invalidCaptchaRes = await makeRequest({
-      method: 'POST',
-      path: '/api/auth/login',
-      body: {
-        phone: uniquePartnerPhone,
-        password: partnerPassword,
-        captchaToken: invalidCaptchaToken,
-      },
-    });
-
-    if (invalidCaptchaRes.statusCode === 400 && !invalidCaptchaRes.body.token) {
-      console.log('  ✅ TEST 6 PASSED: Invalid CAPTCHA token rejected with HTTP 400.');
-    } else {
-      throw new Error(`Security failure: Invalid CAPTCHA was not rejected with 400. Status: ${invalidCaptchaRes.statusCode}`);
-    }
-
-    // ------------------------------------------------------------------------
-    // TEST 7: Rejection on Missing CAPTCHA Token (HTTP 400)
-    // ------------------------------------------------------------------------
-    console.log('\n▶ [TEST 7]: Verifying missing CAPTCHA rejection (HTTP 400)...');
-    const missingCaptchaRes = await makeRequest({
-      method: 'POST',
-      path: '/api/auth/login',
-      body: {
-        phone: uniquePartnerPhone,
-        password: partnerPassword,
-      },
-    });
-
-    if (missingCaptchaRes.statusCode === 400 && !missingCaptchaRes.body.token) {
-      console.log('  ✅ TEST 7 PASSED: Missing CAPTCHA rejected with HTTP 400.');
-    } else {
-      throw new Error(`Security failure: Missing CAPTCHA was not rejected with 400. Status: ${missingCaptchaRes.statusCode}`);
-    }
-
-    // ------------------------------------------------------------------------
-    // TEST 8: Rejection on Incorrect Password (HTTP 401)
-    // ------------------------------------------------------------------------
-    console.log('\n▶ [TEST 8]: Verifying incorrect password rejection (HTTP 401)...');
+    console.log('\n▶ [TEST 6]: Verifying incorrect password rejection (HTTP 401)...');
     const wrongPasswordRes = await makeRequest({
       method: 'POST',
       path: '/api/auth/login',
       body: {
         phone: uniquePartnerPhone,
         password: 'CompletelyWrongPassword999!',
-        captchaToken: validCaptchaToken,
       },
     });
 
     if (wrongPasswordRes.statusCode === 401 && !wrongPasswordRes.body.token) {
-      console.log('  ✅ TEST 8 PASSED: Incorrect password rejected with HTTP 401.');
+      console.log('  ✅ TEST 6 PASSED: Incorrect password rejected with HTTP 401.');
     } else {
       throw new Error(`Security failure: Wrong password was not rejected with 401. Status: ${wrongPasswordRes.statusCode}`);
     }
 
     // ------------------------------------------------------------------------
-    // TEST 9: Phone Number Normalization (+91 prefix, spaces, dash)
+    // TEST 7: Phone Number Normalization (+91 prefix, spaces, dash)
     // ------------------------------------------------------------------------
-    console.log('\n▶ [TEST 9]: Testing Phone Number normalization (+91, spaces)...');
+    console.log('\n▶ [TEST 7]: Testing Phone Number normalization (+91, spaces)...');
     const formattedPhoneVariants = [
       `+91 ${uniquePartnerPhone}`,
       `+91-${uniquePartnerPhone.slice(0, 5)}-${uniquePartnerPhone.slice(5)}`,
@@ -265,7 +220,6 @@ const runComprehensiveAuthTestSuite = async () => {
         body: {
           phone: variant,
           password: partnerPassword,
-          captchaToken: validCaptchaToken,
         },
       });
 
@@ -273,12 +227,12 @@ const runComprehensiveAuthTestSuite = async () => {
         throw new Error(`Normalization failed for phone variant '${variant}': ${JSON.stringify(normRes.body)}`);
       }
     }
-    console.log('  ✅ TEST 9 PASSED: All phone variants (+91, 0-prefix, dashes, spaces) normalized and authenticated.');
+    console.log('  ✅ TEST 7 PASSED: All phone variants (+91, 0-prefix, dashes, spaces) normalized and authenticated.');
 
     // ------------------------------------------------------------------------
-    // TEST 10: Duplicate Phone Number Rejection on Registration (HTTP 409)
+    // TEST 8: Duplicate Phone Number Rejection on Registration (HTTP 409)
     // ------------------------------------------------------------------------
-    console.log('\n▶ [TEST 10]: Testing duplicate phone number registration rejection...');
+    console.log('\n▶ [TEST 8]: Testing duplicate phone number registration rejection...');
     const duplicatePhoneRes = await makeRequest({
       method: 'POST',
       path: '/api/auth/register',
@@ -292,22 +246,21 @@ const runComprehensiveAuthTestSuite = async () => {
     });
 
     if (duplicatePhoneRes.statusCode === 409) {
-      console.log('  ✅ TEST 10 PASSED: Duplicate phone number properly rejected with HTTP 409 Conflict.');
+      console.log('  ✅ TEST 8 PASSED: Duplicate phone number properly rejected with HTTP 409 Conflict.');
     } else {
       throw new Error(`Duplicate phone was not rejected with 409. Status: ${duplicatePhoneRes.statusCode}`);
     }
 
     // ------------------------------------------------------------------------
-    // TEST 11: FARMER Role Login with Seeded Account
+    // TEST 9: FARMER Role Login with Seeded Account
     // ------------------------------------------------------------------------
-    console.log('\n▶ [TEST 11]: Testing FARMER role login (Seeded account)...');
+    console.log('\n▶ [TEST 9]: Testing FARMER role login (Seeded account)...');
     const farmerRes = await makeRequest({
       method: 'POST',
       path: '/api/auth/login',
       body: {
         phone: '8519813077',
         password: 'Password123',
-        captchaToken: validCaptchaToken,
       },
     });
 
@@ -318,19 +271,18 @@ const runComprehensiveAuthTestSuite = async () => {
     if (farmerJwt.role !== 'FARMER') {
       throw new Error(`FARMER JWT role mismatch: ${farmerJwt.role}`);
     }
-    console.log(`  ✅ TEST 11 PASSED: FARMER logged in successfully. Role: ${farmerRes.body.user.role} (JWT: ${farmerJwt.role})`);
+    console.log(`  ✅ TEST 9 PASSED: FARMER logged in successfully. Role: ${farmerRes.body.user.role} (JWT: ${farmerJwt.role})`);
 
     // ------------------------------------------------------------------------
-    // TEST 12: SHOP_OWNER Role Login with Seeded Account
+    // TEST 10: SHOP_OWNER Role Login with Seeded Account
     // ------------------------------------------------------------------------
-    console.log('\n▶ [TEST 12]: Testing SHOP_OWNER role login (Seeded account)...');
+    console.log('\n▶ [TEST 10]: Testing SHOP_OWNER role login (Seeded account)...');
     const shopOwnerRes = await makeRequest({
       method: 'POST',
       path: '/api/auth/login',
       body: {
         phone: '9876543210',
         password: 'Password123',
-        captchaToken: validCaptchaToken,
       },
     });
 
@@ -341,19 +293,18 @@ const runComprehensiveAuthTestSuite = async () => {
     if (shopOwnerJwt.role !== 'SHOP_OWNER') {
       throw new Error(`SHOP_OWNER JWT role mismatch: ${shopOwnerJwt.role}`);
     }
-    console.log(`  ✅ TEST 12 PASSED: SHOP_OWNER logged in successfully. Role: ${shopOwnerRes.body.user.role} (JWT: ${shopOwnerJwt.role})`);
+    console.log(`  ✅ TEST 10 PASSED: SHOP_OWNER logged in successfully. Role: ${shopOwnerRes.body.user.role} (JWT: ${shopOwnerJwt.role})`);
 
     // ------------------------------------------------------------------------
-    // TEST 13: ADMIN Role Login with Seeded Account
+    // TEST 11: ADMIN Role Login with Seeded Account
     // ------------------------------------------------------------------------
-    console.log('\n▶ [TEST 13]: Testing ADMIN role login (Seeded account)...');
+    console.log('\n▶ [TEST 11]: Testing ADMIN role login (Seeded account)...');
     const adminRes = await makeRequest({
       method: 'POST',
       path: '/api/auth/login',
       body: {
         phone: '9876543211',
         password: 'Password123',
-        captchaToken: validCaptchaToken,
       },
     });
 
@@ -364,34 +315,56 @@ const runComprehensiveAuthTestSuite = async () => {
     if (adminJwt.role !== 'ADMIN') {
       throw new Error(`ADMIN JWT role mismatch: ${adminJwt.role}`);
     }
-    console.log(`  ✅ TEST 13 PASSED: ADMIN logged in successfully. Role: ${adminRes.body.user.role} (JWT: ${adminJwt.role})`);
+    console.log(`  ✅ TEST 11 PASSED: ADMIN logged in successfully. Role: ${adminRes.body.user.role} (JWT: ${adminJwt.role})`);
 
     // ------------------------------------------------------------------------
-    // TEST 14: Server-Side CAPTCHA Production Configuration Reporting
+    // TEST 12: Phone-Based Password Recovery & Reset Flow
     // ------------------------------------------------------------------------
-    console.log('\n▶ [TEST 14]: Testing Server-Side CAPTCHA Production Configuration Error Reporting...');
-    const originalEnv = process.env.NODE_ENV;
-    const originalSecret = process.env.TURNSTILE_SECRET_KEY;
-    try {
-      process.env.NODE_ENV = 'production';
-      delete process.env.TURNSTILE_SECRET_KEY;
-      delete process.env.CAPTCHA_SECRET_KEY;
+    console.log('\n▶ [TEST 12]: Testing Phone-based Password Reset flow...');
+    const forgotRes = await makeRequest({
+      method: 'POST',
+      path: '/api/auth/forgot-password',
+      body: { phone: uniquePartnerPhone },
+    });
 
-      const prodCheck = await CaptchaService.verifyCaptchaToken('some-production-token-12345');
-      if (prodCheck.success === false && prodCheck.message?.includes('TURNSTILE_SECRET_KEY is missing')) {
-        console.log('  ✅ TEST 14 PASSED: Missing production CAPTCHA configuration clearly reported.');
-      } else {
-        throw new Error(`Expected production missing secret rejection, got: ${JSON.stringify(prodCheck)}`);
-      }
-    } finally {
-      process.env.NODE_ENV = originalEnv;
-      if (originalSecret) {
-        process.env.TURNSTILE_SECRET_KEY = originalSecret;
-      }
+    if (forgotRes.statusCode !== 200 || !forgotRes.body.resetToken) {
+      throw new Error(`Forgot password failed: ${JSON.stringify(forgotRes.body)}`);
+    }
+
+    const resetToken = forgotRes.body.resetToken;
+    const newPassword = 'NewSecurePartnerPassword2026!';
+
+    const resetRes = await makeRequest({
+      method: 'POST',
+      path: '/api/auth/reset-password',
+      body: {
+        token: resetToken,
+        newPassword,
+      },
+    });
+
+    if (resetRes.statusCode !== 200 || !resetRes.body.success) {
+      throw new Error(`Reset password failed: ${JSON.stringify(resetRes.body)}`);
+    }
+
+    // Log in with new password
+    const newLoginRes = await makeRequest({
+      method: 'POST',
+      path: '/api/auth/login',
+      body: {
+        phone: uniquePartnerPhone,
+        password: newPassword,
+      },
+    });
+
+    if (newLoginRes.statusCode === 200 && newLoginRes.body.user?.role === 'AGRI_PARTNER') {
+      console.log(`  ✅ TEST 12 PASSED: Password reset & login with new password succeeded. Role: ${newLoginRes.body.user.role}`);
+    } else {
+      throw new Error(`Login with new password failed: ${JSON.stringify(newLoginRes.body)}`);
     }
 
     console.log('\n================================================================');
-    console.log('  🎉 ALL 14 PHONE + CAPTCHA + PASSWORD AUTHENTICATION TESTS PASSED!');
+    console.log('  🎉 ALL 12 PHONE + PASSWORD AUTHENTICATION TESTS PASSED!        ');
     console.log('================================================================\n');
 
   } catch (error) {
@@ -404,5 +377,4 @@ const runComprehensiveAuthTestSuite = async () => {
     await disconnectDB();
   }
 };
-
 runComprehensiveAuthTestSuite();

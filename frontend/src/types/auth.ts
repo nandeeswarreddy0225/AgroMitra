@@ -34,7 +34,6 @@ export interface LoginCredentials {
   phone?: string;
   email?: string;
   password: string;
-  captchaToken?: string;
 }
 
 export interface RegisterData {
