@@ -16,7 +16,7 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Request interceptor: Attach JWT token from SecureStore
+// Request interceptor: Attach JWT token from SecureStore and handle FormData boundaries
 apiClient.interceptors.request.use(
   async (config) => {
     try {
@@ -26,6 +26,15 @@ apiClient.interceptors.request.use(
       }
     } catch {
       // Ignore token read error
+    }
+    if (config.data instanceof FormData) {
+      if (typeof config.headers.delete === 'function') {
+        config.headers.delete('Content-Type');
+        config.headers.delete('content-type');
+      } else if (config.headers) {
+        delete (config.headers as any)['Content-Type'];
+        delete (config.headers as any)['content-type'];
+      }
     }
     return config;
   },
