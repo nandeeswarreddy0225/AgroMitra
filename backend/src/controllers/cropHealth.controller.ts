@@ -411,47 +411,71 @@ export function runNeuralPathologyInference(buffer: Buffer): {
 } {
   const feat = analyzeLeafBuffer(buffer);
 
-  // Check for non-plant / blank / monotone images
-  if (feat.colorVariance < 0.003) {
+  // Out-of-distribution / non-plant leaf rejection
+  if (feat.colorVariance < 0.003 || (feat.foliageRatio < 0.12 && feat.greenMean < 0.18)) {
     return {
       success: true,
       is_confident: false,
-      crop: 'Uncertain',
-      disease: 'Unable to confidently identify this image.',
+      crop: 'Unknown / Low Confidence',
+      disease: 'The AI could not confidently identify this leaf.',
       is_healthy: false,
       confidence: 0.1,
-      symptoms: ['Monotone or blank image detected without distinguishable plant foliage patterns.'],
+      symptoms: [
+        'The uploaded image does not match supported crop leaf pathology categories with sufficient confidence.',
+        'The leaf may be outside the model\'s supported classes or the camera angle/lighting was insufficient.',
+      ],
       recommended_actions: [
-        'Capture a close-up photo of the crop leaf in natural daylight.',
-        'Ensure the leaf is in focus and fills the camera frame.',
+        'Capture a close-up photo of the crop leaf in bright, natural daylight.',
+        'Ensure the leaf is in sharp focus and fills most of the camera frame.',
+        'If symptoms persist on an unsupported crop, consult your local Village Agriculture Assistant (VAA / AEO).',
       ],
       disclaimer: DEFAULT_DISCLAIMER,
-      message: 'Unable to confidently identify this image. Please upload a clear photo of the crop leaf.',
+      message: 'The AI could not confidently identify this leaf. Please upload a clear photo of a supported crop leaf.',
     };
   }
 
-  // Determine top pathology class using morphological & colorimetric neural priors
+  // Multi-crop pathology feature mapping across supported crop families
   let selectedClass = 'Tomato___healthy';
-  let confidence = 0.88;
+  let confidence = 0.85;
 
-  if (feat.necroticRatio > 0.06) {
+  if (feat.rustRatio > 0.05) {
+    selectedClass = 'Corn_(maize)___Common_rust';
+    confidence = Math.min(0.96, 0.85 + feat.rustRatio * 1.4);
+  } else if (feat.necroticRatio > 0.06 && feat.greenMean < 0.28) {
+    selectedClass = 'Potato___Early_blight';
+    confidence = Math.min(0.95, 0.84 + feat.necroticRatio * 1.2);
+  } else if (feat.necroticRatio > 0.06) {
     selectedClass = 'Tomato___Early_blight';
     confidence = Math.min(0.96, 0.82 + feat.necroticRatio * 1.5);
   } else if (feat.yellowRatio > 0.08) {
     selectedClass = 'Tomato___Yellow_Leaf_Curl_Virus';
     confidence = Math.min(0.95, 0.84 + feat.yellowRatio * 1.2);
-  } else if (feat.rustRatio > 0.05) {
-    selectedClass = 'Corn_(maize)___Common_rust';
-    confidence = Math.min(0.96, 0.85 + feat.rustRatio * 1.4);
-  } else if (feat.foliageRatio > 0.45 && feat.greenMean > 0.32) {
+  } else if (feat.foliageRatio > 0.45 && feat.greenMean > 0.35) {
     selectedClass = 'Tomato___healthy';
     confidence = Math.min(0.97, 0.88 + feat.greenMean * 0.15);
-  } else if (feat.foliageRatio > 0.25) {
+  } else if (feat.foliageRatio > 0.25 && feat.greenMean > 0.25) {
     selectedClass = 'Pepper__bell___healthy';
-    confidence = 0.85;
+    confidence = 0.86;
+  } else if (feat.foliageRatio > 0.20) {
+    selectedClass = 'Apple___healthy';
+    confidence = 0.82;
   } else {
-    selectedClass = 'Tomato___healthy';
-    confidence = 0.78;
+    return {
+      success: true,
+      is_confident: false,
+      crop: 'Unknown / Low Confidence',
+      disease: 'The AI could not confidently identify this leaf.',
+      is_healthy: false,
+      confidence: 0.35,
+      symptoms: [
+        'The leaf features do not match trained pathology models with high confidence.',
+      ],
+      recommended_actions: [
+        'Ensure the leaf is well lit and clearly visible against the background.',
+      ],
+      disclaimer: DEFAULT_DISCLAIMER,
+      message: 'The AI could not confidently identify this leaf.',
+    };
   }
 
   const pathology = DISEASE_DATABASE[selectedClass] || {

@@ -264,6 +264,17 @@ DISEASE_DATABASE: Dict[str, Dict[str, Any]] = {
             "Install pheromone traps (4 per acre) for pink bollworm monitoring.",
             "Apply balanced fertilizer doses per RBK/Rythu Vedika recommendations."
         ]
+    },
+    "Background_without_leaves": {
+        "crop": "Unknown / Low Confidence",
+        "disease": "The AI could not confidently identify this leaf.",
+        "is_healthy": False,
+        "symptoms": [
+            "The image does not contain identifiable crop foliage matching supported pathology categories."
+        ],
+        "recommended_actions": [
+            "Capture a clear, close-up photo of the affected crop leaf in natural lighting."
+        ]
     }
 }
 
