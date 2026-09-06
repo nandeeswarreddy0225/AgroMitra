@@ -17,6 +17,14 @@ export interface IPayment extends Document {
   razorpayOrderId: string;
   razorpayPaymentId?: string;
   razorpaySignature?: string;
+  paymentMethod?: 'RAZORPAY' | 'UPI_QR' | 'CASH_ON_DELIVERY';
+  upiTransactionId?: string;
+  upiPayerApp?: string;
+  upiId?: string;
+  storeName?: string;
+  verifiedBy?: Types.ObjectId;
+  verifiedAt?: Date;
+  adminNotes?: string;
   amount: number;
   currency: string;
   status: PaymentStatus;
@@ -46,9 +54,51 @@ const PaymentSchema = new Schema<IPayment>(
     razorpayPaymentId: {
       type: String,
       default: undefined,
+      index: true,
     },
     razorpaySignature: {
       type: String,
+      default: undefined,
+    },
+    paymentMethod: {
+      type: String,
+      enum: ['RAZORPAY', 'UPI_QR', 'CASH_ON_DELIVERY'],
+      default: 'RAZORPAY',
+      index: true,
+    },
+    upiTransactionId: {
+      type: String,
+      trim: true,
+      default: undefined,
+      index: true,
+    },
+    upiPayerApp: {
+      type: String,
+      trim: true,
+      default: undefined,
+    },
+    upiId: {
+      type: String,
+      trim: true,
+      default: undefined,
+    },
+    storeName: {
+      type: String,
+      trim: true,
+      default: undefined,
+    },
+    verifiedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: undefined,
+    },
+    verifiedAt: {
+      type: Date,
+      default: undefined,
+    },
+    adminNotes: {
+      type: String,
+      trim: true,
       default: undefined,
     },
     amount: {
@@ -74,6 +124,7 @@ const PaymentSchema = new Schema<IPayment>(
       virtuals: true,
       transform: function (_doc, ret: Record<string, any>) {
         ret.id = ret._id ? ret._id.toString() : undefined;
+        delete ret._id;
         delete ret.__v;
         return ret;
       },

@@ -27,8 +27,11 @@
     "express": "^4.21.2",
     "form-data": "^4.0.6",
     "jsonwebtoken": "^9.0.3",
+    "jsqr": "^1.4.0",
     "mongoose": "^8.9.5",
     "multer": "^2.3.0",
+    "pngjs": "^5.0.0",
+    "qrcode": "^1.5.4",
     "razorpay": "^2.9.8"
   },
   "devDependencies": {
@@ -39,6 +42,8 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.2.0",
     "@types/node": "^22.10.7",
+    "@types/pngjs": "^6.0.5",
+    "@types/qrcode": "^1.5.6",
     "mongodb-memory-server": "^11.2.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"

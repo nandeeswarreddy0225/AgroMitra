@@ -44,6 +44,10 @@ export const connectDB = async (): Promise<void> => {
       import('../utils/migratePasswords')
         .then(({ migratePlaintextPasswords }) => migratePlaintextPasswords())
         .catch((err) => console.warn('⚠️ [Database]: Password migration background check:', err));
+      // Safely ensure standard role test accounts and configs exist in MongoDB
+      import('../utils/autoSeed')
+        .then(({ autoSeedDefaultData }) => autoSeedDefaultData())
+        .catch((err) => console.warn('⚠️ [Database]: Auto-seed background check:', err));
       return;
     } catch (error) {
       console.warn(`⚠️  [Database]: Could not connect to configured MONGODB_URI: ${error instanceof Error ? error.message : error}`);

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { User, UserRole, IUser } from '../models/User.model';
 import { DeliveryBoy } from '../models/DeliveryBoy.model';
+import { StorePaymentConfig } from '../models/StorePaymentConfig.model';
 import { generateToken } from '../utils/jwt';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { normalizePhoneNumber, isValidIndianPhoneNumber, buildPhoneVariants } from '../utils/phone';
@@ -140,9 +141,9 @@ export const register = async (req: Request, res: Response, next: NextFunction):
 
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { phone, email, password } = req.body;
+    const { identifier: rawIdentifier, phone, email, password } = req.body;
 
-    const identifier = (phone || email || '').toString().trim();
+    const identifier = (rawIdentifier || phone || email || '').toString().trim();
     if (!identifier || !password) {
       res.status(400).json({
         success: false,
@@ -289,7 +290,8 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
-    const resetLink = `http://localhost:5173/reset-password?token=${rawResetToken}&phone=${encodeURIComponent(user.phone || '')}`;
+    const frontendBase = (process.env.FRONTEND_URL || 'https://agro-mitra-frontend.vercel.app').replace(/\/+$/, '');
+    const resetLink = `${frontendBase}/reset-password?token=${rawResetToken}&phone=${encodeURIComponent(user.phone || '')}`;
 
     console.log(`🔑 [Auth]: Password reset token generated for '${user.phone || user.email}': ${rawResetToken}`);
 
@@ -447,13 +449,64 @@ export const updateProfile = async (
       user.shopName = shopName.trim();
     }
     if (upiId !== undefined && typeof upiId === 'string') {
-      user.upiId = upiId.trim();
+      const cleanUpi = upiId.trim();
+      if (cleanUpi.length > 0) {
+        const upiRegex = /^[a-zA-Z0-9.\-_]{2,100}@[a-zA-Z0-9]{2,64}$/;
+        if (!upiRegex.test(cleanUpi)) {
+          res.status(400).json({
+            success: false,
+            message: 'Invalid UPI ID format. UPI ID must be in the format username@bank (e.g. store@icici or 9876543210@upi).',
+          });
+          return;
+        }
+      }
+      user.upiId = cleanUpi;
     }
     if (qrCodeUrl !== undefined && typeof qrCodeUrl === 'string') {
       user.qrCodeUrl = qrCodeUrl.trim();
     }
 
     await user.save();
+
+    // If user is ADMIN, SHOP_OWNER, or AGRI_PARTNER, synchronize active StorePaymentConfig
+    if (['ADMIN', 'SHOP_OWNER', 'AGRI_PARTNER'].includes(user.role)) {
+      try {
+        let storeConfig = await StorePaymentConfig.findOne({}).sort({ updatedAt: -1 });
+        const cleanStore = user.shopName || user.name || 'AgroMitra Agri Store';
+        const cleanUpi = user.upiId || '';
+        const cleanPhone = user.phone || '';
+
+        if (!storeConfig) {
+          if (cleanUpi) {
+            storeConfig = new StorePaymentConfig({
+              storeName: cleanStore,
+              upiId: cleanUpi,
+              phoneNumber: cleanPhone,
+              merchantName: cleanStore,
+              isActive: true,
+              updatedBy: user._id,
+            });
+            await storeConfig.save();
+          }
+        } else {
+          if (cleanUpi) {
+            storeConfig.upiId = cleanUpi;
+          }
+          if (user.shopName) {
+            storeConfig.storeName = user.shopName;
+            storeConfig.merchantName = user.shopName;
+          }
+          if (cleanPhone) {
+            storeConfig.phoneNumber = cleanPhone;
+          }
+          storeConfig.isActive = true;
+          storeConfig.updatedBy = user._id;
+          await storeConfig.save();
+        }
+      } catch (syncErr) {
+        console.warn('[updateProfile] StorePaymentConfig sync warning:', syncErr);
+      }
+    }
 
     res.status(200).json({
       success: true,

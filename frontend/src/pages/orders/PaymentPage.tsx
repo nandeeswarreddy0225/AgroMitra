@@ -24,6 +24,7 @@ import {
   createPaymentOrderApi,
   verifyPaymentApi,
   recordDirectUpiPaymentApi,
+  getOrderUpiDetailsApi,
 } from '../../services/api';
 import { Order } from '../../types/order';
 import { loadRazorpayScript } from '../../utils/loadRazorpay';
@@ -54,6 +55,7 @@ export const PaymentPage: React.FC = () => {
   const [upiIntentUrl, setUpiIntentUrl] = useState<string>('');
   const [partnerUpiId, setPartnerUpiId] = useState<string>('');
   const [partnerShopName, setPartnerShopName] = useState<string>('');
+  const [partnerPhone, setPartnerPhone] = useState<string>('');
   const [isMobileDevice, setIsMobileDevice] = useState<boolean>(false);
 
   // Direct UPI UTR submission
@@ -80,49 +82,40 @@ export const PaymentPage: React.FC = () => {
     setIsLoading(true);
     setErrorMsg(null);
     try {
-      const res = await getOrderByIdApi(id);
+      const [res, upiRes] = await Promise.all([
+        getOrderByIdApi(id),
+        getOrderUpiDetailsApi(id).catch(() => null),
+      ]);
+
       if (res.success && res.order) {
         setOrder(res.order);
 
-        // Extract store partner payment info from order items
-        const firstItem = res.order.items?.[0];
-        let shop = typeof firstItem?.shopOwner === 'object' ? firstItem.shopOwner : null;
-        if (!shop && typeof (firstItem?.product as any)?.shopOwner === 'object') {
-          shop = (firstItem?.product as any).shopOwner;
-        }
-
-        const rawUpi = (shop?.upiId || '').trim();
-        const shopName = (shop?.shopName || shop?.name || 'Agri Store Partner').trim();
-
-
-        if (rawUpi) {
-          // Ensure valid standard UPI VPA format
-          const formattedUpi = rawUpi.includes('@') ? rawUpi : `${rawUpi}@upi`;
+        if (upiRes && upiRes.success && upiRes.upiConfigured && upiRes.upiId) {
+          const formattedUpi = upiRes.upiId.trim();
+          const shopName = upiRes.storeName || upiRes.merchantName || 'Agri Store Partner';
+          const phone = upiRes.phoneNumber || '';
           setPartnerUpiId(formattedUpi);
           setPartnerShopName(shopName);
+          setPartnerPhone(phone);
 
-          const orderRef = res.order.orderNumber;
           const amountStr = Number(res.order.totalAmount).toFixed(2);
-
-          // Standard NPCI UPI URI Specification
-          const intent = `upi://pay?pa=${encodeURIComponent(formattedUpi)}&pn=${encodeURIComponent(
-            shopName
-          )}&am=${encodeURIComponent(amountStr)}&cu=INR&tn=${encodeURIComponent(
-            `AgroMitra Order ${orderRef}`
-          )}&tr=${encodeURIComponent(orderRef)}`;
-
+          const intent =
+            upiRes.upiIntentUrl ||
+            `upi://pay?pa=${formattedUpi}&pn=${encodeURIComponent(
+              shopName
+            )}&am=${amountStr}&cu=INR`;
 
           setUpiIntentUrl(intent);
 
-          // Generate dynamic high-contrast QR Code Data URL
+          // Generate ultra-crisp, standards-compliant, high-contrast QR Code
           try {
             const qrData = await QRCode.toDataURL(intent, {
-              width: 280,
-              margin: 2,
+              width: 320,
+              margin: 4,
               errorCorrectionLevel: 'M',
               color: {
-                dark: '#022c22', // High-contrast deep forest green
-                light: '#ffffff',
+                dark: '#000000', // Pure black for maximum camera scanner readability
+                light: '#ffffff', // Pure white background
               },
             });
             setDynamicQrUrl(qrData);
@@ -131,7 +124,8 @@ export const PaymentPage: React.FC = () => {
           }
         } else {
           setPartnerUpiId('');
-          setPartnerShopName(shopName);
+          setPartnerShopName(upiRes?.storeName || 'Agri Store Partner');
+          setPartnerPhone('');
           setUpiIntentUrl('');
           setDynamicQrUrl(null);
         }
@@ -543,30 +537,40 @@ export const PaymentPage: React.FC = () => {
 
             {/* Dynamic QR Display & Copy Buttons */}
             {partnerUpiId ? (
-              <div className="bg-slate-50 dark:bg-slate-800/70 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-center space-y-3">
+              <div className="bg-slate-50 dark:bg-slate-800/70 p-5 rounded-3xl border border-slate-200 dark:border-slate-700 text-center space-y-4">
                 {dynamicQrUrl ? (
-                  <div className="relative inline-block">
+                  <div className="relative inline-block p-3 bg-white rounded-2xl shadow-md border border-slate-200 dark:border-slate-700">
                     <img
                       src={dynamicQrUrl}
                       alt={`Dynamic UPI QR for ${partnerShopName}`}
-                      className="w-44 h-44 mx-auto rounded-2xl shadow-md bg-white p-2 border border-slate-200 dark:border-slate-700"
+                      className="w-64 h-64 sm:w-72 sm:h-72 mx-auto rounded-xl object-contain"
                     />
                   </div>
                 ) : (
-                  <div className="h-44 bg-slate-100 dark:bg-slate-700 rounded-2xl flex items-center justify-center text-xs text-slate-400">
-                    Generating Dynamic QR Code...
+                  <div className="w-64 h-64 sm:w-72 sm:h-72 bg-slate-100 dark:bg-slate-700 rounded-2xl flex items-center justify-center text-xs text-slate-400 mx-auto">
+                    Generating Scannable QR Code...
                   </div>
                 )}
 
                 {/* Amount & Reference Details */}
-                <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs space-y-1 text-left">
+                <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs space-y-2 text-left shadow-sm">
                   <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Payable Amount:</span>
-                    <strong className="text-emerald-600 dark:text-emerald-400 font-bold">₹{order.totalAmount.toFixed(2)}</strong>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">Store:</span>
+                    <strong className="text-slate-900 dark:text-white font-bold">{partnerShopName}</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Payee UPI VPA:</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">UPI ID:</span>
                     <strong className="font-mono text-slate-800 dark:text-slate-200">{partnerUpiId}</strong>
+                  </div>
+                  {partnerPhone && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">Payment Number:</span>
+                      <strong className="font-mono text-slate-800 dark:text-slate-200">{partnerPhone}</strong>
+                    </div>
+                  )}
+                  <div className="flex justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">Payable Amount:</span>
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">₹{order.totalAmount.toFixed(2)}</strong>
                   </div>
                 </div>
 

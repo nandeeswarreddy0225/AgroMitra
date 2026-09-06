@@ -101,8 +101,8 @@ export const addToCart = async (
 
     // Check product in MongoDB
     const product = await Product.findById(productId);
-    if (!product) {
-      res.status(404).json({ success: false, message: 'Product not found in database.' });
+    if (!product || product.isActive === false) {
+      res.status(404).json({ success: false, message: 'Product not found or is currently unavailable.' });
       return;
     }
 
@@ -182,8 +182,8 @@ export const updateCartItemQuantity = async (
     }
 
     const product = await Product.findById(productId);
-    if (!product) {
-      res.status(404).json({ success: false, message: 'Product not found.' });
+    if (!product || product.isActive === false) {
+      res.status(404).json({ success: false, message: 'Product not found or is currently unavailable.' });
       return;
     }
 

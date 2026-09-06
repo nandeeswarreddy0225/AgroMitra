@@ -50,6 +50,7 @@ export interface Product {
   images: string[];
   shopOwner: ShopOwnerInfo | string;
   location?: ProductAddress;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -65,6 +66,7 @@ export interface CreateProductInput {
   image?: string;
   images?: string[];
   location?: ProductAddress;
+  isActive?: boolean;
 }
 
 export interface UpdateProductInput {
@@ -78,6 +80,7 @@ export interface UpdateProductInput {
   image?: string;
   images?: string[];
   location?: ProductAddress;
+  isActive?: boolean;
 }
 
 export interface ProductQueryParams {

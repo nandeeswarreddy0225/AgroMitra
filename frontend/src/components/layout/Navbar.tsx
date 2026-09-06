@@ -18,6 +18,7 @@ import {
   Globe,
   ChevronDown,
   Store,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -205,6 +206,35 @@ export const Navbar: React.FC = () => {
                     >
                       <Store className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                       <span>Fulfill Orders</span>
+                    </Link>
+                  </>
+                )}
+
+                {/* Admin Navigation */}
+                {user.role === 'ADMIN' && (
+                  <>
+                    <Link
+                      to="/admin/dashboard"
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                        isActive('/admin/dashboard') || isActive('/admin')
+                          ? 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span>Store Payment & UPI</span>
+                    </Link>
+
+                    <Link
+                      to="/admin/products"
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                        isActive('/admin/products')
+                          ? 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <Package className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span>Catalog Management</span>
                     </Link>
                   </>
                 )}
@@ -473,6 +503,25 @@ export const Navbar: React.FC = () => {
                       className="block px-3 py-2 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                     >
                       Manage Inventory
+                    </Link>
+                  </>
+                )}
+
+                {user.role === 'ADMIN' && (
+                  <>
+                    <Link
+                      to="/admin/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-3 py-2 rounded-xl text-sm font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40"
+                    >
+                      Admin Dashboard
+                    </Link>
+                    <Link
+                      to="/admin/products"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-3 py-2 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    >
+                      Catalog Management
                     </Link>
                   </>
                 )}

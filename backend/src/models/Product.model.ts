@@ -40,6 +40,7 @@ export interface IProduct extends Document {
   images: string[];
   shopOwner: mongoose.Types.ObjectId;
   location?: IProductAddress;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -113,6 +114,11 @@ const ProductSchema = new Schema<IProduct>(
     location: {
       type: ProductLocationSchema,
       default: () => ({}),
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
     },
   },
   {

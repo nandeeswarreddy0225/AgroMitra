@@ -18,7 +18,7 @@ import {
 const getApiBaseUrl = (): string => {
   const envUrl = (import.meta.env?.VITE_API_URL || '').trim();
   if (!envUrl) {
-    return 'http://localhost:5000/api';
+    return 'https://agromitra-ytqb.onrender.com/api';
   }
   const cleanUrl = envUrl.replace(/\/+$/, '');
   return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
@@ -80,7 +80,7 @@ export const checkBackendHealth = async (): Promise<HealthResponse> => {
 };
 
 export const checkAIServiceHealth = async (): Promise<{ status: string; service: string }> => {
-  const response = await axios.get('http://localhost:8000/health', { timeout: 10000 });
+  const response = await apiClient.get<{ status: string; service: string }>('/crop-health/health');
   return response.data;
 };
 
@@ -270,7 +270,40 @@ export const updateOrderStatusApi = async (
   return response.data;
 };
 
-// Payment API endpoints (Razorpay)
+// Payment API endpoints (Razorpay & Store UPI)
+export const getStorePaymentConfigApi = async (): Promise<import('../types/payment').StorePaymentConfigResponse> => {
+  const response = await apiClient.get<import('../types/payment').StorePaymentConfigResponse>(
+    '/payments/store-config'
+  );
+  return response.data;
+};
+
+export const updateStorePaymentConfigApi = async (
+  data: import('../types/payment').StorePaymentConfig
+): Promise<import('../types/payment').StorePaymentConfigResponse> => {
+  const response = await apiClient.put<import('../types/payment').StorePaymentConfigResponse>(
+    '/payments/store-config',
+    data
+  );
+  return response.data;
+};
+
+export const deleteStorePaymentConfigApi = async (): Promise<{ success: boolean; message: string }> => {
+  const response = await apiClient.delete<{ success: boolean; message: string }>(
+    '/payments/store-config'
+  );
+  return response.data;
+};
+
+export const getOrderUpiDetailsApi = async (
+  orderId: string
+): Promise<import('../types/payment').OrderUpiDetailsResponse> => {
+  const response = await apiClient.get<import('../types/payment').OrderUpiDetailsResponse>(
+    `/payments/order/${orderId}/upi`
+  );
+  return response.data;
+};
+
 export const createPaymentOrderApi = async (
   orderId: string
 ): Promise<import('../types/payment').CreatePaymentOrderResponse> => {
@@ -308,6 +341,25 @@ export const recordDirectUpiPaymentApi = async (
   const response = await apiClient.post<{ success: boolean; message: string; order: any }>(
     '/payments/direct-upi',
     { orderId, upiRefNumber, upiPayerApp }
+  );
+  return response.data;
+};
+
+export const getAdminPaymentsApi = async (): Promise<import('../types/payment').AdminPaymentsResponse> => {
+  const response = await apiClient.get<import('../types/payment').AdminPaymentsResponse>(
+    '/payments/admin/all'
+  );
+  return response.data;
+};
+
+export const verifyAdminPaymentApi = async (
+  orderId: string,
+  status: 'PAID' | 'FAILED',
+  notes?: string
+): Promise<{ success: boolean; message: string; order: any }> => {
+  const response = await apiClient.post<{ success: boolean; message: string; order: any }>(
+    '/payments/admin/verify-upi',
+    { orderId, status, notes }
   );
   return response.data;
 };

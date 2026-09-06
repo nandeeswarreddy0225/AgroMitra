@@ -16,10 +16,10 @@ export const getShopDeliveryBoys = async (
 ): Promise<void> => {
   try {
     const user = req.user;
-    if (!user || user.role !== 'SHOP_OWNER') {
+    if (!user || (user.role !== 'SHOP_OWNER' && user.role !== 'AGRI_PARTNER' && user.role !== 'ADMIN')) {
       res.status(403).json({
         success: false,
-        message: 'Access restricted to Agri Retail Partners.',
+        message: 'Access restricted to Agri Retail Partners and Administrators.',
       });
       return;
     }
@@ -70,10 +70,10 @@ export const createShopDeliveryBoy = async (
 ): Promise<void> => {
   try {
     const user = req.user;
-    if (!user || user.role !== 'SHOP_OWNER') {
+    if (!user || (user.role !== 'SHOP_OWNER' && user.role !== 'AGRI_PARTNER' && user.role !== 'ADMIN')) {
       res.status(403).json({
         success: false,
-        message: 'Access restricted to Agri Retail Partners.',
+        message: 'Access restricted to Agri Retail Partners and Administrators.',
       });
       return;
     }
@@ -137,7 +137,7 @@ export const createShopDeliveryBoy = async (
 };
 
 /**
- * Assign a Delivery Partner to an Order by Agri Retail Partner
+ * Assign a Delivery Partner to an Order by Agri Retail Partner or Admin
  * POST /api/delivery/assign-order
  */
 export const assignDeliveryBoyToOrder = async (
@@ -147,10 +147,10 @@ export const assignDeliveryBoyToOrder = async (
 ): Promise<void> => {
   try {
     const user = req.user;
-    if (!user || user.role !== 'SHOP_OWNER') {
+    if (!user || (user.role !== 'SHOP_OWNER' && user.role !== 'AGRI_PARTNER' && user.role !== 'ADMIN')) {
       res.status(403).json({
         success: false,
-        message: 'Access restricted to Agri Retail Partners.',
+        message: 'Access restricted to Agri Retail Partners and Administrators.',
       });
       return;
     }
@@ -175,10 +175,13 @@ export const assignDeliveryBoyToOrder = async (
       return;
     }
 
-    // Validate shop ownership of the order
-    const isOwner = order.items.some(
-      (item) => item.shopOwner.toString() === user._id.toString()
-    );
+    // Validate shop ownership or Admin / Agri Partner privileges
+    const isOwner =
+      user.role === 'ADMIN' ||
+      user.role === 'AGRI_PARTNER' ||
+      order.items.some(
+        (item) => item.shopOwner && item.shopOwner.toString() === user._id.toString()
+      );
 
     if (!isOwner) {
       res.status(403).json({

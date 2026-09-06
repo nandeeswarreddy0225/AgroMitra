@@ -53,10 +53,10 @@ export const createOrder = async (
 
     for (const item of cart.items) {
       const product = await Product.findById(item.product);
-      if (!product) {
+      if (!product || product.isActive === false) {
         res.status(400).json({
           success: false,
-          message: `A product in your cart is no longer available in the marketplace.`,
+          message: `Product '${product?.name || 'Item'}' is no longer available for purchase in the marketplace.`,
         });
         return;
       }
@@ -179,41 +179,48 @@ export const getShopOwnerOrders = async (
     }
 
     const userIdStr = req.user._id.toString();
+    const isAdmin = req.user.role === 'ADMIN';
 
     // 1. Find all product IDs belonging to this shop owner
     const myProducts = await Product.find({ shopOwner: req.user._id }).select('_id');
     const myProductIds = myProducts.map((p) => p._id);
     const myProductIdsStr = new Set(myProducts.map((p) => p._id.toString()));
 
-    // 2. Find orders containing either items.shopOwner = req.user._id OR items.product in myProductIds
-    const orders = await Order.find({
-      $or: [
-        { 'items.shopOwner': req.user._id },
-        { 'items.product': { $in: myProductIds } },
-      ],
-    })
+    // 2. Find orders (all orders if Admin, or orders containing items belonging to shop owner)
+    const orderQuery = isAdmin
+      ? {}
+      : {
+          $or: [
+            { 'items.shopOwner': req.user._id },
+            { 'items.product': { $in: myProductIds } },
+          ],
+        };
+
+    const orders = await Order.find(orderQuery)
       .sort({ createdAt: -1 })
       .populate('farmer', 'name email phone address')
       .populate('items.shopOwner', 'name email phone address shopName upiId qrCodeUrl');
 
-    // 3. Filter items specifically belonging to this shop owner
+    // 3. Filter items specifically belonging to this shop owner (or all if Admin)
     const formattedOrders = orders
       .map((order) => {
-        const myItems = order.items.filter((item) => {
-          const itemShopOwnerId =
-            (item.shopOwner as any)?._id?.toString() ||
-            (item.shopOwner as any)?.id?.toString() ||
-            item.shopOwner?.toString();
-          const itemProdId =
-            (item.product as any)?._id?.toString() ||
-            (item.product as any)?.id?.toString() ||
-            item.product?.toString();
+        const myItems = isAdmin
+          ? order.items
+          : order.items.filter((item) => {
+              const itemShopOwnerId =
+                (item.shopOwner as any)?._id?.toString() ||
+                (item.shopOwner as any)?.id?.toString() ||
+                item.shopOwner?.toString();
+              const itemProdId =
+                (item.product as any)?._id?.toString() ||
+                (item.product as any)?.id?.toString() ||
+                item.product?.toString();
 
-          return (
-            itemShopOwnerId === userIdStr ||
-            (itemProdId && myProductIdsStr.has(itemProdId))
-          );
-        });
+              return (
+                itemShopOwnerId === userIdStr ||
+                (itemProdId && myProductIdsStr.has(itemProdId))
+              );
+            });
 
         if (myItems.length === 0) return null;
 

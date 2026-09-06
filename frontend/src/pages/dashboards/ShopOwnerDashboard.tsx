@@ -109,10 +109,20 @@ export const ShopOwnerDashboard: React.FC = () => {
     setSaveSuccess(null);
     setSaveError(null);
 
+    const cleanUpi = upiId.trim();
+    if (cleanUpi) {
+      const upiRegex = /^[a-zA-Z0-9.\-_]{2,100}@[a-zA-Z0-9]{2,64}$/;
+      if (!upiRegex.test(cleanUpi)) {
+        setSaveError('Invalid UPI ID format. Please use username@bank (e.g. store@icici or 9876543210@upi).');
+        setIsSaving(false);
+        return;
+      }
+    }
+
     try {
       const res = await updateProfileApi({
         shopName: shopName.trim(),
-        upiId: upiId.trim(),
+        upiId: cleanUpi,
         phone: phone.trim(),
         address: {
           street: street.trim(),

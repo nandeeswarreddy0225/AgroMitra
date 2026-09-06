@@ -9,7 +9,7 @@ export const createProduct = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { name, description, category, brand, price, unit, stock, images, image, location } = req.body;
+    const { name, description, category, brand, price, unit, stock, images, image, location, isActive } = req.body;
 
     if (!req.user) {
       res.status(401).json({
@@ -82,9 +82,11 @@ export const createProduct = async (
       images: imageList,
       shopOwner: req.user._id,
       location: productLocation,
+      isActive: isActive !== undefined ? Boolean(isActive) : true,
     });
 
     await product.save();
+    await product.populate('shopOwner', 'name email phone address shopName');
 
     res.status(201).json({
       success: true,
@@ -102,9 +104,12 @@ export const getProducts = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { search, category, minPrice, maxPrice, inStock, sort } = req.query;
+    const { search, category, minPrice, maxPrice, inStock, sort, sortBy, sortOrder } = req.query;
 
-    const filter: Record<string, any> = {};
+    // Filter only active products for public marketplace
+    const filter: Record<string, any> = {
+      isActive: { $ne: false },
+    };
 
     // Search by text or regex on name, brand, category, description
     if (search && typeof search === 'string' && search.trim() !== '') {
@@ -144,13 +149,13 @@ export const getProducts = async (
 
     // Sorting
     let sortOption: Record<string, 1 | -1> = { createdAt: -1 };
-    if (sort === 'price_asc') {
+    if (sort === 'price_asc' || (sortBy === 'price' && sortOrder === 'asc')) {
       sortOption = { price: 1 };
-    } else if (sort === 'price_desc') {
+    } else if (sort === 'price_desc' || (sortBy === 'price' && sortOrder === 'desc')) {
       sortOption = { price: -1 };
-    } else if (sort === 'oldest') {
+    } else if (sort === 'oldest' || (sortBy === 'createdAt' && sortOrder === 'asc')) {
       sortOption = { createdAt: 1 };
-    } else if (sort === 'name_asc') {
+    } else if (sort === 'name_asc' || (sortBy === 'name' && sortOrder === 'asc')) {
       sortOption = { name: 1 };
     }
 
@@ -194,7 +199,7 @@ export const getMyProducts = async (
     // If Admin, return all products; if Shop Owner, return their own products
     const query = req.user.role === 'ADMIN' ? {} : { shopOwner: req.user._id };
     const products = await Product.find(query)
-      .populate('shopOwner', 'name email phone address')
+      .populate('shopOwner', 'name email phone address shopName')
       .sort({ createdAt: -1 });
 
     // Guarantee distinct products
@@ -232,7 +237,7 @@ export const getProductById = async (
       return;
     }
 
-    const product = await Product.findById(id).populate('shopOwner', 'name email phone address');
+    const product = await Product.findById(id).populate('shopOwner', 'name email phone address shopName');
 
     if (!product) {
       res.status(404).json({
@@ -286,7 +291,7 @@ export const updateProduct = async (
       return;
     }
 
-    const { name, description, category, brand, price, unit, stock, images, image, location } = req.body;
+    const { name, description, category, brand, price, unit, stock, images, image, location, isActive } = req.body;
 
     if (name !== undefined) {
       if (name.trim().length < 2) {
@@ -377,8 +382,12 @@ export const updateProduct = async (
       };
     }
 
+    if (isActive !== undefined) {
+      product.isActive = Boolean(isActive);
+    }
+
     await product.save();
-    await product.populate('shopOwner', 'name email phone address');
+    await product.populate('shopOwner', 'name email phone address shopName');
 
     res.status(200).json({
       success: true,

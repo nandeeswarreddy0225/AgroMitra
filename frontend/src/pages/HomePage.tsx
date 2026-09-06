@@ -849,7 +849,7 @@ export const HomePage: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-12 bg-slate-50 dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
-            <p className="text-xs text-slate-500">Products are currently loading from store catalog.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">No products currently listed in the catalog.</p>
           </div>
         )}
       </section>
