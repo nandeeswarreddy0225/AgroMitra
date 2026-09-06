@@ -82,7 +82,7 @@ async def predict_crop_disease(image: UploadFile = File(...)):
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File size exceeds the 10MB limit.")
 
-    result = ai_classifier.predict(contents)
+    result = ai_classifier.predict(contents, filename=image.filename or "upload.jpg", mime_type=image.content_type or "image/jpeg")
 
     if not result.get("success", True) and "error" in result:
         return JSONResponse(status_code=422, content=result)

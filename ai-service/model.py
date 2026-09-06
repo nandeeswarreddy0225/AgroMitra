@@ -86,14 +86,18 @@ class CropDiseaseClassifier:
             "blue_mean": blue_mean,
         }
 
-    def predict(self, image_bytes: bytes) -> Dict[str, Any]:
+    def predict(self, image_bytes: bytes, filename: str = "upload.jpg", mime_type: str = "image/jpeg") -> Dict[str, Any]:
         """
         Executes real computer vision neural inference on image bytes and returns structured multi-crop diagnosis.
+        Logs safe non-credential diagnostic information.
         """
+        file_size = len(image_bytes)
         try:
             image = Image.open(io.BytesIO(image_bytes))
             image.verify()
             image = Image.open(io.BytesIO(image_bytes))
+            img_width, img_height = image.size
+            img_format = image.format or mime_type
         except Exception as e:
             return {
                 "success": False,
@@ -106,9 +110,11 @@ class CropDiseaseClassifier:
 
         # Out-of-distribution & non-foliar rejection
         if features["color_variance"] < 0.003:
+            print(f"📷 [AI Inference]: Image {img_width}x{img_height}, Format: {img_format}, Size: {file_size} bytes -> Monotone/Blank Rejected.")
             return self._low_confidence_response(0.08, "Monotone / blank image detected.")
 
         if features["foliage_ratio"] < 0.10 and features["green_mean"] < 0.15:
+            print(f"📷 [AI Inference]: Image {img_width}x{img_height}, Format: {img_format}, Size: {file_size} bytes -> Non-foliar Rejected.")
             return self._low_confidence_response(0.12, "Non-plant object or unclear foliage detected.")
 
         try:
@@ -118,24 +124,49 @@ class CropDiseaseClassifier:
             with torch.no_grad():
                 logits = self.model(input_tensor)
                 probabilities = torch.softmax(logits, dim=1)[0]
-                top_prob, top_idx = torch.topk(probabilities, 1)
+                top5_probs, top5_indices = torch.topk(probabilities, min(5, self.num_classes))
 
-            confidence = float(top_prob.item())
-            class_name = self.classes[top_idx.item()]
+            top_prob = float(top5_probs[0].item())
+            top_class = self.classes[top5_indices[0].item()]
 
-            # Enforce strict confidence threshold (0.55) to prevent forcing unconfident predictions
-            CONFIDENCE_THRESHOLD = 0.55
-            if confidence < CONFIDENCE_THRESHOLD or class_name == "Background_without_leaves":
-                return self._low_confidence_response(
-                    round(confidence, 4) if class_name != "Background_without_leaves" else 0.15,
+            # Build structured Top-5 predictions list
+            top5_list = []
+            for p, idx in zip(top5_probs, top5_indices):
+                c_name = self.classes[idx.item()]
+                prob_val = round(float(p.item()), 4)
+                c_info = DISEASE_DATABASE.get(c_name, {})
+                top5_list.append({
+                    "className": c_name,
+                    "crop": c_info.get("crop", c_name.split("___")[0]),
+                    "disease": c_info.get("disease", c_name.replace("___", " ")),
+                    "probability": prob_val
+                })
+
+            # Safe diagnostic logging
+            print("=" * 70)
+            print(f"📷 [AI Diagnostic]: Image Dimensions: {img_width}x{img_height} | Format: {img_format} | Size: {file_size} bytes")
+            print(f"🧠 [AI Diagnostic]: Model: MobileNetV3-Small-MultiCrop | Preprocessing: (224, 224, ImageNet Normalized)")
+            print(f"📊 [AI Diagnostic]: Top 5 Predictions:")
+            for rank, item in enumerate(top5_list, 1):
+                print(f"   {rank}. {item['className']} -> Probability: {item['probability']:.4f} ({item['crop']} - {item['disease']})")
+            print(f"🎯 [AI Diagnostic]: Selected Top Class: {top_class} | Top-1 Confidence: {top_prob:.4f}")
+            print("=" * 70)
+
+            # Strict confidence & OOD threshold (0.45) to prevent forcing unconfident predictions
+            CONFIDENCE_THRESHOLD = 0.45
+            if top_prob < CONFIDENCE_THRESHOLD or top_class == "Background_without_leaves":
+                resp = self._low_confidence_response(
+                    round(top_prob, 4) if top_class != "Background_without_leaves" else 0.15,
                     "Prediction confidence below validated threshold or background image."
                 )
+                resp["top5"] = top5_list
+                return resp
 
             # Retrieve verified pathology details for the predicted multi-crop class
-            pathology = DISEASE_DATABASE.get(class_name, {
+            pathology = DISEASE_DATABASE.get(top_class, {
                 "crop": "Agricultural Crop",
-                "disease": class_name.replace("___", " ").replace("_", " "),
-                "is_healthy": "healthy" in class_name.lower(),
+                "disease": top_class.replace("___", " ").replace("_", " "),
+                "is_healthy": "healthy" in top_class.lower(),
                 "symptoms": ["Leaf tissue discoloration or spot formation."],
                 "recommended_actions": ["Consult your local Agriculture Extension Officer."]
             })
@@ -143,11 +174,12 @@ class CropDiseaseClassifier:
             return {
                 "success": True,
                 "is_confident": True,
-                "class_code": class_name,
+                "class_code": top_class,
                 "crop": pathology["crop"],
                 "disease": pathology["disease"],
                 "is_healthy": pathology["is_healthy"],
-                "confidence": round(confidence, 4),
+                "confidence": round(top_prob, 4),
+                "top5": top5_list,
                 "symptoms": pathology["symptoms"],
                 "recommended_actions": pathology["recommended_actions"],
                 "disclaimer": DEFAULT_DISCLAIMER

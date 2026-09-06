@@ -8,6 +8,12 @@ export interface CropAnalysis {
   isHealthy: boolean;
   confidence: number;
   isConfident: boolean;
+  top5?: Array<{
+    className: string;
+    crop: string;
+    disease: string;
+    probability: number;
+  }>;
   symptoms: string[];
   recommendedActions: string[];
   disclaimer: string;
