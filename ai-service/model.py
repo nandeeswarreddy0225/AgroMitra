@@ -143,14 +143,17 @@ class CropDiseaseClassifier:
                 })
 
             # Safe diagnostic logging
-            print("=" * 70)
-            print(f"📷 [AI Diagnostic]: Image Dimensions: {img_width}x{img_height} | Format: {img_format} | Size: {file_size} bytes")
-            print(f"🧠 [AI Diagnostic]: Model: MobileNetV3-Small-MultiCrop | Preprocessing: (224, 224, ImageNet Normalized)")
-            print(f"📊 [AI Diagnostic]: Top 5 Predictions:")
-            for rank, item in enumerate(top5_list, 1):
-                print(f"   {rank}. {item['className']} -> Probability: {item['probability']:.4f} ({item['crop']} - {item['disease']})")
-            print(f"🎯 [AI Diagnostic]: Selected Top Class: {top_class} | Top-1 Confidence: {top_prob:.4f}")
-            print("=" * 70)
+            try:
+                print("=" * 70)
+                print(f"[AI Diagnostic Camera]: Image Dimensions: {img_width}x{img_height} | Format: {img_format} | Size: {file_size} bytes")
+                print(f"[AI Diagnostic Model]: Model: MobileNetV3-Small-MultiCrop | Preprocessing: (224, 224, ImageNet Normalized)")
+                print(f"[AI Diagnostic Predictions]: Top 5 Distribution:")
+                for rank, item in enumerate(top5_list, 1):
+                    print(f"   {rank}. {item['className']} -> Probability: {item['probability']:.4f} ({item['crop']} - {item['disease']})")
+                print(f"[AI Diagnostic Selected]: Top Class: {top_class} | Top-1 Confidence: {top_prob:.4f}")
+                print("=" * 70)
+            except Exception:
+                pass
 
             # Strict confidence & OOD threshold (0.45) to prevent forcing unconfident predictions
             CONFIDENCE_THRESHOLD = 0.45
