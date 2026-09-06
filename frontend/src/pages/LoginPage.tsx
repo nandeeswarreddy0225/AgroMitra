@@ -25,7 +25,8 @@ export const LoginPage: React.FC = () => {
     setErrorMsg(null);
 
     const cleanIdentifier = phone.trim();
-    if (!cleanIdentifier || !password) {
+    const cleanPassword = password.trim();
+    if (!cleanIdentifier || !cleanPassword) {
       setErrorMsg('Please provide your phone number (or email) and password.');
       return;
     }
@@ -36,7 +37,7 @@ export const LoginPage: React.FC = () => {
         phone: cleanIdentifier,
         email: cleanIdentifier,
         identifier: cleanIdentifier,
-        password,
+        password: cleanPassword,
       });
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
       const destination = getPostLoginRedirectPath(from, authenticatedUser.role);
@@ -101,6 +102,10 @@ export const LoginPage: React.FC = () => {
                     name="phone"
                     type="text"
                     autoComplete="username"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    inputMode={isEmailInput ? 'email' : 'tel'}
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -134,6 +139,9 @@ export const LoginPage: React.FC = () => {
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

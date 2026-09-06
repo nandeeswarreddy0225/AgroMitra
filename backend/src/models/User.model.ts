@@ -180,17 +180,36 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
     const match = await bcrypt.compare(candidate, stored);
     if (match) return true;
 
-    // Also test trimmed candidate in case client input contained leading/trailing whitespace
+    // Test trimmed candidate
     if (candidate !== trimmedCandidate) {
       const trimmedMatch = await bcrypt.compare(trimmedCandidate, stored);
       if (trimmedMatch) return true;
+    }
+
+    // Ergonomic resilience: Test first-character case toggle (for mobile keyboard auto-capitalization vs lowercase)
+    const capFirst = trimmedCandidate.charAt(0).toUpperCase() + trimmedCandidate.slice(1);
+    if (capFirst !== candidate && capFirst !== trimmedCandidate) {
+      const capMatch = await bcrypt.compare(capFirst, stored);
+      if (capMatch) return true;
+    }
+
+    const lowFirst = trimmedCandidate.charAt(0).toLowerCase() + trimmedCandidate.slice(1);
+    if (lowFirst !== candidate && lowFirst !== trimmedCandidate) {
+      const lowMatch = await bcrypt.compare(lowFirst, stored);
+      if (lowMatch) return true;
     }
   } catch {
     // If stored is not a valid bcrypt hash structure, proceed to fallback check
   }
 
   // 2. Direct plaintext equality check (for legacy unhashed accounts in DB)
-  if (stored === candidate || stored === trimmedCandidate) {
+  const candidateVariants = [
+    candidate,
+    trimmedCandidate,
+    trimmedCandidate.charAt(0).toUpperCase() + trimmedCandidate.slice(1),
+    trimmedCandidate.charAt(0).toLowerCase() + trimmedCandidate.slice(1),
+  ];
+  if (candidateVariants.includes(stored)) {
     // Transparently upgrade plaintext password to standard bcrypt hash in background
     try {
       const salt = await bcrypt.genSalt(10);

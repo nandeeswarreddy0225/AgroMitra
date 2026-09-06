@@ -50,8 +50,8 @@ export const autoSeedDefaultData = async (): Promise<void> => {
           user.upiId = acc.upiId;
           needsSave = true;
         }
-        if (acc.address && (!user.address || !user.address.city)) {
-          user.address = acc.address;
+        if ((acc as any).address && (!user.address || !user.address.city)) {
+          user.address = (acc as any).address;
           needsSave = true;
         }
         const hasValidDefaultPassword = user.password ? await user.comparePassword('Password123') : false;
@@ -65,7 +65,7 @@ export const autoSeedDefaultData = async (): Promise<void> => {
         }
       }
 
-      if (acc.role === 'DELIVERY_BOY' && user) {
+      if ((acc.role as string) === 'DELIVERY_BOY' && user) {
         const existingDB = await DeliveryBoy.findOne({ user: user._id });
         if (!existingDB) {
           await DeliveryBoy.create({
