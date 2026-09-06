@@ -33,6 +33,7 @@ export interface UpdateProfileData {
 export interface LoginCredentials {
   phone?: string;
   email?: string;
+  identifier?: string;
   password: string;
 }
 

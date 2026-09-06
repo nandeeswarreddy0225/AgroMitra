@@ -18,20 +18,24 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const isEmailInput = phone.includes('@') || /[a-zA-Z]/.test(phone);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
-    const cleanPhone = phone.trim();
-    if (!cleanPhone || !password) {
-      setErrorMsg('Please provide both your phone number and password.');
+    const cleanIdentifier = phone.trim();
+    if (!cleanIdentifier || !password) {
+      setErrorMsg('Please provide your phone number (or email) and password.');
       return;
     }
 
     setIsSubmitting(true);
     try {
       const authenticatedUser = await login({
-        phone: cleanPhone,
+        phone: cleanIdentifier,
+        email: cleanIdentifier,
+        identifier: cleanIdentifier,
         password,
       });
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
@@ -79,14 +83,14 @@ export const LoginPage: React.FC = () => {
           )}
 
           <form className="space-y-5" onSubmit={handleSubmit}>
-            {/* Phone Number with +91 Country Indicator */}
+            {/* Phone Number or Email Input */}
             <div>
               <label htmlFor="phone" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                {t('phoneLabel', 'Phone Number')} <span className="text-rose-500">*</span>
+                {t('phoneLabel', 'Phone Number or Email')} <span className="text-rose-500">*</span>
               </label>
               <div className="relative rounded-xl shadow-sm flex">
                 <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs">
-                  🇮🇳 +91
+                  {isEmailInput ? '📧 Email' : '🇮🇳 +91'}
                 </span>
                 <div className="relative flex-1">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -95,13 +99,13 @@ export const LoginPage: React.FC = () => {
                   <input
                     id="phone"
                     name="phone"
-                    type="tel"
-                    autoComplete="tel"
+                    type="text"
+                    autoComplete="username"
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="9876543210"
-                    maxLength={15}
+                    placeholder="9876543210 or user@example.com"
+                    maxLength={100}
                     className="block w-full pl-9 pr-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-r-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                   />
                 </div>

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 async function testAllProdLogins() {
   const prodBase = 'https://agromitra-ytqb.onrender.com/api';
-  console.log('Testing Production API login at:', prodBase);
+  console.log('Testing Production API login at:', prodBase, '\n');
 
   const accounts = [
     { role: 'ADMIN', phone: '9876543211', email: 'admin@agrimart.com', password: 'Password123' },
@@ -12,15 +12,42 @@ async function testAllProdLogins() {
     { role: 'DELIVERY_BOY', phone: '9876543220', email: 'delivery@agrimart.com', password: 'Password123' },
   ];
 
+  console.log('=== TEST A: LOGIN WITH PHONE NUMBER ===');
   for (const acc of accounts) {
     try {
       const res = await axios.post(`${prodBase}/auth/login`, {
         phone: acc.phone,
         password: acc.password,
       });
-      console.log(`✅ [${acc.role}] Login SUCCESS! User: ${res.data.user?.name} | Role: ${res.data.user?.role} | Phone: ${res.data.user?.phone} | Token: ${res.data.token?.substring(0, 15)}...`);
+      console.log(`✅ [${acc.role} - Phone ${acc.phone}] Login SUCCESS -> User: ${res.data.user?.name} (${res.data.user?.role})`);
     } catch (err: any) {
-      console.log(`❌ [${acc.role}] Login FAILED:`, err.response?.data?.message || err.message);
+      console.log(`❌ [${acc.role} - Phone ${acc.phone}] Login FAILED:`, err.response?.data?.message || err.message);
+    }
+  }
+
+  console.log('\n=== TEST B: LOGIN WITH EMAIL ADDRESS ===');
+  for (const acc of accounts) {
+    try {
+      const res = await axios.post(`${prodBase}/auth/login`, {
+        email: acc.email,
+        password: acc.password,
+      });
+      console.log(`✅ [${acc.role} - Email ${acc.email}] Login SUCCESS -> User: ${res.data.user?.name} (${res.data.user?.role})`);
+    } catch (err: any) {
+      console.log(`❌ [${acc.role} - Email ${acc.email}] Login FAILED:`, err.response?.data?.message || err.message);
+    }
+  }
+
+  console.log('\n=== TEST C: LOGIN WITH +91 PREFIX ===');
+  for (const acc of accounts) {
+    try {
+      const res = await axios.post(`${prodBase}/auth/login`, {
+        phone: `+91${acc.phone}`,
+        password: acc.password,
+      });
+      console.log(`✅ [${acc.role} - +91${acc.phone}] Login SUCCESS -> User: ${res.data.user?.name} (${res.data.user?.role})`);
+    } catch (err: any) {
+      console.log(`❌ [${acc.role} - +91${acc.phone}] Login FAILED:`, err.response?.data?.message || err.message);
     }
   }
 }

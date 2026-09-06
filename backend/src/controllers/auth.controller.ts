@@ -175,9 +175,17 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       }
     }
 
-    // C. Fallback: check email field explicitly if provided separately
-    if (!user && email && typeof email === 'string') {
-      user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
+    // C. Fallback: check email field explicitly or case-insensitive regex
+    if (!user) {
+      const emailQuery = (email || identifier).toString().trim();
+      if (emailQuery) {
+        user = await User.findOne({
+          $or: [
+            { email: emailQuery.toLowerCase() },
+            { email: new RegExp(`^${emailQuery.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, 'i') },
+          ],
+        }).select('+password');
+      }
     }
 
     // Generic error for security (do not disclose whether account exists)
