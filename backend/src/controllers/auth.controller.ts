@@ -143,7 +143,8 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
   try {
     const { identifier: rawIdentifier, phone, email, password } = req.body;
 
-    const identifier = (rawIdentifier || phone || email || '').toString().trim();
+    const rawInput = (rawIdentifier || phone || email || '').toString();
+    const identifier = rawInput.replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '').trim();
     if (!identifier || !password) {
       res.status(400).json({
         success: false,
@@ -152,7 +153,9 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       return;
     }
 
-    // 1. Query user by phone (all variants) or email
+    console.log(`🔍 [Auth Request]: Received login request for identifier '${identifier}' (length: ${identifier.length})`);
+
+    // 1. Query user by phone (all variants), email, or name/username
     let user: IUser | null = null;
 
     // A. Check if identifier is an email (contains '@')
@@ -188,9 +191,17 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       }
     }
 
+    // D. Fallback: check name / username (case-insensitive)
+    if (!user && identifier) {
+      const escapedName = identifier.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      user = await User.findOne({
+        name: new RegExp(`^${escapedName}$`, 'i'),
+      }).select('+password');
+    }
+
     // Generic error for security (do not disclose whether account exists)
     if (!user) {
-      console.warn(`🔒 [Auth]: Login failed - user identifier not found.`);
+      console.warn(`🔒 [Auth]: Login failed - user identifier '${identifier}' not found in MongoDB.`);
       res.status(401).json({
         success: false,
         message: 'Invalid phone number or password.',
@@ -198,11 +209,13 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       return;
     }
 
+    console.log(`🔍 [Auth]: User found '${user.phone || user.email}' (${user.name}, role: ${user.role}). Comparing password...`);
+
     // 2. Verify password with bcrypt
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
-      console.warn(`🔒 [Auth]: Login failed - incorrect password for user ID '${user._id}'.`);
+      console.warn(`🔒 [Auth]: Login failed - incorrect password for user '${user.phone || user.email}' (ID: ${user._id}).`);
       res.status(401).json({
         success: false,
         message: 'Invalid phone number or password.',

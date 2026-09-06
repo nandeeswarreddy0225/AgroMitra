@@ -5,8 +5,8 @@
 export const normalizePhoneNumber = (phone: string): string => {
   if (!phone || typeof phone !== 'string') return '';
 
-  // Strip spaces, dashes, parentheses, dots
-  let cleaned = phone.replace(/[\s\-\(\)\.]/g, '').trim();
+  // Strip zero-width characters, non-breaking spaces, spaces, dashes, parentheses, dots
+  let cleaned = phone.replace(/[\u200B-\u200D\uFEFF\u00A0\s\-\(\)\.]/g, '').trim();
 
   // Strip international prefixes if present
   if (cleaned.startsWith('+91')) {
