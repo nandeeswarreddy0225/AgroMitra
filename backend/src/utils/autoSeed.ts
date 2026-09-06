@@ -13,56 +13,6 @@ export const autoSeedDefaultData = async (): Promise<void> => {
         shopName: 'AgroMitra Super Store',
         upiId: 'partnerB.kurnool@hdfcbank',
       },
-      {
-        name: 'Nandeesh',
-        email: 'nandeeswarreddy1346@gmail.com',
-        phone: '8247303735',
-        role: 'FARMER' as const,
-        address: {
-          street: 'Door 4/12, Agro Green Farm Fields',
-          city: 'Kurnool',
-          state: 'Andhra Pradesh',
-          pincode: '518001',
-        },
-      },
-      {
-        name: 'Nandhu',
-        email: 'nandeeswarreddy2852@gmail.com',
-        phone: '8519813077',
-        role: 'FARMER' as const,
-        address: {
-          street: 'Survey 42, Green Agro Farm',
-          city: 'Kurnool',
-          state: 'Andhra Pradesh',
-          pincode: '518001',
-        },
-      },
-      {
-        name: 'Agri Partner Kendra',
-        email: 'agripartner@agrimart.com',
-        phone: '9876543299',
-        role: 'AGRI_PARTNER' as const,
-        shopName: 'AgroMitra Certified Agri Kendra',
-        upiId: 'agripartner@upi',
-        address: {
-          street: 'Market Yard Complex, Shop 12',
-          city: 'Kurnool',
-          state: 'Andhra Pradesh',
-          pincode: '518001',
-        },
-      },
-      {
-        name: 'Ramesh Kumar',
-        email: 'delivery@agrimart.com',
-        phone: '9876543220',
-        role: 'DELIVERY_BOY' as const,
-        address: {
-          street: 'Agri Transport Hub',
-          city: 'Kurnool',
-          state: 'Andhra Pradesh',
-          pincode: '518001',
-        },
-      },
     ];
 
     for (const acc of seedAccounts) {
