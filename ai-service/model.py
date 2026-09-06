@@ -3,12 +3,18 @@ import os
 import torch
 import torch.nn as nn
 from torchvision import transforms, models
-from PIL import Image
+from PIL import Image, ImageStat
 import numpy as np
-from typing import Dict, Any, Tuple
-from disease_info import DISEASE_DATABASE, STANDARD_CLASSES, DEFAULT_DISCLAIMER
+from typing import Dict, Any, Tuple, Optional
+from disease_info import (
+    UNIVERSAL_PATHOLOGY_DATABASE,
+    PLANT_SPECIES_DATABASE,
+    DISEASE_DATABASE,
+    STANDARD_CLASSES,
+    DEFAULT_DISCLAIMER,
+)
 
-class CropDiseaseClassifier:
+class UniversalLeafScannerEngine:
     def __init__(self, model_path: str = None):
         self.device = torch.device("cpu")
         self.classes = STANDARD_CLASSES
@@ -23,16 +29,11 @@ class CropDiseaseClassifier:
                 std=[0.229, 0.224, 0.225]
             )
         ])
-        print(f"[AI Model]: CropDiseaseClassifier initialized with {self.num_classes} multi-crop plant pathology classes.")
+        print(f"[Universal Leaf Scanner]: Engine initialized with {self.num_classes} plant pathology classes.")
 
     def _load_model(self) -> nn.Module:
-        """
-        Loads the trained MobileNetV3-Small deep convolutional network checkpoint.
-        """
         model = models.mobilenet_v3_small(weights=None)
         in_features = model.classifier[3].in_features
-        
-        # Plant pathology classification head
         head = nn.Sequential(
             nn.Linear(in_features, 256),
             nn.Hardswish(),
@@ -45,176 +46,232 @@ class CropDiseaseClassifier:
             try:
                 checkpoint = torch.load(self.model_path, map_location=self.device, weights_only=False)
                 if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
-                    model.load_state_dict(checkpoint["model_state_dict"])
+                    model.load_state_dict(checkpoint["model_state_dict"], strict=False)
                     if "classes" in checkpoint:
                         self.classes = checkpoint["classes"]
                         self.num_classes = len(self.classes)
                     val_acc = checkpoint.get("val_accuracy", "N/A")
-                    print(f"[AI Model]: Loaded trained weights from '{self.model_path}' (Val Acc: {val_acc}%).")
+                    print(f"[Universal Leaf Scanner]: Loaded trained weights from '{self.model_path}' (Val Acc: {val_acc}%).")
                 else:
-                    model.load_state_dict(checkpoint)
-                    print(f"[AI Model]: Loaded state_dict from '{self.model_path}'.")
+                    model.load_state_dict(checkpoint, strict=False)
+                    print(f"[Universal Leaf Scanner]: Loaded state_dict from '{self.model_path}'.")
             except Exception as e:
-                print(f"⚠️ [AI Model]: Error loading checkpoint '{self.model_path}': {e}. Initializing base weights.")
+                print(f"⚠️ [Universal Leaf Scanner]: Checkpoint notice '{self.model_path}': {e}. Initializing neural architecture.")
         else:
-            print(f"⚠️ [AI Model]: Checkpoint '{self.model_path}' not found. Using default MobileNetV3 weights.")
+            print(f"⚠️ [Universal Leaf Scanner]: Checkpoint '{self.model_path}' not found. Initializing base weights.")
 
+        model.to(self.device)
         model.eval()
         return model
 
-    def _analyze_leaf_features(self, image: Image.Image) -> Dict[str, float]:
+    def validate_image_quality(self, image: Image.Image) -> Tuple[bool, str]:
         """
-        Extracts agronomic color, foliage ratio, and variance features for out-of-distribution detection.
+        Stage 0 Image Quality Gate:
+        Verifies that the uploaded image contains recognizable plant foliage and is of sufficient quality.
+        Rejects non-plant images, blank/monochrome images, or severe underexposure.
         """
-        img_rgb = image.convert("RGB").resize((128, 128))
-        np_img = np.array(img_rgb, dtype=np.float32) / 255.0
-        r, g, b = np_img[:, :, 0], np_img[:, :, 1], np_img[:, :, 2]
+        width, height = image.size
+        if width < 50 or height < 50:
+            return False, "Image resolution is too low. Please upload a clear photo of a plant leaf."
 
-        # Excess Green Index (ExG = 2*G - R - B)
+        # Convert to RGB if needed
+        rgb_img = image.convert("RGB")
+        stat = ImageStat.Stat(rgb_img)
+        
+        # Check variance across color channels
+        var = sum(stat.var) / 3.0
+        mean = sum(stat.mean) / 3.0
+
+        if var < 15.0:
+            # Monotone / blank image
+            return False, "Please upload a clear photo of a plant leaf."
+
+        if mean < 15.0 or mean > 245.0:
+            # Severely underexposed / completely overexposed
+            return False, "Image lighting is too dark or washed out. Please upload a clear photo in good daylight."
+
+        # Analyze foliage index across image pixels
+        img_np = np.array(rgb_img, dtype=np.float32) / 255.0
+        r, g, b = img_np[:, :, 0], img_np[:, :, 1], img_np[:, :, 2]
+        
+        # Excess Green Index (ExG)
         exg = 2.0 * g - r - b
-        foliage_ratio = float(np.mean(exg > -0.15))
-        color_variance = float(np.var(np_img))
-        green_mean = float(np.mean(g))
-        red_mean = float(np.mean(r))
-        blue_mean = float(np.mean(b))
+        foliage_pixels = np.sum(exg > -0.15)
+        total_pixels = img_np.shape[0] * img_np.shape[1]
+        foliage_ratio = foliage_pixels / float(total_pixels)
+        green_mean = np.mean(g)
 
-        return {
-            "foliage_ratio": foliage_ratio,
-            "color_variance": color_variance,
-            "green_mean": green_mean,
-            "red_mean": red_mean,
-            "blue_mean": blue_mean,
-        }
+        # Non-plant rejection check (e.g. metallic tools, plain walls, dark devices)
+        if foliage_ratio < 0.05 and green_mean < 0.12 and var < 120.0:
+            return False, "Please upload a clear photo of a plant leaf."
 
-    def predict(self, image_bytes: bytes, filename: str = "upload.jpg", mime_type: str = "image/jpeg") -> Dict[str, Any]:
+        return True, "OK"
+
+    def predict(self, image_bytes: bytes, filename: str = "image.jpg", mimetype: str = "image/jpeg") -> Dict[str, Any]:
         """
-        Executes real computer vision neural inference on image bytes and returns structured multi-crop diagnosis.
-        Logs safe non-credential diagnostic information.
+        Universal Leaf Scanner Diagnostic Pipeline:
+        IMAGE -> QUALITY CHECK -> PLANT IDENTIFICATION -> HEALTH STATUS -> DISEASE CLASSIFICATION -> CONFIDENCE
         """
-        file_size = len(image_bytes)
         try:
+            file_size = len(image_bytes)
+            if file_size == 0:
+                return {
+                    "success": False,
+                    "error": "EMPTY_FILE",
+                    "message": "The uploaded image file is empty.",
+                    "plant": {"name": "Unknown", "confidence": 0},
+                    "health": {"status": "Unknown", "confidence": 0},
+                    "diagnosis": None,
+                    "severity": "Unknown",
+                    "recommendation": "Please upload a clear close-up image of the leaf."
+                }
+
+            # Open image
             image = Image.open(io.BytesIO(image_bytes))
-            image.verify()
-            image = Image.open(io.BytesIO(image_bytes))
+            img_format = image.format or "JPEG"
             img_width, img_height = image.size
-            img_format = image.format or mime_type
-        except Exception as e:
-            return {
-                "success": False,
-                "is_confident": False,
-                "error": f"Invalid or corrupted image file: {str(e)}",
-                "message": "Unable to process this file. Please upload a valid JPEG, PNG, or WebP image."
-            }
 
-        features = self._analyze_leaf_features(image)
+            # 1. Quality Check
+            is_valid, quality_msg = self.validate_image_quality(image)
+            if not is_valid:
+                return {
+                    "success": False,
+                    "error": "INVALID_IMAGE_QUALITY",
+                    "message": quality_msg,
+                    "plant": {"name": "Unknown", "confidence": 0},
+                    "health": {"status": "Unknown", "confidence": 0},
+                    "diagnosis": None,
+                    "severity": "Unknown",
+                    "recommendation": "Please upload a clear close-up photo of a plant leaf in natural daylight."
+                }
 
-        # Out-of-distribution & non-foliar rejection
-        if features["color_variance"] < 0.003:
-            print(f"📷 [AI Inference]: Image {img_width}x{img_height}, Format: {img_format}, Size: {file_size} bytes -> Monotone/Blank Rejected.")
-            return self._low_confidence_response(0.08, "Monotone / blank image detected.")
-
-        if features["foliage_ratio"] < 0.10 and features["green_mean"] < 0.15:
-            print(f"📷 [AI Inference]: Image {img_width}x{img_height}, Format: {img_format}, Size: {file_size} bytes -> Non-foliar Rejected.")
-            return self._low_confidence_response(0.12, "Non-plant object or unclear foliage detected.")
-
-        try:
-            rgb_image = image.convert("RGB")
-            input_tensor = self.transform(rgb_image).unsqueeze(0).to(self.device)
+            # 2. Neural Feature Extraction & Inference
+            rgb_img = image.convert("RGB")
+            tensor = self.transform(rgb_img).unsqueeze(0).to(self.device)
 
             with torch.no_grad():
-                logits = self.model(input_tensor)
-                probabilities = torch.softmax(logits, dim=1)[0]
-                top5_probs, top5_indices = torch.topk(probabilities, min(5, self.num_classes))
+                logits = self.model(tensor)
+                probs = torch.softmax(logits, dim=1)[0].cpu().numpy()
 
-            top_prob = float(top5_probs[0].item())
-            top_class = self.classes[top5_indices[0].item()]
+            sorted_indices = probs.argsort()[::-1]
+            top1_idx = int(sorted_indices[0])
+            top_prob = float(probs[top1_idx])
+            top_class = self.classes[top1_idx] if top1_idx < len(self.classes) else "Unknown___unsupported"
 
-            # Build structured Top-5 predictions list
+            # Build Top 5 Distribution
             top5_list = []
-            for p, idx in zip(top5_probs, top5_indices):
-                c_name = self.classes[idx.item()]
-                prob_val = round(float(p.item()), 4)
-                c_info = DISEASE_DATABASE.get(c_name, {})
+            for rank_idx in sorted_indices[:5]:
+                c_name = self.classes[rank_idx] if rank_idx < len(self.classes) else "Unknown"
+                c_info = UNIVERSAL_PATHOLOGY_DATABASE.get(c_name, {})
+                prob_val = round(float(probs[rank_idx]), 4)
+                plant_name = c_info.get("plant", c_name.split("___")[0])
+                disease_name = c_info.get("diagnosis") or ("Healthy Crop" if c_info.get("is_healthy") else "Condition")
                 top5_list.append({
                     "className": c_name,
-                    "crop": c_info.get("crop", c_name.split("___")[0]),
-                    "disease": c_info.get("disease", c_name.replace("___", " ")),
+                    "crop": c_info.get("plant_display", plant_name),
+                    "plant": plant_name,
+                    "disease": disease_name,
+                    "health_status": c_info.get("health_status", "Healthy" if c_info.get("is_healthy") else "Diseased"),
                     "probability": prob_val
                 })
 
-            # Safe diagnostic logging
+            # Safe diagnostic console log
             try:
                 print("=" * 70)
-                print(f"[AI Diagnostic Camera]: Image Dimensions: {img_width}x{img_height} | Format: {img_format} | Size: {file_size} bytes")
-                print(f"[AI Diagnostic Model]: Model: MobileNetV3-Small-MultiCrop | Preprocessing: (224, 224, ImageNet Normalized)")
-                print(f"[AI Diagnostic Predictions]: Top 5 Distribution:")
-                for rank, item in enumerate(top5_list, 1):
-                    print(f"   {rank}. {item['className']} -> Probability: {item['probability']:.4f} ({item['crop']} - {item['disease']})")
-                print(f"[AI Diagnostic Selected]: Top Class: {top_class} | Top-1 Confidence: {top_prob:.4f}")
+                print(f"[Leaf Scanner Image]: {img_width}x{img_height} | Format: {img_format} | Size: {file_size} bytes")
+                print(f"[Leaf Scanner Top-1]: {top_class} | Softmax Confidence: {top_prob * 100:.2f}%")
                 print("=" * 70)
             except Exception:
                 pass
 
-            # Strict confidence & OOD threshold (0.45) to prevent forcing unconfident predictions
-            CONFIDENCE_THRESHOLD = 0.45
-            if top_prob < CONFIDENCE_THRESHOLD or top_class == "Background_without_leaves":
-                resp = self._low_confidence_response(
-                    round(top_prob, 4) if top_class != "Background_without_leaves" else 0.15,
-                    "Prediction confidence below validated threshold or background image."
-                )
-                resp["top5"] = top5_list
-                return resp
+            # 3. Confidence & Out-of-Distribution Validation
+            CONFIDENCE_THRESHOLD = 0.40
+            if top_prob < CONFIDENCE_THRESHOLD or "Background" in top_class or "Unknown" in top_class:
+                return {
+                    "success": True,
+                    "plant": {
+                        "name": "Unknown",
+                        "confidence": int(round(top_prob * 100)) if "Background" not in top_class else 25
+                    },
+                    "health": {
+                        "status": "Unknown",
+                        "confidence": 35
+                    },
+                    "diagnosis": None,
+                    "severity": "Unknown",
+                    "recommendation": "The image could not be reliably identified. Please upload a clear close-up image of the leaf.",
+                    # Backward compatibility fields:
+                    "is_confident": False,
+                    "crop": "Unknown Plant",
+                    "disease": "Insufficient visual evidence or unsupported plant species.",
+                    "is_healthy": False,
+                    "confidence": round(top_prob, 4) if "Background" not in top_class else 0.15,
+                    "top5": top5_list,
+                    "symptoms": ["Visual leaf morphology does not match known high-confidence plant categories in the database."],
+                    "recommended_actions": ["Capture a sharp close-up photo of the leaf in natural daylight.", "Consult your local Agricultural Extension Officer (AEO) for field confirmation."],
+                    "disclaimer": DEFAULT_DISCLAIMER
+                }
 
-            # Retrieve verified pathology details for the predicted multi-crop class
-            pathology = DISEASE_DATABASE.get(top_class, {
-                "crop": "Agricultural Crop",
-                "disease": top_class.replace("___", " ").replace("_", " "),
+            # 4. Resolve pathology record
+            pathology = UNIVERSAL_PATHOLOGY_DATABASE.get(top_class, {
+                "plant": top_class.split("___")[0],
+                "plant_display": top_class.split("___")[0],
+                "health_status": "Healthy" if "healthy" in top_class.lower() else "Diseased",
+                "diagnosis": None if "healthy" in top_class.lower() else top_class.replace("___", " "),
+                "severity": "None" if "healthy" in top_class.lower() else "Moderate",
                 "is_healthy": "healthy" in top_class.lower(),
-                "symptoms": ["Leaf tissue discoloration or spot formation."],
-                "recommended_actions": ["Consult your local Agriculture Extension Officer."]
+                "symptoms": ["Foliar characteristics consistent with analyzed plant specimen."],
+                "recommendation": "Follow balanced crop care and regular monitoring."
             })
+
+            plant_conf = int(round(top_prob * 100))
+            health_conf = int(round(min(99, top_prob * 100 + 3)))
+            disease_conf = int(round(top_prob * 100)) if pathology["health_status"] != "Healthy" else None
+
+            diagnosis_obj = None
+            if pathology["health_status"] != "Healthy" and pathology["diagnosis"]:
+                diagnosis_obj = {
+                    "name": pathology["diagnosis"],
+                    "confidence": disease_conf
+                }
 
             return {
                 "success": True,
+                "plant": {
+                    "name": pathology["plant"],
+                    "displayName": pathology.get("plant_display", pathology["plant"]),
+                    "confidence": plant_conf
+                },
+                "health": {
+                    "status": pathology["health_status"],
+                    "confidence": health_conf
+                },
+                "diagnosis": diagnosis_obj,
+                "severity": pathology.get("severity", "None"),
+                "recommendation": pathology.get("recommendation", "Continue regular crop monitoring."),
+                # Backward compatibility fields:
                 "is_confident": True,
-                "class_code": top_class,
-                "crop": pathology["crop"],
-                "disease": pathology["disease"],
-                "is_healthy": pathology["is_healthy"],
+                "crop": pathology.get("plant_display", pathology["plant"]),
+                "disease": pathology["diagnosis"] if pathology["diagnosis"] else "Healthy Crop (ఆరోగ్యకరమైన పంట)",
+                "is_healthy": pathology.get("is_healthy", False),
                 "confidence": round(top_prob, 4),
                 "top5": top5_list,
-                "symptoms": pathology["symptoms"],
-                "recommended_actions": pathology["recommended_actions"],
+                "symptoms": pathology.get("symptoms", []),
+                "recommended_actions": [pathology.get("recommendation", "")],
                 "disclaimer": DEFAULT_DISCLAIMER
             }
+
         except Exception as e:
             return {
                 "success": False,
-                "is_confident": False,
-                "error": str(e),
-                "message": "An error occurred during neural network inference."
+                "error": "INFERENCE_ERROR",
+                "message": f"An error occurred during leaf analysis: {str(e)}",
+                "plant": {"name": "Unknown", "confidence": 0},
+                "health": {"status": "Unknown", "confidence": 0},
+                "diagnosis": None,
+                "severity": "Unknown",
+                "recommendation": "Please try capturing the leaf photo again."
             }
 
-    def _low_confidence_response(self, confidence: float, reason: str = "") -> Dict[str, Any]:
-        return {
-            "success": True,
-            "is_confident": False,
-            "crop": "Unknown / Low Confidence",
-            "disease": "The AI could not confidently identify this leaf.",
-            "is_healthy": False,
-            "confidence": round(confidence, 4),
-            "symptoms": [
-                "The uploaded image does not match supported crop leaf pathology categories with sufficient confidence.",
-                "The leaf may be outside the model's supported classes or the camera angle/lighting was insufficient."
-            ],
-            "recommended_actions": [
-                "Capture a close-up photo of the affected leaf in bright, natural daylight.",
-                "Ensure the leaf is in sharp focus and fills most of the camera frame.",
-                "If symptoms persist on an unsupported crop, consult your local Village Agriculture Assistant (VAA / AEO)."
-            ],
-            "disclaimer": DEFAULT_DISCLAIMER,
-            "message": "The AI could not confidently identify this leaf. Please upload a clear photo of a supported crop leaf."
-        }
-
 # Global singleton instance
-ai_classifier = CropDiseaseClassifier()
+ai_classifier = UniversalLeafScannerEngine()

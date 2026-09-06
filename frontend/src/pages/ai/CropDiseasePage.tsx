@@ -22,6 +22,9 @@ import {
   Smartphone,
   ChevronDown,
   ChevronUp,
+  HeartPulse,
+  Bug,
+  Lightbulb,
 } from 'lucide-react';
 import { analyzeCropImageApi, getCropAnalysisHistoryApi, deleteCropAnalysisApi } from '../../services/api';
 import { CropAnalysis } from '../../types/cropHealth';
@@ -297,7 +300,15 @@ export const CropDiseasePage: React.FC = () => {
     try {
       const res = await analyzeCropImageApi(selectedFile);
       if (res.success && res.analysis) {
-        setCurrentResult(res.analysis);
+        const fullResult: CropAnalysis = {
+          ...res.analysis,
+          plant: res.plant || res.analysis.plant,
+          health: res.health || res.analysis.health,
+          diagnosis: res.diagnosis !== undefined ? res.diagnosis : res.analysis.diagnosis,
+          severity: res.severity || res.analysis.severity,
+          recommendation: res.recommendation || res.analysis.recommendation,
+        };
+        setCurrentResult(fullResult);
         setShowTop5(true);
         fetchHistory();
       } else {
@@ -695,41 +706,32 @@ export const CropDiseasePage: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-5 gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Crop Diagnosis</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Universal Leaf Scanner</span>
                     <span
                       className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
-                        !currentResult.isConfident
+                        !currentResult.isConfident || currentResult.plant?.name === 'Unknown'
                           ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
-                          : currentResult.isHealthy
+                          : (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
                           ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
                           : 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
                       }`}
                     >
-                      {!currentResult.isConfident
-                        ? 'UNCERTAIN / LOW CONFIDENCE'
-                        : currentResult.isHealthy
-                        ? 'HEALTHY CROP'
-                        : 'DISEASE IDENTIFIED'}
+                      {!currentResult.isConfident || currentResult.plant?.name === 'Unknown'
+                        ? 'UNKNOWN PLANT / LOW CONFIDENCE'
+                        : (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
+                        ? 'HEALTHY LEAF'
+                        : `${currentResult.health?.status?.toUpperCase() || 'DISEASED'}`}
                     </span>
                   </div>
 
-                  {!currentResult.isConfident ? (
-                    <div className="mt-2 space-y-1">
-                      <h3 className="text-xl font-heading font-black text-amber-700 dark:text-amber-400">
-                        Unable to confidently identify this leaf
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        The leaf may be outside the model's supported crop families (Tomato, Potato, Corn, Pepper, Apple, Rice, Cotton) or the foliar symptoms are ambiguous. The AI does not guess or force a diagnosis.
-                      </p>
+                  <div className="mt-1">
+                    <h3 className="text-2xl font-heading font-black text-slate-900 dark:text-white">
+                      {currentResult.plant?.displayName || currentResult.plant?.name || currentResult.crop}
+                    </h3>
+                    <div className="text-base font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
+                      {currentResult.diagnosis?.name || currentResult.disease}
                     </div>
-                  ) : (
-                    <div className="mt-1">
-                      <h3 className="text-2xl font-heading font-black text-slate-900 dark:text-white">{currentResult.crop}</h3>
-                      <div className="text-base font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
-                        {currentResult.disease}
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-3 self-start sm:self-auto">
@@ -741,10 +743,93 @@ export const CropDiseasePage: React.FC = () => {
                   <div className="text-right bg-slate-50 dark:bg-slate-800 px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-700">
                     <div className="text-[10px] font-semibold text-slate-400 uppercase">AI Confidence</div>
                     <div className="text-lg font-heading font-black text-slate-900 dark:text-white">
-                      {(currentResult.confidence * 100).toFixed(1)}%
+                      {currentResult.plant?.confidence ? `${currentResult.plant.confidence}%` : `${(currentResult.confidence * 100).toFixed(1)}%`}
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Universal Leaf Diagnostics Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* 1. Plant Species */}
+                <div className="bg-emerald-50/60 dark:bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-100 dark:border-emerald-800/60 space-y-1">
+                  <div className="flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                    <span className="flex items-center gap-1.5">
+                      <Leaf className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>🌿 Plant</span>
+                    </span>
+                    <span className="font-mono bg-emerald-100 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 px-2 py-0.5 rounded-full text-[11px]">
+                      {currentResult.plant?.confidence ? `${currentResult.plant.confidence}%` : `${(currentResult.confidence * 100).toFixed(0)}%`}
+                    </span>
+                  </div>
+                  <div className="font-heading font-black text-base text-slate-900 dark:text-white">
+                    {currentResult.plant?.displayName || currentResult.plant?.name || currentResult.crop}
+                  </div>
+                </div>
+
+                {/* 2. Health Status */}
+                <div className={`p-3.5 rounded-2xl border space-y-1 ${
+                  (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
+                    ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-800/60'
+                    : 'bg-rose-50/60 dark:bg-rose-950/40 border-rose-100 dark:border-rose-800/60'
+                }`}>
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="flex items-center gap-1.5 text-rose-800 dark:text-rose-300">
+                      <HeartPulse className="w-3.5 h-3.5 text-rose-500" />
+                      <span>❤️ Health Status</span>
+                    </span>
+                    <span className="font-mono px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] border border-slate-200 dark:border-slate-700">
+                      {currentResult.health?.confidence ? `${currentResult.health.confidence}%` : `${(currentResult.confidence * 100).toFixed(0)}%`}
+                    </span>
+                  </div>
+                  <div className={`font-heading font-black text-base ${
+                    (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : 'text-rose-700 dark:text-rose-400'
+                  }`}>
+                    {currentResult.health?.status || (currentResult.isHealthy ? 'Healthy' : 'Diseased')}
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Diagnosis & Severity Card */}
+              {(currentResult.diagnosis?.name || (!currentResult.isHealthy && currentResult.disease && currentResult.disease !== 'Healthy Crop (ఆరోగ్యకరమైన పంట)')) && (
+                <div className="bg-amber-50/60 dark:bg-amber-950/40 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-800/60 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                      <Bug className="w-4 h-4 text-amber-600" />
+                      <span>🦠 Disease / Defect Diagnosis</span>
+                    </span>
+                    {currentResult.severity && currentResult.severity !== 'None' && (
+                      <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${
+                        currentResult.severity === 'Severe'
+                          ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200'
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200'
+                      }`}>
+                        ⚠️ Severity: {currentResult.severity}
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-heading font-black text-base text-slate-900 dark:text-white">
+                    {currentResult.diagnosis?.name || currentResult.disease}
+                  </div>
+                  {currentResult.diagnosis?.confidence && (
+                    <div className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                      Diagnosis Confidence: <strong className="font-mono">{currentResult.diagnosis.confidence}%</strong>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 4. Recommendation Card */}
+              <div className="bg-blue-50/50 dark:bg-blue-950/30 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/40 space-y-1.5">
+                <div className="text-xs font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                  <Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <span>💡 Recommended Action:</span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {currentResult.recommendation || currentResult.recommendedActions?.[0] || 'Continue regular crop care and periodic scouting.'}
+                </p>
               </div>
 
               {/* Top 5 Predictions Accordion */}
