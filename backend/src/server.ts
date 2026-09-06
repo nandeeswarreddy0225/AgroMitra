@@ -7,9 +7,9 @@ const startServer = async (): Promise<void> => {
   // Connect to MongoDB
   await connectDB();
 
-  app.listen(PORT, () => {
-    console.log(`🚀 [Server]: AgriMart Backend running on http://localhost:${PORT}`);
-    console.log(`🩺 [Server]: Health check available at http://localhost:${PORT}/api/health`);
+  app.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`🚀 [Server]: AgriMart Backend running on http://0.0.0.0:${PORT}`);
+    console.log(`🩺 [Server]: Health check available at http://0.0.0.0:${PORT}/api/health`);
   });
 };
 

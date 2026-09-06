@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs=require('fs'); ['crop_disease_model.onnx','model_metadata.json'].forEach(f=>{if(fs.existsSync(f))fs.copyFileSync(f,'dist/'+f);});\"",
     "start": "node dist/server.js",
     "seed:admin": "tsx src/seedAdmin.ts",
     "test": "tsx src/tests/stage6_order_workflow.test.ts"
@@ -20,16 +20,19 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/jpeg-js": "^0.3.0",
     "axios": "^1.20.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "form-data": "^4.0.6",
+    "jpeg-js": "^0.4.4",
     "jsonwebtoken": "^9.0.3",
     "jsqr": "^1.4.0",
     "mongoose": "^8.9.5",
     "multer": "^2.3.0",
+    "onnxruntime-node": "^1.29.0",
     "pngjs": "^5.0.0",
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.8"

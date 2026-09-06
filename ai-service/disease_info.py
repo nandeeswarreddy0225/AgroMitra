@@ -399,7 +399,177 @@ UNIVERSAL_PATHOLOGY_DATABASE: Dict[str, Dict[str, Any]] = {
         "recommendation": "Prune cankered twigs before monsoon. Spray Copper Oxychloride (3g/L) + Streptocycline (100mg/L)."
     },
 
-    # --- UNKNOWN / OUT OF DISTRIBUTION ---
+    # --- CITRUS GREENING ---
+    "Citrus___Citrus_greening": {
+        "plant": "Citrus",
+        "plant_display": "Citrus (నిమ్మ / బత్తాయి)",
+        "health_status": "Diseased",
+        "diagnosis": "Huanglongbing / Citrus Greening (హ్వాంగ్లాంగ్‌బింగ్ - Candidatus Liberibacter)",
+        "severity": "Severe",
+        "is_healthy": False,
+        "symptoms": ["Asymmetric blotchy mottling on leaves, yellow shoot dieback, and small lopsided bitter fruits."],
+        "recommendation": "Control Asian citrus psyllid vectors with Imidacloprid. Remove severely infected trees and source disease-free nursery budwood."
+    },
+
+    # --- ADDITIONAL TOMATO DISEASES ---
+    "Tomato___Septoria_leaf_spot": {
+        "plant": "Tomato",
+        "plant_display": "Tomato (టమాటా)",
+        "health_status": "Diseased",
+        "diagnosis": "Septoria Leaf Spot (సెప్టోరియా ఆకు మచ్చ - Septoria lycopersici)",
+        "severity": "Moderate",
+        "is_healthy": False,
+        "symptoms": ["Numerous small circular spots with gray centers and dark brown borders on lower foliage."],
+        "recommendation": "Remove lower infected foliage. Apply Chlorothalonil or Mancozeb sprays and mulch soil around plant bases."
+    },
+    "Tomato___Bacterial_spot": {
+        "plant": "Tomato",
+        "plant_display": "Tomato (టమాటా)",
+        "health_status": "Diseased",
+        "diagnosis": "Bacterial Spot (బాక్టీరియా మచ్చ - Xanthomonas campestris pv. vesicatoria)",
+        "severity": "Moderate",
+        "is_healthy": False,
+        "symptoms": ["Small angular water-soaked dark brown spots that turn greasy and scabby with yellow chlorotic halos."],
+        "recommendation": "Apply Copper Hydroxide (2.5g/L) + Streptocycline (100mg/L). Avoid overhead irrigation."
+    },
+    "Tomato___Spider_mites": {
+        "plant": "Tomato",
+        "plant_display": "Tomato (టమాటా)",
+        "health_status": "Pest Damage",
+        "diagnosis": "Two-Spotted Spider Mites (ఎర్ర నల్లి నష్టం - Tetranychus urticae)",
+        "severity": "Moderate",
+        "is_healthy": False,
+        "symptoms": ["Fine pale yellow stippling and speckled chlorosis on upper leaf surface with delicate webbing underneath."],
+        "recommendation": "Spray Spiromesifen (1ml/L) or Wettable Sulfur (3g/L) on lower leaf undersides; wash foliage with strong water sprays."
+    },
+    "Tomato___Target_Spot": {
+        "plant": "Tomato",
+        "plant_display": "Tomato (టమాటా)",
+        "health_status": "Diseased",
+        "diagnosis": "Target Spot (టార్గెట్ స్పాట్ తెగులు - Corynespora cassiicola)",
+        "severity": "Moderate",
+        "is_healthy": False,
+        "symptoms": ["Pinpoint brown lesions that enlarge into target-like circular necrotic zones with concentric rings."],
+        "recommendation": "Ensure proper plant spacing for air circulation. Spray Azoxystrobin or Difenoconazole."
+    },
+    "Tomato___Mosaic_virus": {
+        "plant": "Tomato",
+        "plant_display": "Tomato (టమాటా)",
+        "health_status": "Diseased",
+        "diagnosis": "Tomato Mosaic Virus (మొజాయిక్ వైరస్ - ToMV)",
+        "severity": "Severe",
+        "is_healthy": False,
+        "symptoms": ["Mottled light and dark green mosaic patterns, blistering, leaf distortion, and fern-like foliage."],
+        "recommendation": "Rogue and burn infected plants. Disinfect pruning tools with 10% trisodium phosphate; wash hands before handling."
+    },
+
+    # --- PEACH ---
+    "Peach___healthy": {
+        "plant": "Peach",
+        "plant_display": "Peach",
+        "health_status": "Healthy",
+        "diagnosis": None,
+        "severity": "None",
+        "is_healthy": True,
+        "symptoms": ["Clean lanceolate leaves with smooth margins and healthy green color."],
+        "recommendation": "Maintain regular orchard pruning and balanced winter fertilizing."
+    },
+    "Peach___Bacterial_spot": {
+        "plant": "Peach",
+        "plant_display": "Peach",
+        "health_status": "Diseased",
+        "diagnosis": "Bacterial Spot (బాక్టీరియల్ స్పాట్ - Xanthomonas arboricola)",
+        "severity": "Moderate",
+        "is_healthy": False,
+        "symptoms": ["Small angular water-soaked purple-brown lesions that drop out leaving 'shot-hole' appearance."],
+        "recommendation": "Spray Copper compounds during dormant and bloom stages."
+    },
+
+    # --- STRAWBERRY ---
+    "Strawberry___healthy": {
+        "plant": "Strawberry",
+        "plant_display": "Strawberry",
+        "health_status": "Healthy",
+        "diagnosis": None,
+        "severity": "None",
+        "is_healthy": True,
+        "symptoms": ["Trifoliate bright green leaves with serrated margins and healthy crowns."],
+        "recommendation": "Ensure raised bed drainage, organic straw mulching, and balanced drip irrigation."
+    },
+    "Strawberry___Leaf_scorch": {
+        "plant": "Strawberry",
+        "plant_display": "Strawberry",
+        "health_status": "Diseased",
+        "diagnosis": "Leaf Scorch (ఆకు ముడుత తెగులు - Diplocarpon earlianum)",
+        "severity": "Moderate",
+        "is_healthy": False,
+        "symptoms": ["Small dark purple irregular blotches that coalesce into widespread brown scorching."],
+        "recommendation": "Remove old infected leaves after harvest; spray Captan or Copper fungicide."
+    },
+
+    # --- CHERRY, BLUEBERRY, RASPBERRY, SOYBEAN ---
+    "Cherry___healthy": {
+        "plant": "Cherry",
+        "plant_display": "Cherry",
+        "health_status": "Healthy",
+        "diagnosis": None,
+        "severity": "None",
+        "is_healthy": True,
+        "symptoms": ["Deep green glossy ovate leaves without shot-holes or powdery mildew."],
+        "recommendation": "Maintain proper tree canopy pruning and orchard floor hygiene."
+    },
+    "Cherry___Powdery_mildew": {
+        "plant": "Cherry",
+        "plant_display": "Cherry",
+        "health_status": "Diseased",
+        "diagnosis": "Powdery Mildew (బూడిద తెగులు - Podosphaera clandestina)",
+        "severity": "Moderate",
+        "is_healthy": False,
+        "symptoms": ["White powdery superficial fungal patches causing leaf curling and distorted shoot growth."],
+        "recommendation": "Apply Sulfur or Myclobutanil sprays starting from shuck fall stage."
+    },
+    "Blueberry___healthy": {
+        "plant": "Blueberry",
+        "plant_display": "Blueberry",
+        "health_status": "Healthy",
+        "diagnosis": None,
+        "severity": "None",
+        "is_healthy": True,
+        "symptoms": ["Glossy elliptical dark green foliage without chlorosis or leaf spots."],
+        "recommendation": "Maintain acidic soil pH (4.5–5.2) with organic pine bark mulch."
+    },
+    "Raspberry___healthy": {
+        "plant": "Raspberry",
+        "plant_display": "Raspberry",
+        "health_status": "Healthy",
+        "diagnosis": None,
+        "severity": "None",
+        "is_healthy": True,
+        "symptoms": ["Compound pinnate green leaves with silvery undersides and healthy cane vigor."],
+        "recommendation": "Prune out spent floricanes after harvest and maintain trellis support."
+    },
+    "Soybean___healthy": {
+        "plant": "Soybean",
+        "plant_display": "Soybean (సోయాబీన్)",
+        "health_status": "Healthy",
+        "diagnosis": None,
+        "severity": "None",
+        "is_healthy": True,
+        "symptoms": ["Trifoliate lush green leaves without rust pustules or bacterial pustules."],
+        "recommendation": "Maintain proper rhizobium inoculation and balanced phosphorus fertilization."
+    },
+
+    # --- BACKGROUND & UNKNOWN ---
+    "Background___non_leaf": {
+        "plant": "Non-Leaf Object",
+        "plant_display": "Non-Leaf Object (ఆకు కాదు)",
+        "health_status": "Unknown",
+        "diagnosis": None,
+        "severity": "Unknown",
+        "is_healthy": False,
+        "symptoms": ["Image does not depict agricultural foliage or plant tissue."],
+        "recommendation": "Please upload a clear close-up photo of a real crop or plant leaf in natural daylight."
+    },
     "Unknown___unsupported": {
         "plant": "Unknown",
         "plant_display": "Unknown Plant",
@@ -408,7 +578,7 @@ UNIVERSAL_PATHOLOGY_DATABASE: Dict[str, Dict[str, Any]] = {
         "severity": "Unknown",
         "is_healthy": False,
         "symptoms": ["The visual morphology does not match high-confidence botanical profiles in the database."],
-        "recommendation": "The image could not be reliably identified. Please upload a clear close-up image of the leaf or consult a local agricultural officer."
+        "recommendation": "The image could not be reliably identified. Please upload a clear close-up image of the leaf or consult a local agricultural extension officer."
     }
 }
 

@@ -4,6 +4,7 @@ import axios from 'axios';
 import FormData from 'form-data';
 import { CropAnalysis } from '../models/CropAnalysis.model';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { onnxPathologyEngine } from '../services/onnxInference.service';
 
 const AI_SERVICE_URL = process.env.AI_API_URL || process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
@@ -788,8 +789,15 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
 
     let predictionData: UniversalScannerResult | null = null;
 
-    // 1. Try external Python FastAPI AI Service if configured & reachable
-    if (AI_SERVICE_URL && !AI_SERVICE_URL.includes('localhost:8000') && !AI_SERVICE_URL.includes('127.0.0.1:8000')) {
+    // 1. In-process deep learning inference using embedded ONNX model
+    try {
+      predictionData = await onnxPathologyEngine.predict(buffer, originalname, mimetype);
+    } catch (onnxErr: any) {
+      console.warn('⚠️ [ONNX Engine Notice]: Embedded inference notice:', onnxErr.message);
+    }
+
+    // 2. If in-process ONNX did not produce a result, connect to Python AI microservice
+    if (!predictionData && AI_SERVICE_URL) {
       try {
         const formData = new FormData();
         formData.append('image', buffer, {
@@ -799,20 +807,29 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
 
         const aiResponse = await axios.post(`${AI_SERVICE_URL}/predict`, formData, {
           headers: { ...formData.getHeaders() },
-          timeout: 8000,
+          timeout: 10000,
         });
 
         if (aiResponse.data) {
           predictionData = aiResponse.data;
         }
       } catch (aiErr: any) {
-        console.warn('⚠️ [AI Service]: Remote AI service notice, executing integrated universal classifier:', aiErr.message);
+        console.warn(`⚠️ [AI Service Notice]: Remote AI service unavailable at ${AI_SERVICE_URL} (${aiErr.message})`);
       }
     }
 
-    // 2. Execute integrated high-accuracy universal leaf scanner engine
+    // 3. Fallback to heuristic classifier if both neural models are unavailable
     if (!predictionData) {
       predictionData = runNeuralPathologyInference(buffer, originalname, mimetype);
+    }
+
+    if (!predictionData) {
+      res.status(500).json({
+        success: false,
+        error: 'EMPTY_PREDICTION',
+        message: 'The AI service did not return a valid diagnostic prediction.',
+      });
+      return;
     }
 
     // If Stage 0 Image Quality check failed (non-leaf/bad photo), return 400 rejection

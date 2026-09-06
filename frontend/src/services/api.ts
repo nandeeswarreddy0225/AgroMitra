@@ -18,6 +18,18 @@ import {
 const getApiBaseUrl = (): string => {
   const envUrl = (import.meta.env?.VITE_API_URL || '').trim();
   if (!envUrl) {
+    if (typeof window !== 'undefined' && window.location) {
+      const hostname = window.location.hostname;
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        /^192\.168\./.test(hostname) ||
+        /^10\./.test(hostname) ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+      ) {
+        return `http://${hostname}:5000/api`;
+      }
+    }
     return 'https://agromitra-ytqb.onrender.com/api';
   }
   const cleanUrl = envUrl.replace(/\/+$/, '');
