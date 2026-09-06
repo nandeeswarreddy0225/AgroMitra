@@ -302,6 +302,20 @@ export const DISEASE_DATABASE: Record<string, DiseaseInfo> = {
       'Apply balanced fertilizer doses per RBK/Rythu Vedika recommendations.',
     ],
   },
+  'Background_without_leaves': {
+    crop: 'Unknown / Low Confidence',
+    disease: 'The AI could not confidently identify this leaf.',
+    is_healthy: false,
+    symptoms: [
+      'The uploaded image does not match supported crop leaf pathology categories with sufficient confidence.',
+      'The leaf may belong to an unsupported plant species (e.g., Neem, Mango, weeds, or non-crop foliage) or image lighting is suboptimal.',
+    ],
+    recommended_actions: [
+      'Capture a close-up photo of the affected crop leaf in bright, natural daylight.',
+      'Ensure the leaf is in sharp focus and fills most of the camera frame.',
+      'If symptoms persist on an unsupported crop, consult your local Village Agriculture Assistant (VAA / AEO).',
+    ],
+  },
 };
 
 export const STANDARD_CLASSES = Object.keys(DISEASE_DATABASE);
@@ -450,55 +464,44 @@ export function runNeuralPathologyInference(buffer: Buffer, originalname: string
   // 2. Compute multi-crop pathology logit scores
   const rawLogits: Record<string, number> = {};
   for (const cls of STANDARD_CLASSES) {
-    rawLogits[cls] = -2.0; // Base negative prior
+    rawLogits[cls] = -2.0; // Base negative prior for specific disease classes
+  }
+  // Baseline prior for background / out-of-distribution foliage
+  rawLogits['Background_without_leaves'] = 2.5;
+
+  // Corn Common Rust (distinct cinnamon-brown / orange pustules)
+  if (feat.rustRatio > 0.04) {
+    rawLogits['Corn_(maize)___Common_rust'] = 5.0 + feat.rustRatio * 20.0;
   }
 
-  // Corn Common Rust
-  if (feat.rustRatio > 0.035) {
-    rawLogits['Corn_(maize)___Common_rust'] = 4.0 + feat.rustRatio * 15.0;
+  // Pepper Bacterial Spot (dark water-soaked angular spots on intense green)
+  if (feat.necroticRatio > 0.05 && feat.greenMean > 0.32 && feat.yellowRatio < 0.04 && feat.rustRatio < 0.02) {
+    rawLogits['Pepper__bell___Bacterial_spot'] = 4.8 + feat.necroticRatio * 10.0;
   }
 
-  // Pepper Bacterial Spot
-  if (feat.necroticRatio > 0.04 && feat.greenMean > 0.30 && feat.yellowRatio < 0.05 && feat.rustRatio < 0.02) {
-    rawLogits['Pepper__bell___Bacterial_spot'] = 3.8 + feat.necroticRatio * 8.0;
+  // Apple Scab (olive-green/brown velvety lesions with low red)
+  if (feat.necroticRatio > 0.05 && feat.greenMean >= 0.20 && feat.greenMean <= 0.30 && feat.redMean < 0.25) {
+    rawLogits['Apple___Apple_scab'] = 4.9 + feat.necroticRatio * 9.0;
   }
 
-  // Apple Scab
-  if (feat.necroticRatio > 0.04 && feat.greenMean >= 0.20 && feat.greenMean <= 0.30 && feat.redMean < 0.25) {
-    rawLogits['Apple___Apple_scab'] = 3.9 + feat.necroticRatio * 7.5;
+  // Potato Early Blight (dark brown angular lesions on medium green)
+  if (feat.necroticRatio > 0.07 && feat.greenMean < 0.28 && feat.yellowRatio > 0.03) {
+    rawLogits['Potato___Early_blight'] = 5.0 + feat.necroticRatio * 10.0;
   }
 
-  // Potato Early Blight
-  if (feat.necroticRatio > 0.06 && feat.greenMean < 0.28 && feat.yellowRatio > 0.03) {
-    rawLogits['Potato___Early_blight'] = 4.2 + feat.necroticRatio * 9.0;
+  // Tomato Early Blight (prominent target-board concentric dark rings + yellow chlorotic halo)
+  if (feat.necroticRatio > 0.08 && feat.yellowRatio > 0.06 && feat.greenMean >= 0.30) {
+    rawLogits['Tomato___Early_blight'] = 5.2 + feat.necroticRatio * 10.0;
   }
 
-  // Tomato Early Blight
-  if (feat.necroticRatio > 0.06 && feat.yellowRatio > 0.04 && feat.greenMean >= 0.28) {
-    rawLogits['Tomato___Early_blight'] = 4.2 + feat.necroticRatio * 9.0;
+  // Tomato Yellow Leaf Curl Virus (marked interveinal yellowing with upward cupping)
+  if (feat.yellowRatio > 0.12 && feat.necroticRatio < 0.03) {
+    rawLogits['Tomato___Yellow_Leaf_Curl_Virus'] = 5.0 + feat.yellowRatio * 12.0;
   }
 
-  // Tomato Yellow Leaf Curl Virus
-  if (feat.yellowRatio > 0.09 && feat.necroticRatio < 0.04) {
-    rawLogits['Tomato___Yellow_Leaf_Curl_Virus'] = 4.1 + feat.yellowRatio * 10.0;
-  }
-
-  // Rice Brown Spot
-  if (feat.necroticRatio > 0.03 && feat.rustRatio < 0.02 && feat.greenMean > 0.35) {
-    rawLogits['Rice___Brown_Spot'] = 3.5 + feat.necroticRatio * 6.0;
-  }
-
-  // Healthy Crop variants (when no lesions / chlorosis / rust are present)
-  if (feat.necroticRatio < 0.025 && feat.yellowRatio < 0.03 && feat.rustRatio < 0.015) {
-    if (feat.greenMean > 0.40 && feat.foliageRatio > 0.50) {
-      rawLogits['Tomato___healthy'] = 3.5 + feat.greenMean * 2.0;
-    } else if (feat.greenMean > 0.32) {
-      rawLogits['Pepper__bell___healthy'] = 3.2 + feat.greenMean * 2.0;
-    } else if (feat.greenMean > 0.25) {
-      rawLogits['Corn_(maize)___healthy'] = 3.0 + feat.greenMean * 2.0;
-    } else {
-      rawLogits['Apple___healthy'] = 2.8 + feat.greenMean * 2.0;
-    }
+  // Rice Brown Spot (cylindrical brown spots on narrow leaves)
+  if (feat.necroticRatio > 0.04 && feat.rustRatio < 0.02 && feat.greenMean > 0.36) {
+    rawLogits['Rice___Brown_Spot'] = 4.5 + feat.necroticRatio * 8.0;
   }
 
   // 3. Compute true Softmax distribution
@@ -541,24 +544,22 @@ export function runNeuralPathologyInference(buffer: Buffer, originalname: string
   console.log(`🎯 [AI Diagnostic]: Selected Top: ${selectedClass} | Confidence: ${(topProb * 100).toFixed(2)}%`);
   console.log('='.repeat(70));
 
-  // 4. Strict Confidence / Out-of-Distribution Rejection (0.65 threshold)
-  // If the image is a generic non-target leaf or low certainty, return Unknown / Low Confidence
-  const CONFIDENCE_THRESHOLD = 0.65;
-  const hasDistinctLesions = (feat.rustRatio > 0.035 || feat.necroticRatio > 0.04 || feat.yellowRatio > 0.08);
-  const isHealthyMatch = (feat.necroticRatio < 0.025 && feat.yellowRatio < 0.03 && feat.rustRatio < 0.015 && feat.greenMean > 0.32);
+  // 4. Strict Confidence / Out-of-Distribution Rejection
+  // If the top class is Background_without_leaves or confidence is below threshold, return Unknown / Low Confidence
+  const CONFIDENCE_THRESHOLD = 0.50;
 
-  if (topProb < CONFIDENCE_THRESHOLD || (!hasDistinctLesions && !isHealthyMatch)) {
+  if (topProb < CONFIDENCE_THRESHOLD || selectedClass === 'Background_without_leaves') {
     return {
       success: true,
       is_confident: false,
       crop: 'Unknown / Low Confidence',
       disease: 'The AI could not confidently identify this leaf.',
       is_healthy: false,
-      confidence: Number(topProb.toFixed(4)),
+      confidence: selectedClass === 'Background_without_leaves' ? 0.15 : Number(topProb.toFixed(4)),
       top5: top5List,
       symptoms: [
         'The uploaded image does not match supported crop leaf pathology categories with sufficient confidence.',
-        'The leaf may belong to an unsupported plant species (e.g. non-agricultural garden plant, weed, tree foliage) or symptoms are ambiguous.',
+        'The leaf may belong to an unsupported plant species (e.g., Neem, Mango, weeds, garden plants) or lighting was insufficient.',
       ],
       recommended_actions: [
         'Capture a close-up photo of the affected crop leaf in bright, natural daylight.',
