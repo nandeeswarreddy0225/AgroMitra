@@ -1,4 +1,4 @@
-export type UserRole = 'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'ADMIN';
+export type UserRole = 'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'ADMIN' | 'MARKET_OWNER';
 
 export interface UserAddress {
   street?: string;
@@ -17,6 +17,9 @@ export interface User {
   shopName?: string;
   upiId?: string;
   qrCodeUrl?: string;
+  market?: any;
+  isApproved?: boolean;
+  status?: 'ACTIVE' | 'PENDING' | 'DISABLED';
   createdAt?: string;
   updatedAt?: string;
 }
@@ -42,8 +45,9 @@ export interface RegisterData {
   email: string;
   phone: string;
   password: string;
-  role: 'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY';
+  role: 'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'MARKET_OWNER';
   address?: UserAddress;
+  marketName?: string;
 }
 
 export interface AuthResponse {
@@ -63,6 +67,8 @@ export const getRoleDisplayName = (role?: UserRole | string): string => {
       return 'Farmer';
     case 'DELIVERY_BOY':
       return 'Delivery Partner';
+    case 'MARKET_OWNER':
+      return 'Market / Mandi Owner';
     case 'ADMIN':
       return 'Administrator';
     default:
@@ -71,7 +77,8 @@ export const getRoleDisplayName = (role?: UserRole | string): string => {
 };
 
 export const getRoleDashboardPath = (role?: UserRole | string): string => {
-  switch (role) {
+  const normalizedRole = (role || '').toString().trim().toUpperCase();
+  switch (normalizedRole) {
     case 'FARMER':
       return '/dashboard';
     case 'AGRI_PARTNER':
@@ -79,23 +86,26 @@ export const getRoleDashboardPath = (role?: UserRole | string): string => {
       return '/shop-owner/dashboard';
     case 'DELIVERY_BOY':
       return '/delivery/dashboard';
+    case 'MARKET_OWNER':
+      return '/market-owner/dashboard';
     case 'ADMIN':
       return '/admin/dashboard';
     default:
-      return '/';
+      return '/dashboard';
   }
 };
 
 export const isPathAllowedForRole = (pathname: string, role?: UserRole | string): boolean => {
   if (!pathname || !role) return false;
 
+  const normalizedRole = (role || '').toString().trim().toUpperCase();
   const cleanPath = pathname.split('?')[0].split('#')[0].replace(/\/+$/, '') || '/';
 
   if (['/login', '/register', '/forgot-password', '/reset-password'].includes(cleanPath)) {
     return false;
   }
 
-  if (role === 'ADMIN') {
+  if (normalizedRole === 'ADMIN') {
     return true;
   }
 
@@ -103,6 +113,8 @@ export const isPathAllowedForRole = (pathname: string, role?: UserRole | string)
     cleanPath === '/' ||
     cleanPath === '/marketplace' ||
     cleanPath.startsWith('/marketplace/') ||
+    cleanPath === '/market/prices' ||
+    cleanPath === '/mandi-prices' ||
     cleanPath === '/schemes' ||
     cleanPath === '/government-schemes' ||
     cleanPath === '/profile'
@@ -110,7 +122,7 @@ export const isPathAllowedForRole = (pathname: string, role?: UserRole | string)
     return true;
   }
 
-  if (role === 'FARMER') {
+  if (normalizedRole === 'FARMER') {
     return (
       cleanPath === '/dashboard' ||
       cleanPath === '/farmer/dashboard' ||
@@ -119,11 +131,23 @@ export const isPathAllowedForRole = (pathname: string, role?: UserRole | string)
       cleanPath === '/orders' ||
       cleanPath.startsWith('/orders/') ||
       cleanPath === '/ai/crop-disease' ||
-      cleanPath === '/crop-disease'
+      cleanPath === '/crop-disease' ||
+      cleanPath === '/market/prices' ||
+      cleanPath === '/mandi-prices'
     );
   }
 
-  if (role === 'SHOP_OWNER' || role === 'AGRI_PARTNER') {
+  if (normalizedRole === 'MARKET_OWNER') {
+    return (
+      cleanPath === '/market-owner/dashboard' ||
+      cleanPath === '/market-owner' ||
+      cleanPath === '/market/prices' ||
+      cleanPath === '/mandi-prices' ||
+      cleanPath.startsWith('/market-owner/')
+    );
+  }
+
+  if (normalizedRole === 'SHOP_OWNER' || normalizedRole === 'AGRI_PARTNER') {
     return (
       cleanPath === '/shop-owner/dashboard' ||
       cleanPath === '/shop-owner' ||
@@ -139,7 +163,7 @@ export const isPathAllowedForRole = (pathname: string, role?: UserRole | string)
     );
   }
 
-  if (role === 'DELIVERY_BOY') {
+  if (normalizedRole === 'DELIVERY_BOY') {
     return (
       cleanPath === '/delivery/dashboard' ||
       cleanPath === '/delivery-boy/dashboard' ||
@@ -151,8 +175,19 @@ export const isPathAllowedForRole = (pathname: string, role?: UserRole | string)
 };
 
 export const getPostLoginRedirectPath = (fromPath?: string | null, role?: UserRole | string): string => {
-  if (fromPath && fromPath !== '/' && isPathAllowedForRole(fromPath, role)) {
+  const normalizedRole = (role || '').toString().trim().toUpperCase();
+  const defaultDashboard = getRoleDashboardPath(normalizedRole);
+
+  // If the previous path was home, an auth page, a generic profile alias, or any dashboard route,
+  // redirect directly to the user's specific role dashboard
+  if (!fromPath || fromPath === '/' || fromPath.includes('dashboard') || fromPath === '/profile') {
+    return defaultDashboard;
+  }
+
+  // If the user intended to access a specific allowed non-dashboard page (e.g. /cart, /checkout, /marketplace/...)
+  if (isPathAllowedForRole(fromPath, normalizedRole)) {
     return fromPath;
   }
-  return getRoleDashboardPath(role);
+
+  return defaultDashboard;
 };

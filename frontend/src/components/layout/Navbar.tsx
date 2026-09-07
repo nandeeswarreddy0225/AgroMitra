@@ -18,12 +18,15 @@ import {
   ChevronDown,
   Store,
   CreditCard,
+  Building2,
+  TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { AgroMitraLogo } from '../common/AgroMitraLogo';
+import { NotificationBell } from '../common/NotificationBell';
 
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -59,6 +62,8 @@ export const Navbar: React.FC = () => {
     switch (role) {
       case 'ADMIN':
         return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800';
+      case 'MARKET_OWNER':
+        return 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800';
       case 'SHOP_OWNER':
       case 'AGRI_PARTNER':
         return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800';
@@ -72,6 +77,8 @@ export const Navbar: React.FC = () => {
 
   const getRoleShortLabel = (role?: string) => {
     switch (role) {
+      case 'MARKET_OWNER':
+        return 'Market Owner';
       case 'SHOP_OWNER':
       case 'AGRI_PARTNER':
         return t('rolePartner', 'Agri Store Partner');
@@ -123,6 +130,19 @@ export const Navbar: React.FC = () => {
               <span>{t('navMarketplace', 'Marketplace')}</span>
             </Link>
 
+            {/* Mandi Prices Link (Accessible to Everyone & Farmers) */}
+            <Link
+              to="/market/prices"
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                isActive('/market/prices') || isActive('/mandi-prices')
+                  ? 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span>Mandi Rates</span>
+            </Link>
+
             {isAuthenticated && user ? (
               <>
                 {/* Farmer Navigation */}
@@ -167,6 +187,23 @@ export const Navbar: React.FC = () => {
                           {totalItems}
                         </span>
                       )}
+                    </Link>
+                  </>
+                )}
+
+                {/* Market Owner Navigation */}
+                {user.role === 'MARKET_OWNER' && (
+                  <>
+                    <Link
+                      to="/market-owner/dashboard"
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                        isActive('/market-owner/dashboard') || isActive('/market-owner')
+                          ? 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <span>Mandi Dashboard</span>
                     </Link>
                   </>
                 )}
@@ -320,6 +357,9 @@ export const Navbar: React.FC = () => {
               )}
             </button>
 
+            {/* In-App Notifications & Alerts Bell */}
+            <NotificationBell />
+
             {/* Authenticated Role Dashboard & Profile */}
             {isAuthenticated && user ? (
               <div className="flex items-center space-x-2">
@@ -431,6 +471,14 @@ export const Navbar: React.FC = () => {
               {t('navMarketplace', 'Marketplace')}
             </Link>
 
+            <Link
+              to="/market/prices"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-xl text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              Live Mandi Rates
+            </Link>
+
             {isAuthenticated && user ? (
               <>
                 {user.role === 'FARMER' && (
@@ -474,6 +522,18 @@ export const Navbar: React.FC = () => {
                           {totalItems}
                         </span>
                       )}
+                    </Link>
+                  </>
+                )}
+
+                {user.role === 'MARKET_OWNER' && (
+                  <>
+                    <Link
+                      to="/market-owner/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-3 py-2 rounded-xl text-sm font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40"
+                    >
+                      Mandi Owner Dashboard
                     </Link>
                   </>
                 )}

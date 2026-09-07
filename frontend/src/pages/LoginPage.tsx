@@ -40,8 +40,17 @@ export const LoginPage: React.FC = () => {
         identifier: cleanIdentifier,
         password: cleanPassword,
       });
+
+      const rawRole =
+        authenticatedUser?.role ||
+        (authenticatedUser as any)?.user?.role ||
+        (authenticatedUser as any)?.data?.role ||
+        (authenticatedUser as any)?.data?.user?.role ||
+        'FARMER';
+      const userRole = rawRole.toString().trim().toUpperCase();
+
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
-      const destination = getPostLoginRedirectPath(from, authenticatedUser.role);
+      const destination = getPostLoginRedirectPath(from, userRole);
       navigate(destination, { replace: true });
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.data?.message) {

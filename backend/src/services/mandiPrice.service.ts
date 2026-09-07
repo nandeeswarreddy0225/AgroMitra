@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { MarketPrice } from '../models/MarketPrice.model';
 
 export interface MandiPriceRecord {
   id: string;
@@ -158,6 +159,15 @@ export class MandiPriceService {
   }
 
   /**
+   * Instantly clear cached price data when a Market Owner updates rates
+   */
+  public static clearCache(): void {
+    for (const key of Object.keys(priceCache)) {
+      delete priceCache[key];
+    }
+  }
+
+  /**
    * Fetch latest official daily mandi prices
    */
   public static async getLatestMandiPrices(options: {
@@ -191,6 +201,36 @@ export class MandiPriceService {
     }
 
     try {
+      // 1. First fetch verified active Market Owner quotes from MongoDB
+      let dbNormalizedRecords: MandiPriceRecord[] = [];
+      try {
+        const dbQuery: any = { status: 'ACTIVE' };
+        if (state && state.trim()) dbQuery.state = new RegExp(`^${state.trim()}$`, 'i');
+        if (district && district.trim()) dbQuery.district = new RegExp(`^${district.trim()}$`, 'i');
+        if (market && market.trim()) dbQuery.marketName = new RegExp(market.trim(), 'i');
+        if (commodity && commodity.trim()) dbQuery.commodityName = new RegExp(commodity.trim(), 'i');
+
+        const dbMarketPrices = await MarketPrice.find(dbQuery).sort({ updatedAt: -1 }).limit(limit);
+        dbNormalizedRecords = dbMarketPrices.map((p) => ({
+          id: p._id.toString(),
+          commodity: p.commodityName,
+          variety: 'Standard / FAQ',
+          grade: 'FAQ',
+          state: p.state,
+          district: p.district,
+          market: p.marketName,
+          minPrice: p.minPrice,
+          modalPrice: p.modalPrice,
+          maxPrice: p.maxPrice,
+          priceDate: p.priceDate,
+          source: `AgriMart APMC Mandi (${p.marketName})`,
+          priceChangePercent: p.priceChangePercent ?? null,
+        }));
+      } catch (dbErr: any) {
+        console.warn('[MandiPriceService] MongoDB query warning:', dbErr.message);
+      }
+
+      // 2. Fetch external Agmarknet records
       const apiKey = this.getApiKey();
       const params: Record<string, any> = {
         'api-key': apiKey,
@@ -211,69 +251,86 @@ export class MandiPriceService {
         params['filters[commodity]'] = commodity.trim();
       }
 
-      const response = await axios.get(this.API_URL, {
-        params,
-        timeout: 8000,
-      });
-
-      const rawRecords: any[] = response.data?.records || [];
-
-      let normalizedRecords: MandiPriceRecord[] = rawRecords.map((r, index) => {
-        const minP = Number(r.min_price) || 0;
-        const modalP = Number(r.modal_price) || minP;
-        const maxP = Number(r.max_price) || modalP;
-
-        return {
-          id: `${r.market || 'm'}_${r.commodity || 'c'}_${index}`,
-          commodity: r.commodity || 'Commodity',
-          variety: r.variety || 'Standard',
-          grade: r.grade || 'FAQ',
-          state: r.state || state || 'India',
-          district: r.district || 'General',
-          market: r.market || 'APMC Mandi',
-          minPrice: minP,
-          modalPrice: modalP,
-          maxPrice: maxP,
-          priceDate: r.arrival_date || new Date().toLocaleDateString('en-GB'),
-          source: this.SOURCE_NAME,
-          priceChangePercent: null,
-        };
-      });
-
-      if (normalizedRecords.length === 0 && state) {
-        const fallbackRes = await axios.get(this.API_URL, {
-          params: { 'api-key': apiKey, format: 'json', limit: 40 },
+      let externalRecords: MandiPriceRecord[] = [];
+      try {
+        const response = await axios.get(this.API_URL, {
+          params,
           timeout: 8000,
         });
-        const altRecords: any[] = fallbackRes.data?.records || [];
-        normalizedRecords = altRecords.map((r, index) => ({
-          id: `${r.market || 'm'}_${r.commodity || 'c'}_${index}`,
-          commodity: r.commodity || 'Commodity',
-          variety: r.variety || 'Standard',
-          grade: r.grade || 'FAQ',
-          state: r.state || 'India',
-          district: r.district || 'General',
-          market: r.market || 'APMC Mandi',
-          minPrice: Number(r.min_price) || 0,
-          modalPrice: Number(r.modal_price) || 0,
-          maxPrice: Number(r.max_price) || 0,
-          priceDate: r.arrival_date || new Date().toLocaleDateString('en-GB'),
-          source: this.SOURCE_NAME,
-          priceChangePercent: null,
-        }));
+
+        const rawRecords: any[] = response.data?.records || [];
+
+        externalRecords = rawRecords.map((r, index) => {
+          const minP = Number(r.min_price) || 0;
+          const modalP = Number(r.modal_price) || minP;
+          const maxP = Number(r.max_price) || modalP;
+
+          return {
+            id: `${r.market || 'm'}_${r.commodity || 'c'}_${index}`,
+            commodity: r.commodity || 'Commodity',
+            variety: r.variety || 'Standard',
+            grade: r.grade || 'FAQ',
+            state: r.state || state || 'India',
+            district: r.district || 'General',
+            market: r.market || 'APMC Mandi',
+            minPrice: minP,
+            modalPrice: modalP,
+            maxPrice: maxP,
+            priceDate: r.arrival_date || new Date().toLocaleDateString('en-GB'),
+            source: this.SOURCE_NAME,
+            priceChangePercent: null,
+          };
+        });
+      } catch (extErr: any) {
+        console.warn('[MandiPriceService] External API call note:', extErr.message);
       }
 
-      const states = Array.from(new Set(normalizedRecords.map((r) => r.state))).filter(Boolean);
-      const commodities = Array.from(new Set(normalizedRecords.map((r) => r.commodity))).filter(Boolean);
-      const insight = this.generateMarketInsight(normalizedRecords);
+      let combinedRecords = [...dbNormalizedRecords, ...externalRecords];
+
+      if (combinedRecords.length === 0 && state) {
+        try {
+          const fallbackRes = await axios.get(this.API_URL, {
+            params: { 'api-key': apiKey, format: 'json', limit: 40 },
+            timeout: 8000,
+          });
+          const altRecords: any[] = fallbackRes.data?.records || [];
+          const altNormalized = altRecords.map((r, index) => ({
+            id: `${r.market || 'm'}_${r.commodity || 'c'}_${index}`,
+            commodity: r.commodity || 'Commodity',
+            variety: r.variety || 'Standard',
+            grade: r.grade || 'FAQ',
+            state: r.state || 'India',
+            district: r.district || 'General',
+            market: r.market || 'APMC Mandi',
+            minPrice: Number(r.min_price) || 0,
+            modalPrice: Number(r.modal_price) || 0,
+            maxPrice: Number(r.max_price) || 0,
+            priceDate: r.arrival_date || new Date().toLocaleDateString('en-GB'),
+            source: this.SOURCE_NAME,
+            priceChangePercent: null,
+          }));
+          combinedRecords = [...dbNormalizedRecords, ...altNormalized];
+        } catch {
+          // Keep whatever we have
+        }
+      }
+
+      if (combinedRecords.length === 0) {
+        const authenticFallback = this.getAuthenticFallbackDataset(state);
+        combinedRecords = [...dbNormalizedRecords, ...authenticFallback.records];
+      }
+
+      const states = Array.from(new Set(combinedRecords.map((r) => r.state))).filter(Boolean);
+      const commodities = Array.from(new Set(combinedRecords.map((r) => r.commodity))).filter(Boolean);
+      const insight = this.generateMarketInsight(combinedRecords);
 
       const finalResponse: MandiPriceResponse = {
         success: true,
-        source: this.SOURCE_NAME,
+        source: dbNormalizedRecords.length > 0 ? 'AgriMart Mandi Network & Agmarknet APMC' : this.SOURCE_NAME,
         isCached: false,
         cachedAt: new Date().toISOString(),
-        totalRecords: normalizedRecords.length,
-        records: normalizedRecords,
+        totalRecords: combinedRecords.length,
+        records: combinedRecords,
         filterOptions: {
           states,
           commodities,
@@ -309,18 +366,39 @@ export class MandiPriceService {
     const rawCommodity = options.commodity || 'Paddy(Common)';
     const normKey = rawCommodity.toLowerCase();
 
-    // 1. Gather real observations
+    // 1. Gather real observations from MongoDB first, then authentic archive
     let observations: { date: string; price: number; market: string; district?: string; state?: string }[] = [];
 
-    // Match key from archive
-    for (const key of Object.keys(AUTHENTIC_HISTORICAL_ARCHIVE)) {
-      if (normKey.includes(key)) {
-        observations = [...AUTHENTIC_HISTORICAL_ARCHIVE[key]];
-        break;
+    try {
+      const dbPrices = await MarketPrice.find({
+        commodityName: new RegExp(normKey.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i'),
+        status: 'ACTIVE',
+      }).sort({ priceDate: 1 }).limit(15);
+
+      if (dbPrices.length > 0) {
+        observations = dbPrices.map((p) => ({
+          date: p.priceDate,
+          price: p.modalPrice,
+          market: p.marketName,
+          district: p.district,
+          state: p.state,
+        }));
+      }
+    } catch (dbErr: any) {
+      console.warn('[MandiPriceService] MongoDB observations query note:', dbErr.message);
+    }
+
+    // Match key from archive if insufficient DB observations
+    if (observations.length < 3) {
+      for (const key of Object.keys(AUTHENTIC_HISTORICAL_ARCHIVE)) {
+        if (normKey.includes(key)) {
+          observations = [...AUTHENTIC_HISTORICAL_ARCHIVE[key], ...observations];
+          break;
+        }
       }
     }
 
-    // If no exact archive match, fetch latest real quotes for this commodity
+    // If still empty, fetch latest real quotes for this commodity
     if (observations.length === 0) {
       const latestData = await this.getLatestMandiPrices({
         commodity: rawCommodity,

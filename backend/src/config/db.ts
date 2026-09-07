@@ -12,12 +12,11 @@ let mongoMemoryServer: MongoMemoryServer | null = null;
  */
 export const configureDnsResolvers = (): void => {
   try {
-    const servers = process.env.DNS_SERVERS
-      ? process.env.DNS_SERVERS.split(',').map((s) => s.trim()).filter(Boolean)
-      : ['1.1.1.1', '1.0.0.1', '8.8.8.8', '8.8.4.4'];
-
-    if (servers.length > 0) {
-      dns.setServers(servers);
+    if (process.env.DNS_SERVERS) {
+      const servers = process.env.DNS_SERVERS.split(',').map((s) => s.trim()).filter(Boolean);
+      if (servers.length > 0) {
+        dns.setServers(servers);
+      }
     }
   } catch (err) {
     console.warn('⚠️ [Database]: DNS resolver setup note:', err instanceof Error ? err.message : err);
@@ -37,7 +36,7 @@ export const connectDB = async (): Promise<void> => {
   if (mongoUri && mongoUri.trim() !== '') {
     try {
       const conn = await mongoose.connect(mongoUri, {
-        serverSelectionTimeoutMS: 15000,
+        serverSelectionTimeoutMS: 5000,
       });
       console.log(`✅ [Database]: MongoDB Connected successfully to host: ${conn.connection.host}`);
       // Auto-migrate any legacy plaintext passwords safely in background

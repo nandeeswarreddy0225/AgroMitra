@@ -2,7 +2,7 @@ import mongoose, { Document, Schema, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { normalizePhoneNumber } from '../utils/phone';
 
-export type UserRole = 'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'ADMIN';
+export type UserRole = 'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'ADMIN' | 'MARKET_OWNER';
 
 export interface IAddress {
   street?: string;
@@ -22,6 +22,9 @@ export interface IUser extends Document {
   shopName?: string;
   upiId?: string;
   qrCodeUrl?: string;
+  market?: mongoose.Types.ObjectId | string;
+  isApproved?: boolean;
+  status?: 'ACTIVE' | 'PENDING' | 'DISABLED';
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   createdAt: Date;
@@ -80,7 +83,7 @@ const UserSchema = new Schema<IUser>(
     role: {
       type: String,
       enum: {
-        values: ['FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', 'DELIVERY_BOY', 'ADMIN'],
+        values: ['FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', 'DELIVERY_BOY', 'ADMIN', 'MARKET_OWNER'],
         message: '{VALUE} is not a valid role',
       },
       required: [true, 'Role is required'],
@@ -104,6 +107,20 @@ const UserSchema = new Schema<IUser>(
       type: String,
       trim: true,
       default: '',
+    },
+    market: {
+      type: Schema.Types.ObjectId,
+      ref: 'Market',
+      default: undefined,
+    },
+    isApproved: {
+      type: Boolean,
+      default: true,
+    },
+    status: {
+      type: String,
+      enum: ['ACTIVE', 'PENDING', 'DISABLED'],
+      default: 'ACTIVE',
     },
     resetPasswordToken: {
       type: String,

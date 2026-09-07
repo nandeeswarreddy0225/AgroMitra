@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import {
   Shield,
-  User,
+  User as UserIcon,
   Mail,
   Phone,
   MapPin,
@@ -18,6 +18,12 @@ import {
   Loader2,
   RefreshCw,
   Check,
+  Building2,
+  TrendingUp,
+  AlertTriangle,
+  Activity,
+  ShieldCheck,
+  XCircle,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -26,8 +32,14 @@ import {
   deleteStorePaymentConfigApi,
   getAdminPaymentsApi,
   verifyAdminPaymentApi,
+  getAdminMarketsApi,
+  getAdminMarketOwnersApi,
+  updateAdminMarketOwnerStatusApi,
+  getAdminPriceAuditsApi,
 } from '../../services/api';
 import { StorePaymentConfig, AdminPaymentRecord } from '../../types/payment';
+import { Market, PriceAuditRecord } from '../../types/marketOwner';
+import { User } from '../../types/auth';
 import axios from 'axios';
 
 export const AdminDashboard: React.FC = () => {
@@ -52,6 +64,18 @@ export const AdminDashboard: React.FC = () => {
   const [paymentActionId, setPaymentActionId] = useState<string | null>(null);
   const [paymentSuccessMsg, setPaymentSuccessMsg] = useState<string | null>(null);
   const [paymentErrorMsg, setPaymentErrorMsg] = useState<string | null>(null);
+
+  // Market Governance State
+  const [marketOwners, setMarketOwners] = useState<User[]>([]);
+  const [isLoadingMarketOwners, setIsLoadingMarketOwners] = useState(true);
+  const [adminMarkets, setAdminMarkets] = useState<Market[]>([]);
+  const [isLoadingAdminMarkets, setIsLoadingAdminMarkets] = useState(true);
+  const [priceAudits, setPriceAudits] = useState<PriceAuditRecord[]>([]);
+  const [isLoadingAudits, setIsLoadingAudits] = useState(true);
+  const [auditSuspiciousOnly, setAuditSuspiciousOnly] = useState(false);
+  const [marketActionMsg, setMarketActionMsg] = useState<string | null>(null);
+  const [marketActionError, setMarketActionError] = useState<string | null>(null);
+  const [actioningOwnerId, setActioningOwnerId] = useState<string | null>(null);
 
   const fetchConfig = async () => {
     setIsLoadingConfig(true);
@@ -95,10 +119,65 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const fetchMarketGovernance = async () => {
+    setIsLoadingMarketOwners(true);
+    setIsLoadingAdminMarkets(true);
+    setIsLoadingAudits(true);
+    try {
+      const [ownersRes, marketsRes, auditsRes] = await Promise.allSettled([
+        getAdminMarketOwnersApi(),
+        getAdminMarketsApi(),
+        getAdminPriceAuditsApi({ suspicious: auditSuspiciousOnly ? true : undefined, limit: 30 }),
+      ]);
+
+      if (ownersRes.status === 'fulfilled' && ownersRes.value.success) {
+        setMarketOwners(ownersRes.value.owners || []);
+      }
+      if (marketsRes.status === 'fulfilled' && marketsRes.value.success) {
+        setAdminMarkets(marketsRes.value.markets || []);
+      }
+      if (auditsRes.status === 'fulfilled' && auditsRes.value.success) {
+        setPriceAudits(auditsRes.value.audits || []);
+      }
+    } catch {
+      // Ignore
+    } finally {
+      setIsLoadingMarketOwners(false);
+      setIsLoadingAdminMarkets(false);
+      setIsLoadingAudits(false);
+    }
+  };
+
+  const handleUpdateOwnerStatus = async (
+    ownerId: string,
+    status: 'ACTIVE' | 'PENDING' | 'DISABLED',
+    isApproved: boolean
+  ) => {
+    setActioningOwnerId(ownerId);
+    setMarketActionMsg(null);
+    setMarketActionError(null);
+    try {
+      const res = await updateAdminMarketOwnerStatusApi(ownerId, status, isApproved);
+      if (res.success) {
+        setMarketActionMsg(`Market Owner ${res.user?.name || ''} status updated to ${status}.`);
+        await fetchMarketGovernance();
+      }
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        setMarketActionError(err.response.data.message);
+      } else {
+        setMarketActionError('Failed to update Market Owner status.');
+      }
+    } finally {
+      setActioningOwnerId(null);
+    }
+  };
+
   useEffect(() => {
     fetchConfig();
     fetchPayments();
-  }, []);
+    fetchMarketGovernance();
+  }, [auditSuspiciousOnly]);
 
   const handleSaveUpiConfig = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -302,6 +381,366 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* APMC Mandi & Price Governance Card */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4 md:col-span-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <Building2 className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-heading font-extrabold text-slate-900 dark:text-white">
+                    Mandi & Market Owner Governance
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                    Phase 1 Active
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  Oversee verified APMC Mandis, approve market yard operators, and monitor real-time daily price updates and anomaly audits.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Link
+                to="/market/prices"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition-all"
+              >
+                <TrendingUp className="w-4 h-4" />
+                <span>Farmer Price Portal</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Market Owner Approvals & Mandi Management Section */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <h2 className="text-lg sm:text-xl font-heading font-extrabold text-slate-900 dark:text-white flex items-center gap-2.5">
+              <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <span>Market Owner Governance & Approvals</span>
+              {marketOwners.filter((o) => !o.isApproved || o.status === 'PENDING').length > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                  {marketOwners.filter((o) => !o.isApproved || o.status === 'PENDING').length} Pending Approval
+                </span>
+              )}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              Approve, verify, or disable agricultural market yard operators across states and districts.
+            </p>
+          </div>
+
+          <button
+            onClick={fetchMarketGovernance}
+            disabled={isLoadingMarketOwners}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold self-start sm:self-auto"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingMarketOwners ? 'animate-spin' : ''}`} />
+            <span>Refresh Market Data</span>
+          </button>
+        </div>
+
+        {marketActionMsg && (
+          <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-xs sm:text-sm text-emerald-800 dark:text-emerald-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>{marketActionMsg}</span>
+            </div>
+            <button onClick={() => setMarketActionMsg(null)} className="text-emerald-700 dark:text-emerald-300 text-xs font-bold">
+              ✕
+            </button>
+          </div>
+        )}
+
+        {marketActionError && (
+          <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-700 text-xs sm:text-sm text-rose-800 dark:text-rose-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+              <span>{marketActionError}</span>
+            </div>
+            <button onClick={() => setMarketActionError(null)} className="text-rose-700 dark:text-rose-300 text-xs font-bold">
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Market Owners Table */}
+        {isLoadingMarketOwners ? (
+          <div className="py-8 flex flex-col items-center justify-center text-slate-400">
+            <Loader2 className="w-6 h-6 animate-spin text-indigo-600 mb-2" />
+            <span className="text-xs">Loading market owners...</span>
+          </div>
+        ) : marketOwners.length === 0 ? (
+          <div className="py-8 text-center text-slate-400 text-xs">
+            No market owner accounts registered yet.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 font-bold uppercase">
+                  <th className="py-3 px-4">Market Owner</th>
+                  <th className="py-3 px-4">Contact</th>
+                  <th className="py-3 px-4">Assigned Mandi</th>
+                  <th className="py-3 px-4">Location</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Admin Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {marketOwners.map((owner) => {
+                  const isActioning = actioningOwnerId === owner.id;
+                  const mandi = adminMarkets.find((m) => {
+                    const oId = typeof m.owner === 'object' ? (m.owner as any)?._id || (m.owner as any)?.id : m.owner;
+                    return oId === owner.id;
+                  });
+
+                  return (
+                    <tr key={owner.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-indigo-500" />
+                          <span>{owner.name}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400">{owner.email}</div>
+                      </td>
+                      <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-mono">
+                        {owner.phone}
+                      </td>
+                      <td className="py-3 px-4">
+                        {mandi ? (
+                          <div>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">{mandi.name}</span>
+                            <span className="block text-[10px] text-slate-400">{mandi.district}, {mandi.state}</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">No Mandi Linked</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
+                        {[owner.address?.city, owner.address?.state, owner.address?.pincode].filter(Boolean).join(', ') || '—'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                            owner.isApproved && owner.status === 'ACTIVE'
+                              ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                              : owner.status === 'DISABLED'
+                              ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
+                              : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                          }`}
+                        >
+                          {owner.status || (owner.isApproved ? 'ACTIVE' : 'PENDING')}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {!owner.isApproved || owner.status !== 'ACTIVE' ? (
+                            <button
+                              onClick={() => handleUpdateOwnerStatus(owner.id, 'ACTIVE', true)}
+                              disabled={isActioning}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-sm transition-colors disabled:opacity-50"
+                            >
+                              {isActioning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                              <span>Approve & Activate</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleUpdateOwnerStatus(owner.id, 'DISABLED', false)}
+                              disabled={isActioning}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] font-bold transition-colors disabled:opacity-50"
+                            >
+                              <XCircle className="w-3 h-3" />
+                              <span>Disable Access</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* APMC Mandis Grid */}
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-indigo-600" />
+            <span>Registered APMC Mandis & Market Yards ({adminMarkets.length})</span>
+          </h3>
+
+          {isLoadingAdminMarkets ? (
+            <div className="py-4 flex items-center justify-center text-slate-400 text-xs">
+              <Loader2 className="w-4 h-4 animate-spin text-indigo-600 mr-2" />
+              <span>Loading registered markets...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {adminMarkets.map((m) => {
+                const lat = m.location?.lat ?? m.latitude;
+                const lon = m.location?.lon ?? m.longitude;
+                const hours = typeof m.operatingHours === 'object'
+                  ? `${m.operatingHours?.open || '06:00'} - ${m.operatingHours?.close || '18:00'}`
+                  : (m.operatingHours || '06:00 AM - 06:00 PM');
+                const mStatus = m.status || (m.isActive !== false ? 'ACTIVE' : 'INACTIVE');
+
+                return (
+                  <div
+                    key={m._id || m.id}
+                    className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-bold text-slate-900 dark:text-white text-xs">{m.name}</h4>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                          mStatus === 'ACTIVE'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                            : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                        }`}>
+                          {mStatus}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                        {m.address}, {m.district}, {m.state} - {m.pincode}
+                      </p>
+                    </div>
+
+                    <div className="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[10px] text-slate-500">
+                      <span className="flex items-center gap-1 font-mono">
+                        <MapPin className="w-3 h-3 text-indigo-500" />
+                        {lat !== undefined ? `${lat.toFixed(4)}, ${lon?.toFixed(4)}` : 'GPS Standard'}
+                      </span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                        {hours}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Price Audit Trail & Anomaly Detection */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <h2 className="text-lg sm:text-xl font-heading font-extrabold text-slate-900 dark:text-white flex items-center gap-2.5">
+              <Activity className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <span>Mandi Price Audit Trail & Anomaly Detection</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              Real-time audit records tracking all daily price submissions, revisions, and automated suspicious swing flags.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={auditSuspiciousOnly}
+                onChange={(e) => setAuditSuspiciousOnly(e.target.checked)}
+                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
+              />
+              <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400 font-bold">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>Suspicious Swings Only</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        {isLoadingAudits ? (
+          <div className="py-8 flex flex-col items-center justify-center text-slate-400">
+            <Loader2 className="w-6 h-6 animate-spin text-indigo-600 mb-2" />
+            <span className="text-xs">Loading price audit logs...</span>
+          </div>
+        ) : priceAudits.length === 0 ? (
+          <div className="py-8 text-center text-slate-400 text-xs">
+            {auditSuspiciousOnly ? 'No suspicious price swings detected.' : 'No price audit logs recorded yet.'}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 font-bold uppercase">
+                  <th className="py-3 px-4">Timestamp</th>
+                  <th className="py-3 px-4">Commodity</th>
+                  <th className="py-3 px-4">Mandi</th>
+                  <th className="py-3 px-4">Action</th>
+                  <th className="py-3 px-4">Previous Rate</th>
+                  <th className="py-3 px-4">New Rate</th>
+                  <th className="py-3 px-4">Updated By</th>
+                  <th className="py-3 px-4 text-right">Audit Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {priceAudits.map((a) => {
+                  const mandiName = typeof a.market === 'object' ? a.market?.name : 'Mandi Yard';
+                  const commodityName = typeof a.commodity === 'object' ? a.commodity?.name : 'Commodity';
+                  const userName = typeof a.user === 'object' ? a.user?.name : 'Market Operator';
+
+                  return (
+                    <tr
+                      key={a._id}
+                      className={`hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors ${
+                        a.isSuspiciousChange ? 'bg-rose-50/40 dark:bg-rose-950/20' : ''
+                      }`}
+                    >
+                      <td className="py-3 px-4 text-slate-500 font-mono text-[11px]">
+                        {new Date(a.createdAt).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
+                        {commodityName}
+                      </td>
+                      <td className="py-3 px-4 text-slate-700 dark:text-slate-300">
+                        {mandiName}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          a.action === 'CREATE' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                        }`}>
+                          {a.action}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-slate-500">
+                        {a.previousPrice?.modalPrice ? `₹${a.previousPrice.modalPrice}` : '—'}
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-white">
+                        ₹{a.newPrice.modalPrice} <span className="text-[10px] text-slate-400 font-normal">({a.newPrice.minPrice}-{a.newPrice.maxPrice}/{a.newPrice.unit})</span>
+                      </td>
+                      <td className="py-3 px-4 text-slate-700 dark:text-slate-300">
+                        {userName}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {a.isSuspiciousChange ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-700">
+                            <AlertTriangle className="w-3 h-3 text-rose-600" />
+                            <span>Flagged Swing</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                            <Check className="w-3 h-3" />
+                            <span>Verified Valid</span>
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Store UPI Payment Configuration Form Section */}
@@ -592,13 +1031,13 @@ export const AdminDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
           <h2 className="text-lg font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <User className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <UserIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             <span>Administrator Credentials</span>
           </h2>
           <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs sm:text-sm">
             <div className="py-2.5 flex justify-between items-center">
               <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <User className="w-4 h-4" />
+                <UserIcon className="w-4 h-4" />
                 <span>Full Name</span>
               </span>
               <span className="font-semibold text-slate-900 dark:text-white">{user?.name}</span>

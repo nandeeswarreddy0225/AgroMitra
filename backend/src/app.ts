@@ -13,6 +13,9 @@ import { deliveryBoyRouter } from './routes/deliveryBoy.routes';
 import { weatherRouter } from './routes/weather.routes';
 import { cropAdvisorRouter } from './routes/cropAdvisor.routes';
 import { mandiPriceRouter } from './routes/mandiPrice.routes';
+import { locationRouter } from './routes/location.routes';
+import { marketOwnerRouter } from './routes/marketOwner.routes';
+import { notificationRouter } from './routes/notification.routes';
 import { notFoundHandler, errorHandler } from './middlewares/errorHandler';
 
 dotenv.config();
@@ -70,8 +73,12 @@ app.use('/api/delivery', deliveryBoyRouter);
 app.use('/api/weather', weatherRouter);
 app.use('/api/crop-advisor', cropAdvisorRouter);
 app.use('/api/mandi-prices', mandiPriceRouter);
+app.use('/api/mandi', mandiPriceRouter);
 app.use('/api/market-prices', mandiPriceRouter);
 app.use('/api/market', mandiPriceRouter);
+app.use('/api/location', locationRouter);
+app.use('/api/market-owner', marketOwnerRouter);
+app.use('/api/notifications', notificationRouter);
 
 
 // 404 & Global Error Handling

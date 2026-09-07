@@ -1,15 +1,36 @@
 import { Request, Response } from 'express';
 import { WeatherService } from '../services/weather.service';
+import { LocationService } from '../services/location.service';
 
 export const getLiveWeatherController = async (req: Request, res: Response): Promise<void> => {
   try {
     const latStr = (req.query.lat || req.query.latitude) as string | undefined;
     const lonStr = (req.query.lon || req.query.lng || req.query.longitude) as string | undefined;
-    const city = (req.query.city || req.query.district || req.query.q) as string | undefined;
-    const state = req.query.state as string | undefined;
+    let city = (req.query.city || req.query.district || req.query.q) as string | undefined;
+    let state = req.query.state as string | undefined;
+    const pincode = (req.query.pincode || req.query.pin) as string | undefined;
 
-    const lat = latStr ? parseFloat(latStr) : undefined;
-    const lon = lonStr ? parseFloat(lonStr) : undefined;
+    let lat: number | undefined;
+    let lon: number | undefined;
+
+    if (latStr !== undefined || lonStr !== undefined) {
+      const coordValidation = LocationService.validateCoordinates(latStr, lonStr);
+      if (!coordValidation.isValid) {
+        res.status(400).json({
+          success: false,
+          message: coordValidation.message || 'Invalid coordinates provided.',
+        });
+        return;
+      }
+      lat = coordValidation.latitude;
+      lon = coordValidation.longitude;
+    } else if (pincode && pincode.trim().length === 6) {
+      const pinResult = await LocationService.lookupPincode(pincode.trim());
+      if (pinResult.success) {
+        city = pinResult.district || pinResult.city || city;
+        state = pinResult.state || state;
+      }
+    }
 
     const weather = await WeatherService.getLiveWeather({
       lat,
@@ -51,11 +72,31 @@ export const getWeatherForecastController = async (req: Request, res: Response):
   try {
     const latStr = (req.query.lat || req.query.latitude) as string | undefined;
     const lonStr = (req.query.lon || req.query.lng || req.query.longitude) as string | undefined;
-    const city = (req.query.city || req.query.district || req.query.q) as string | undefined;
-    const state = req.query.state as string | undefined;
+    let city = (req.query.city || req.query.district || req.query.q) as string | undefined;
+    let state = req.query.state as string | undefined;
+    const pincode = (req.query.pincode || req.query.pin) as string | undefined;
 
-    const lat = latStr ? parseFloat(latStr) : undefined;
-    const lon = lonStr ? parseFloat(lonStr) : undefined;
+    let lat: number | undefined;
+    let lon: number | undefined;
+
+    if (latStr !== undefined || lonStr !== undefined) {
+      const coordValidation = LocationService.validateCoordinates(latStr, lonStr);
+      if (!coordValidation.isValid) {
+        res.status(400).json({
+          success: false,
+          message: coordValidation.message || 'Invalid coordinates provided.',
+        });
+        return;
+      }
+      lat = coordValidation.latitude;
+      lon = coordValidation.longitude;
+    } else if (pincode && pincode.trim().length === 6) {
+      const pinResult = await LocationService.lookupPincode(pincode.trim());
+      if (pinResult.success) {
+        city = pinResult.district || pinResult.city || city;
+        state = pinResult.state || state;
+      }
+    }
 
     const weather = await WeatherService.getLiveWeather({
       lat,

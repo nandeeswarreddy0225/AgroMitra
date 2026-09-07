@@ -1,16 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus, Lock, Mail, User as UserIcon, Phone, Sprout, Store, Truck, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  UserPlus,
+  Lock,
+  Mail,
+  User as UserIcon,
+  Phone,
+  Sprout,
+  Store,
+  Truck,
+  Building2,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import { AgroMitraLogo } from '../components/common/AgroMitraLogo';
+import { LocationAutofillWidget } from '../components/common/LocationAutofillWidget';
 import axios from 'axios';
 
 export const RegisterPage: React.FC = () => {
-  const [role, setRole] = useState<'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY'>('FARMER');
+  const [role, setRole] = useState<'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'MARKET_OWNER'>('FARMER');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [marketName, setMarketName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [street, setStreet] = useState('');
@@ -39,6 +55,7 @@ export const RegisterPage: React.FC = () => {
     setName('');
     setEmail('');
     setPhone('');
+    setMarketName('');
     setPassword('');
     setConfirmPassword('');
     setStreet('');
@@ -97,12 +114,14 @@ export const RegisterPage: React.FC = () => {
           state: state.trim(),
           pincode: pincode.trim(),
         },
+        marketName: role === 'MARKET_OWNER' ? (marketName.trim() || `${trimmedName} APMC Mandi`) : undefined,
       });
 
       // Clear the form fields upon successful registration
       setName('');
       setEmail('');
       setPhone('');
+      setMarketName('');
       setPassword('');
       setConfirmPassword('');
       setStreet('');
@@ -158,11 +177,11 @@ export const RegisterPage: React.FC = () => {
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
                 {t('registerAs', 'Register as:')} <span className="text-rose-500">*</span>
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <button
                   type="button"
                   onClick={() => setRole('FARMER')}
-                  className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border-2 transition-all ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${
                     role === 'FARMER'
                       ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-200 font-bold shadow-sm'
                       : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600 dark:text-slate-400'
@@ -170,40 +189,56 @@ export const RegisterPage: React.FC = () => {
                 >
                   <Sprout className={`w-5 h-5 mb-1 ${role === 'FARMER' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
                   <span className="text-xs font-bold">{t('roleFarmer', 'Farmer')}</span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
-                    {t('roleFarmerDesc', 'Buy fertilizers, seeds & AI crop health')}
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
+                    Buy inputs & AI health
                   </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setRole('AGRI_PARTNER')}
-                  className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border-2 transition-all ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${
                     role === 'AGRI_PARTNER' || role === 'SHOP_OWNER'
                       ? 'border-amber-600 bg-amber-50 dark:bg-amber-950/70 text-amber-950 dark:text-amber-200 font-bold shadow-sm'
                       : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   <Store className={`w-5 h-5 mb-1 ${role === 'AGRI_PARTNER' || role === 'SHOP_OWNER' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
-                  <span className="text-xs font-bold text-center">{t('rolePartner', 'Agri Store Partner')}</span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
-                    {t('rolePartnerDesc', 'Sell farm inputs & fulfill orders')}
+                  <span className="text-xs font-bold text-center">Store Partner</span>
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
+                    Sell seeds & fertilizers
                   </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setRole('DELIVERY_BOY')}
-                  className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border-2 transition-all ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${
                     role === 'DELIVERY_BOY'
                       ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/70 text-blue-950 dark:text-blue-200 font-bold shadow-sm'
                       : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   <Truck className={`w-5 h-5 mb-1 ${role === 'DELIVERY_BOY' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`} />
-                  <span className="text-xs font-bold">{t('roleDelivery', 'Delivery Partner')}</span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
-                    {t('roleDeliveryDesc', 'Deliver farm input orders')}
+                  <span className="text-xs font-bold">Delivery</span>
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
+                    Deliver farm inputs
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRole('MARKET_OWNER')}
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${
+                    role === 'MARKET_OWNER'
+                      ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/70 text-purple-950 dark:text-purple-200 font-bold shadow-sm'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  <Building2 className={`w-5 h-5 mb-1 ${role === 'MARKET_OWNER' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400'}`} />
+                  <span className="text-xs font-bold text-center">Market Owner</span>
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
+                    Publish Mandi rates
                   </span>
                 </button>
               </div>
@@ -287,75 +322,48 @@ export const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Address Details */}
-            <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <label htmlFor="agri_reg_street" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                {t('addressDetails', 'Address Details (Village / Town / City)')}
-              </label>
-              <input
-                id="agri_reg_street"
-                name="agri_reg_street"
-                type="text"
-                autoComplete="off"
-                readOnly={!unlockedFields['street']}
-                onFocus={() => unlockField('street')}
-                onPointerDown={() => unlockField('street')}
-                value={street}
-                onChange={(e) => setStreet(e.target.value)}
-                placeholder="Street / Farm Location / Landmark"
-                className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label htmlFor="agri_reg_city" className="sr-only">City / District</label>
+            {/* Market Owner specific fields */}
+            {role === 'MARKET_OWNER' && (
+              <div>
+                <label htmlFor="agri_reg_market_name" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Mandi / Market Yard Name <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative rounded-xl shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Building2 className="h-4 w-4" />
+                  </div>
                   <input
-                    id="agri_reg_city"
-                    name="agri_reg_city"
+                    id="agri_reg_market_name"
+                    name="agri_reg_market_name"
                     type="text"
                     autoComplete="off"
-                    readOnly={!unlockedFields['city']}
-                    onFocus={() => unlockField('city')}
-                    onPointerDown={() => unlockField('city')}
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="City / District"
-                    className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="agri_reg_state" className="sr-only">State</label>
-                  <input
-                    id="agri_reg_state"
-                    name="agri_reg_state"
-                    type="text"
-                    autoComplete="off"
-                    readOnly={!unlockedFields['state']}
-                    onFocus={() => unlockField('state')}
-                    onPointerDown={() => unlockField('state')}
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    placeholder="State"
-                    className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="agri_reg_pincode" className="sr-only">Pincode</label>
-                  <input
-                    id="agri_reg_pincode"
-                    name="agri_reg_pincode"
-                    type="text"
-                    autoComplete="off"
-                    readOnly={!unlockedFields['pincode']}
-                    onFocus={() => unlockField('pincode')}
-                    onPointerDown={() => unlockField('pincode')}
-                    value={pincode}
-                    onChange={(e) => setPincode(e.target.value)}
-                    placeholder="Pincode"
-                    className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    readOnly={!unlockedFields['marketName']}
+                    onFocus={() => unlockField('marketName')}
+                    onPointerDown={() => unlockField('marketName')}
+                    required={role === 'MARKET_OWNER'}
+                    value={marketName}
+                    onChange={(e) => setMarketName(e.target.value)}
+                    placeholder="e.g. Guntur APMC Market Yard / Azadpur Mandi"
+                    className="block w-full pl-10 pr-3 py-2.5 border border-purple-300 dark:border-purple-700 rounded-xl bg-purple-50/40 dark:bg-purple-950/20 text-slate-900 dark:text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Address Details with PIN Auto-fill and On-Demand GPS */}
+            <LocationAutofillWidget
+              street={street}
+              setStreet={setStreet}
+              city={city}
+              setCity={setCity}
+              state={state}
+              setState={setState}
+              pincode={pincode}
+              setPincode={setPincode}
+              unlockedFields={unlockedFields}
+              unlockField={unlockField}
+              className="pt-2 border-t border-slate-100 dark:border-slate-800"
+            />
 
             {/* Passwords */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">

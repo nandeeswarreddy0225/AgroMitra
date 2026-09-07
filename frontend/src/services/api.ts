@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 import { AuthResponse, LoginCredentials, RegisterData, User, UpdateProfileData } from '../types/auth';
 import {
   CreateProductInput,
@@ -16,32 +17,40 @@ import {
 } from '../types/order';
 
 const getApiBaseUrl = (): string => {
+  const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform();
+
+  // 1. Native mobile runtime (Android / iOS): Never route to device loopback (localhost)
+  if (isNative) {
+    const envUrl = (import.meta.env?.VITE_PRODUCTION_API_URL || import.meta.env?.VITE_API_URL || '').trim();
+    if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+      const cleanUrl = envUrl.replace(/\/+$/, '');
+      return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+    }
+    return 'https://agromitra-ytqb.onrender.com/api';
+  }
+
+  // 2. Desktop/Laptop Browser runtime check: if running on localhost or local network, talk to local backend on port 5000
+  if (typeof window !== 'undefined' && window.location) {
+    const hostname = window.location.hostname;
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      /^192\.168\./.test(hostname) ||
+      /^10\./.test(hostname) ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+    ) {
+      return `http://${hostname}:5000/api`;
+    }
+  }
+
+  // 3. Explicit environment variable for web deployment
   const envUrl = (import.meta.env?.VITE_API_URL || '').trim();
   if (envUrl) {
     const cleanUrl = envUrl.replace(/\/+$/, '');
     return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
   }
 
-  // Capacitor native mobile runtime check
-  if (typeof window !== 'undefined') {
-    const isCapacitor = !!(window as any).Capacitor || window.location.protocol === 'capacitor:';
-    if (isCapacitor) {
-      return 'https://agromitra-ytqb.onrender.com/api';
-    }
-
-    if (window.location) {
-      const hostname = window.location.hostname;
-      if (
-        hostname === 'localhost' ||
-        hostname === '127.0.0.1' ||
-        /^192\.168\./.test(hostname) ||
-        /^10\./.test(hostname) ||
-        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
-      ) {
-        return `http://${hostname}:5000/api`;
-      }
-    }
-  }
+  // 4. Default production fallback
   return 'https://agromitra-ytqb.onrender.com/api';
 };
 
@@ -636,6 +645,316 @@ export const getMarketIntelligenceApi = async (params: {
     '/mandi-prices/intelligence',
     { params }
   );
+  return response.data;
+};
+
+// ==========================================
+// Pincode Auto-Fill & GPS Location APIs
+// ==========================================
+export const lookupPincodeApi = async (
+  pincode: string
+): Promise<import('../types/location').PincodeLookupResponse> => {
+  const response = await apiClient.get<import('../types/location').PincodeLookupResponse>(
+    `/location/pincode/${pincode}`
+  );
+  return response.data;
+};
+
+export const validateCoordinatesApi = async (params: {
+  latitude: number;
+  longitude: number;
+}): Promise<import('../types/location').CoordinateValidationResponse> => {
+  const response = await apiClient.post<import('../types/location').CoordinateValidationResponse>(
+    '/location/validate',
+    params
+  );
+  return response.data;
+};
+
+export const reverseGeocodeApi = async (params: {
+  lat: number;
+  lon: number;
+}): Promise<import('../types/location').ReverseGeocodeResponse> => {
+  const response = await apiClient.get<import('../types/location').ReverseGeocodeResponse>(
+    '/location/reverse-geocode',
+    { params }
+  );
+  return response.data;
+};
+
+// ==========================================
+// Market Owner & Daily Mandi Price APIs
+// ==========================================
+export const getMarketOwnerDashboardApi = async (): Promise<
+  import('../types/marketOwner').MarketOwnerDashboardData
+> => {
+  const response = await apiClient.get<import('../types/marketOwner').MarketOwnerDashboardData>(
+    '/market-owner/dashboard'
+  );
+  return response.data;
+};
+
+export const getMyMarketApi = async (): Promise<{
+  success: boolean;
+  market: import('../types/marketOwner').Market;
+}> => {
+  const response = await apiClient.get<{
+    success: boolean;
+    market: import('../types/marketOwner').Market;
+  }>('/market-owner/my-market');
+  return response.data;
+};
+
+export const updateMyMarketApi = async (
+  data: Partial<import('../types/marketOwner').Market>
+): Promise<{
+  success: boolean;
+  message: string;
+  market: import('../types/marketOwner').Market;
+}> => {
+  const response = await apiClient.put<{
+    success: boolean;
+    message: string;
+    market: import('../types/marketOwner').Market;
+  }>('/market-owner/my-market', data);
+  return response.data;
+};
+
+export const addOrUpdateMarketPriceApi = async (
+  payload: import('../types/marketOwner').AddPricePayload
+): Promise<{
+  success: boolean;
+  marketPrice: import('../types/marketOwner').MarketPriceRecord;
+  audit: import('../types/marketOwner').PriceAuditRecord;
+  message: string;
+}> => {
+  const response = await apiClient.post<{
+    success: boolean;
+    marketPrice: import('../types/marketOwner').MarketPriceRecord;
+    audit: import('../types/marketOwner').PriceAuditRecord;
+    message: string;
+  }>('/market-owner/prices', payload);
+  return response.data;
+};
+
+export const getCommoditiesApi = async (params?: {
+  category?: string;
+  search?: string;
+  includeInactive?: boolean;
+}): Promise<{
+  success: boolean;
+  count: number;
+  commodities: import('../types/marketOwner').Commodity[];
+}> => {
+  const response = await apiClient.get<{
+    success: boolean;
+    count: number;
+    commodities: import('../types/marketOwner').Commodity[];
+  }>('/market-owner/commodities', { params });
+  return response.data;
+};
+
+export const createCommodityApi = async (data: {
+  name: string;
+  category: string;
+  variety?: string;
+  defaultUnit?: string;
+  allowedUnits?: string[];
+  icon?: string;
+}): Promise<{
+  success: boolean;
+  message: string;
+  commodity: import('../types/marketOwner').Commodity;
+}> => {
+  const response = await apiClient.post<{
+    success: boolean;
+    message: string;
+    commodity: import('../types/marketOwner').Commodity;
+  }>('/market-owner/commodities', data);
+  return response.data;
+};
+
+export const updateCommodityApi = async (
+  id: string,
+  data: Partial<import('../types/marketOwner').Commodity>
+): Promise<{
+  success: boolean;
+  message: string;
+  commodity: import('../types/marketOwner').Commodity;
+}> => {
+  const response = await apiClient.put<{
+    success: boolean;
+    message: string;
+    commodity: import('../types/marketOwner').Commodity;
+  }>(`/market-owner/commodities/${id}`, data);
+  return response.data;
+};
+
+export const getMarketPricesTodayApi = async (params?: {
+  state?: string;
+  district?: string;
+  marketId?: string;
+  commodity?: string;
+  date?: string;
+}): Promise<{
+  success: boolean;
+  date: string;
+  totalRecords: number;
+  records: import('../types/marketOwner').MarketPriceRecord[];
+}> => {
+  const response = await apiClient.get<{
+    success: boolean;
+    date: string;
+    totalRecords: number;
+    records: import('../types/marketOwner').MarketPriceRecord[];
+  }>('/market-owner/prices/today', { params });
+  return response.data;
+};
+
+export const getMarketPriceHistoryApi = async (params: {
+  commodityId?: string;
+  commodity?: string;
+  marketId?: string;
+  days?: number;
+}): Promise<import('../types/marketOwner').MarketPriceHistoryData> => {
+  const response = await apiClient.get<import('../types/marketOwner').MarketPriceHistoryData>(
+    '/market-owner/prices/history',
+    { params }
+  );
+  return response.data;
+};
+
+export const compareNearbyMarketsApi = async (params: {
+  commodityId?: string;
+  commodity?: string;
+  lat?: number;
+  lon?: number;
+}): Promise<import('../types/marketOwner').MarketComparisonResponse> => {
+  const response = await apiClient.get<import('../types/marketOwner').MarketComparisonResponse>(
+    '/market-owner/prices/compare',
+    { params }
+  );
+  return response.data;
+};
+
+// ==========================================
+// Admin Governance APIs (Market Owners & Audits)
+// ==========================================
+export const getAdminMarketsApi = async (): Promise<{
+  success: boolean;
+  count: number;
+  markets: import('../types/marketOwner').Market[];
+}> => {
+  const response = await apiClient.get<{
+    success: boolean;
+    count: number;
+    markets: import('../types/marketOwner').Market[];
+  }>('/market-owner/admin/markets');
+  return response.data;
+};
+
+export const getAdminMarketOwnersApi = async (): Promise<{
+  success: boolean;
+  count: number;
+  owners: User[];
+}> => {
+  const response = await apiClient.get<{
+    success: boolean;
+    count: number;
+    owners: User[];
+  }>('/market-owner/admin/owners');
+  return response.data;
+};
+
+export const updateAdminMarketOwnerStatusApi = async (
+  ownerId: string,
+  status: 'ACTIVE' | 'PENDING' | 'DISABLED',
+  isApproved?: boolean
+): Promise<{ success: boolean; message: string; user: User }> => {
+  const response = await apiClient.put<{ success: boolean; message: string; user: User }>(
+    `/market-owner/admin/owners/${ownerId}/status`,
+    { status, isApproved }
+  );
+  return response.data;
+};
+
+export const assignAdminMarketOwnerApi = async (
+  marketId: string,
+  ownerId: string
+): Promise<{ success: boolean; message: string; market: import('../types/marketOwner').Market }> => {
+  const response = await apiClient.put<{
+    success: boolean;
+    message: string;
+    market: import('../types/marketOwner').Market;
+  }>('/market-owner/admin/markets/assign', { marketId, ownerId });
+  return response.data;
+};
+
+export const getAdminPriceAuditsApi = async (params?: {
+  marketId?: string;
+  commodityId?: string;
+  suspicious?: boolean;
+  limit?: number;
+}): Promise<{
+  success: boolean;
+  count: number;
+  audits: import('../types/marketOwner').PriceAuditRecord[];
+}> => {
+  const response = await apiClient.get<{
+    success: boolean;
+    count: number;
+    audits: import('../types/marketOwner').PriceAuditRecord[];
+  }>('/market-owner/admin/audits', { params });
+  return response.data;
+};
+
+// ----------------------------------------------------------------------------
+// In-App Notifications & Price Alerts API
+// ----------------------------------------------------------------------------
+export interface AppNotification {
+  _id: string;
+  type: 'PRICE_ALERT' | 'WEATHER_ALERT' | 'ORDER_ALERT' | 'SYSTEM';
+  title: string;
+  message: string;
+  data?: Record<string, any>;
+  read: boolean;
+  createdAt: string;
+}
+
+export const getNotificationsApi = async (limit = 20): Promise<{
+  success: boolean;
+  unreadCount: number;
+  notifications: AppNotification[];
+}> => {
+  const response = await apiClient.get<{
+    success: boolean;
+    unreadCount: number;
+    notifications: AppNotification[];
+  }>('/notifications', { params: { limit } });
+  return response.data;
+};
+
+export const markNotificationReadApi = async (id: string): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  const response = await apiClient.patch<{
+    success: boolean;
+    message: string;
+  }>(`/notifications/${id}/read`);
+  return response.data;
+};
+
+export const markAllNotificationsReadApi = async (): Promise<{
+  success: boolean;
+  markedCount: number;
+  message: string;
+}> => {
+  const response = await apiClient.patch<{
+    success: boolean;
+    markedCount: number;
+    message: string;
+  }>('/notifications/read-all');
   return response.data;
 };
 

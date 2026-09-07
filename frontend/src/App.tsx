@@ -1,6 +1,6 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { Layout } from './components/layout/Layout';
 import { HomePage } from './pages/HomePage';
@@ -24,8 +24,41 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { GovernmentSchemesPage } from './pages/schemes/GovernmentSchemesPage';
 import { CropDiseasePage } from './pages/ai/CropDiseasePage';
+import { MarketOwnerDashboard } from './pages/dashboards/MarketOwnerDashboard';
+import { MarketOwnerPricesPage } from './pages/market-owner/MarketOwnerPricesPage';
+import { MarketOwnerPriceHistoryPage } from './pages/market-owner/MarketOwnerPriceHistoryPage';
+import { MarketOwnerMarketPage } from './pages/market-owner/MarketOwnerMarketPage';
+import { MarketOwnerWeatherPage } from './pages/market-owner/MarketOwnerWeatherPage';
+import { MarketOwnerProfilePage } from './pages/market-owner/MarketOwnerProfilePage';
+import { FarmerMarketPricesPage } from './pages/market/FarmerMarketPricesPage';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
+
+const RoleProfileRedirect: React.FC = () => {
+  const { user, getRoleDashboardPath } = useAuth();
+  return <Navigate to={getRoleDashboardPath(user?.role)} replace />;
+};
+
+const RootEntryRedirect: React.FC = () => {
+  const { user, isAuthenticated, isLoading, getRoleDashboardPath } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Loading AgroMitra...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Navigate to={getRoleDashboardPath(user.role)} replace />;
+};
 
 export const App: React.FC = () => {
   return (
@@ -36,8 +69,9 @@ export const App: React.FC = () => {
             <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
-              {/* Public Routes */}
-              <Route index element={<HomePage />} />
+              {/* Root Entry: Unauthenticated -> /login, Authenticated -> Role Dashboard */}
+              <Route index element={<RootEntryRedirect />} />
+              <Route path="home" element={<HomePage />} />
               <Route path="login" element={<LoginPage />} />
               <Route path="register" element={<RegisterPage />} />
               <Route path="forgot-password" element={<ForgotPasswordPage />} />
@@ -46,6 +80,9 @@ export const App: React.FC = () => {
               <Route path="marketplace/product/:id" element={<ProductDetailPage />} />
               <Route path="schemes" element={<GovernmentSchemesPage />} />
               <Route path="government-schemes" element={<GovernmentSchemesPage />} />
+              <Route path="market/prices" element={<FarmerMarketPricesPage />} />
+              <Route path="mandi-prices" element={<FarmerMarketPricesPage />} />
+              <Route path="mandi" element={<FarmerMarketPricesPage />} />
 
 
               {/* Protected Farmer Routes */}
@@ -196,7 +233,7 @@ export const App: React.FC = () => {
                 path="profile"
                 element={
                   <ProtectedRoute>
-                    <FarmerDashboard />
+                    <RoleProfileRedirect />
                   </ProtectedRoute>
                 }
               />
@@ -215,6 +252,72 @@ export const App: React.FC = () => {
                 element={
                   <ProtectedRoute allowedRoles={['DELIVERY_BOY']}>
                     <DeliveryBoyDashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Protected Market Owner Routes */}
+              <Route
+                path="market-owner/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['MARKET_OWNER', 'ADMIN']}>
+                    <MarketOwnerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="market-owner/prices"
+                element={
+                  <ProtectedRoute allowedRoles={['MARKET_OWNER', 'ADMIN']}>
+                    <MarketOwnerPricesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="market-owner/price-history"
+                element={
+                  <ProtectedRoute allowedRoles={['MARKET_OWNER', 'ADMIN']}>
+                    <MarketOwnerPriceHistoryPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="market-owner/market"
+                element={
+                  <ProtectedRoute allowedRoles={['MARKET_OWNER', 'ADMIN']}>
+                    <MarketOwnerMarketPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="market-owner/weather"
+                element={
+                  <ProtectedRoute allowedRoles={['MARKET_OWNER', 'ADMIN']}>
+                    <MarketOwnerWeatherPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="market-owner/profile"
+                element={
+                  <ProtectedRoute allowedRoles={['MARKET_OWNER', 'ADMIN']}>
+                    <MarketOwnerProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="market-owner"
+                element={
+                  <ProtectedRoute allowedRoles={['MARKET_OWNER', 'ADMIN']}>
+                    <MarketOwnerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="market-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['MARKET_OWNER', 'ADMIN']}>
+                    <MarketOwnerDashboard />
                   </ProtectedRoute>
                 }
               />

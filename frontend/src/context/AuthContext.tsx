@@ -36,10 +36,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const storedToken = localStorage.getItem('agrimart_token');
       if (storedToken) {
         try {
-          const data = await getMeApi();
-          if (data.success && data.user) {
-            setUser(data.user);
-            localStorage.setItem('agrimart_user', JSON.stringify(data.user));
+          const data: any = await getMeApi();
+          const rawUser = data.user || data.data?.user || data.data;
+          if (rawUser && (rawUser.id || rawUser._id || rawUser.role)) {
+            const normalizedRole = (rawUser.role || 'FARMER').toString().trim().toUpperCase() as import('../types/auth').UserRole;
+            const syncedUser: User = {
+              id: rawUser.id || rawUser._id || '',
+              name: rawUser.name || '',
+              email: rawUser.email || '',
+              phone: rawUser.phone || '',
+              role: normalizedRole,
+              address: rawUser.address,
+              shopName: rawUser.shopName,
+              upiId: rawUser.upiId,
+              qrCodeUrl: rawUser.qrCodeUrl,
+              createdAt: rawUser.createdAt,
+              updatedAt: rawUser.updatedAt,
+            };
+            setUser(syncedUser);
+            localStorage.setItem('agrimart_user', JSON.stringify(syncedUser));
           }
         } catch (err: any) {
           // Only log out if backend explicitly rejected the token with 401 Unauthorized
@@ -59,12 +74,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (credentials: LoginCredentials): Promise<User> => {
     setIsLoading(true);
     try {
-      const response = await loginApi(credentials);
-      setToken(response.token);
-      setUser(response.user);
-      localStorage.setItem('agrimart_token', response.token);
-      localStorage.setItem('agrimart_user', JSON.stringify(response.user));
-      return response.user;
+      const response: any = await loginApi(credentials);
+      const rawUser = response.user || response.data?.user || response.data || response;
+      const rawToken = response.token || response.data?.token || '';
+
+      const normalizedRole = (rawUser.role || 'FARMER').toString().trim().toUpperCase() as import('../types/auth').UserRole;
+      const userObj: User = {
+        id: rawUser.id || rawUser._id || '',
+        name: rawUser.name || '',
+        email: rawUser.email || '',
+        phone: rawUser.phone || '',
+        role: normalizedRole,
+        address: rawUser.address,
+        shopName: rawUser.shopName,
+        upiId: rawUser.upiId,
+        qrCodeUrl: rawUser.qrCodeUrl,
+        createdAt: rawUser.createdAt,
+        updatedAt: rawUser.updatedAt,
+      };
+
+      setToken(rawToken);
+      setUser(userObj);
+      if (rawToken) {
+        localStorage.setItem('agrimart_token', rawToken);
+      }
+      localStorage.setItem('agrimart_user', JSON.stringify(userObj));
+      return userObj;
     } finally {
       setIsLoading(false);
     }
@@ -73,12 +108,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const register = async (data: RegisterData): Promise<User> => {
     setIsLoading(true);
     try {
-      const response = await registerApi(data);
-      setToken(response.token);
-      setUser(response.user);
-      localStorage.setItem('agrimart_token', response.token);
-      localStorage.setItem('agrimart_user', JSON.stringify(response.user));
-      return response.user;
+      const response: any = await registerApi(data);
+      const rawUser = response.user || response.data?.user || response.data || response;
+      const rawToken = response.token || response.data?.token || '';
+
+      const normalizedRole = (rawUser.role || data.role || 'FARMER').toString().trim().toUpperCase() as import('../types/auth').UserRole;
+      const userObj: User = {
+        id: rawUser.id || rawUser._id || '',
+        name: rawUser.name || data.name || '',
+        email: rawUser.email || data.email || '',
+        phone: rawUser.phone || data.phone || '',
+        role: normalizedRole,
+        address: rawUser.address || data.address,
+        shopName: rawUser.shopName,
+        upiId: rawUser.upiId,
+        qrCodeUrl: rawUser.qrCodeUrl,
+        createdAt: rawUser.createdAt,
+        updatedAt: rawUser.updatedAt,
+      };
+
+      setToken(rawToken);
+      setUser(userObj);
+      if (rawToken) {
+        localStorage.setItem('agrimart_token', rawToken);
+      }
+      localStorage.setItem('agrimart_user', JSON.stringify(userObj));
+      return userObj;
     } finally {
       setIsLoading(false);
     }

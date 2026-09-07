@@ -4,6 +4,8 @@ import crypto from 'crypto';
 import { User, UserRole, IUser } from '../models/User.model';
 import { DeliveryBoy } from '../models/DeliveryBoy.model';
 import { StorePaymentConfig } from '../models/StorePaymentConfig.model';
+import { Market } from '../models/Market.model';
+import { MarketOwnerService } from '../services/marketOwner.service';
 import { generateToken } from '../utils/jwt';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { normalizePhoneNumber, isValidIndianPhoneNumber, buildPhoneVariants } from '../utils/phone';
@@ -41,10 +43,10 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     }
 
     const normalizedRole = (role as string).toUpperCase() as UserRole;
-    if (!['FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', 'DELIVERY_BOY'].includes(normalizedRole)) {
+    if (!['FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', 'DELIVERY_BOY', 'MARKET_OWNER'].includes(normalizedRole)) {
       res.status(400).json({
         success: false,
-        message: `Invalid role '${role}'. Allowed registration roles are 'FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', and 'DELIVERY_BOY'.`,
+        message: `Invalid role '${role}'. Allowed registration roles are 'FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', 'DELIVERY_BOY', and 'MARKET_OWNER'.`,
       });
       return;
     }
@@ -99,9 +101,11 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       password,
       role: normalizedRole,
       address: address || {},
-      shopName: req.body.shopName || '',
+      shopName: req.body.shopName || req.body.marketName || '',
       upiId: req.body.upiId || '',
       qrCodeUrl: req.body.qrCodeUrl || '',
+      isApproved: true,
+      status: 'ACTIVE',
     });
 
     await user.save();
@@ -119,6 +123,37 @@ export const register = async (req: Request, res: Response, next: NextFunction):
         isAvailable: true,
         activeOrdersCount: 0,
       });
+    }
+
+    // If role is MARKET_OWNER, create & link authorized Market profile
+    if (normalizedRole === 'MARKET_OWNER') {
+      const marketName = (req.body.marketName || req.body.shopName || `${user.name} APMC Market Yard`).trim();
+      const marketState = (address?.state || req.body.state || 'Andhra Pradesh').trim();
+      const marketDistrict = (address?.city || req.body.district || 'Kurnool').trim();
+      const marketCity = (address?.city || req.body.city || marketDistrict).trim();
+      const marketPincode = (address?.pincode || req.body.pincode || '518001').trim();
+      const marketAddress = (address?.street || req.body.address || 'APMC Market Yard').trim();
+      const latitude = req.body.latitude ? Number(req.body.latitude) : 15.8281;
+      const longitude = req.body.longitude ? Number(req.body.longitude) : 78.0373;
+
+      const market = await Market.create({
+        name: marketName,
+        address: marketAddress,
+        state: marketState,
+        district: marketDistrict,
+        city: marketCity,
+        pincode: marketPincode,
+        latitude,
+        longitude,
+        owner: user._id,
+        contactPerson: user.name,
+        contactPhone: user.phone,
+        operatingHours: req.body.operatingHours || '06:00 AM - 06:00 PM',
+        isActive: true,
+      });
+
+      user.market = market._id;
+      await user.save();
     }
 
     // Generate JWT

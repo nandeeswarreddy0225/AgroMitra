@@ -153,8 +153,15 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
           </div>
         </div>
 
-        {/* Action / Refresh Button */}
-        <div className="flex items-center gap-2 self-start lg:self-auto">
+        {/* Action / Refresh Button & Portal Link */}
+        <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
+          <Link
+            to="/market/prices"
+            className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs"
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>Mandi Rates & Comparisons</span>
+          </Link>
           <button
             type="button"
             disabled={isRefreshing || isLoading}
@@ -336,9 +343,15 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
                 Source: <strong>{data.source}</strong>. Daily wholesale mandi realizations across APMCs.
               </span>
             </div>
-            <Link to="/marketplace" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline shrink-0">
-              Browse Agri Marketplace →
-            </Link>
+            <div className="flex items-center gap-3 shrink-0 font-bold">
+              <Link to="/market/prices" className="text-emerald-600 dark:text-emerald-400 hover:underline">
+                Full Mandi Price Portal →
+              </Link>
+              <span>•</span>
+              <Link to="/marketplace" className="text-slate-600 dark:text-slate-300 hover:underline">
+                Agri Marketplace →
+              </Link>
+            </div>
           </div>
         </div>
       )}
