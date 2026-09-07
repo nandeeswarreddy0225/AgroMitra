@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogIn, Lock, Phone, Sprout, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { LogIn, Lock, Phone, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import { getPostLoginRedirectPath } from '../types/auth';
+import { AgroMitraLogo } from '../components/common/AgroMitraLogo';
 import axios from 'axios';
 
 export const LoginPage: React.FC = () => {
@@ -58,12 +59,10 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-[calc(100vh-160px)] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="flex justify-center">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 via-green-600 to-emerald-500 flex items-center justify-center text-white shadow-md shadow-emerald-600/30">
-            <Sprout className="w-7 h-7" />
-          </div>
+        <div className="flex justify-center mb-2">
+          <AgroMitraLogo variant="stacked" size="lg" showTagline={false} />
         </div>
-        <h2 className="mt-4 font-heading text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+        <h2 className="mt-2 font-heading text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
           {t('signInTitle', 'Sign in to AgroMitra')}
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">

@@ -7,12 +7,12 @@ import { SeasonalCropAdvisorCard } from '../../components/crops/SeasonalCropAdvi
 import { LiveMandiPricesCard } from '../../components/market/LiveMandiPricesCard';
 import { AIMarketIntelligenceSection } from '../../components/market/AIMarketIntelligenceSection';
 import { WeatherData } from '../../types/weather';
+import { AgroMitraLogo } from '../../components/common/AgroMitraLogo';
 
 
 
 
 import {
-  Sprout,
   User,
   Mail,
   Phone,
@@ -38,8 +38,8 @@ export const FarmerDashboard: React.FC = () => {
       {/* 1. Header Banner */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
         <div className="flex items-center space-x-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-green-500 text-white flex items-center justify-center shadow-md shadow-emerald-600/30">
-            <Sprout className="w-8 h-8" />
+          <div className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md shadow-emerald-950/20">
+            <AgroMitraLogo variant="mark" size="lg" />
           </div>
           <div>
             <div className="flex items-center gap-2">

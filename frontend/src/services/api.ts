@@ -17,8 +17,19 @@ import {
 
 const getApiBaseUrl = (): string => {
   const envUrl = (import.meta.env?.VITE_API_URL || '').trim();
-  if (!envUrl) {
-    if (typeof window !== 'undefined' && window.location) {
+  if (envUrl) {
+    const cleanUrl = envUrl.replace(/\/+$/, '');
+    return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+  }
+
+  // Capacitor native mobile runtime check
+  if (typeof window !== 'undefined') {
+    const isCapacitor = !!(window as any).Capacitor || window.location.protocol === 'capacitor:';
+    if (isCapacitor) {
+      return 'https://agromitra-ytqb.onrender.com/api';
+    }
+
+    if (window.location) {
       const hostname = window.location.hostname;
       if (
         hostname === 'localhost' ||
@@ -30,10 +41,8 @@ const getApiBaseUrl = (): string => {
         return `http://${hostname}:5000/api`;
       }
     }
-    return 'https://agromitra-ytqb.onrender.com/api';
   }
-  const cleanUrl = envUrl.replace(/\/+$/, '');
-  return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+  return 'https://agromitra-ytqb.onrender.com/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();

@@ -69,3 +69,23 @@ Thumbs.db
 *.swo
 *.tmp
 *.bak
+
+# Keystore & Signing Secrets
+*.jks
+*.keystore
+*.key
+*.p12
+
+# Mobile Binaries & Build Caches
+*.apk
+*.aab
+.expo/
+mobile/.expo/
+mobile/package-lock.json
+
+# Scratch & Temporary Diagnostic Scripts
+backend/src/scripts/check_current_users.ts
+backend/src/scripts/inspect_vercel_bundle.ts
+backend/src/tests/inspect_onnx_model.ts
+backend/src/tests/test_onnx_inference.ts
+backend/src/tests/test_raw_onnx_potato.ts

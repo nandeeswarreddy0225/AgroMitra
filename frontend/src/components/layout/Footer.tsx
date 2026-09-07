@@ -9,6 +9,7 @@ import {
   Truck,
 } from 'lucide-react';
 import { useTranslation } from '../../context/LanguageContext';
+import { AgroMitraLogo } from '../common/AgroMitraLogo';
 
 export const Footer: React.FC = () => {
   const { t } = useTranslation();
@@ -20,18 +21,8 @@ export const Footer: React.FC = () => {
           
           {/* Col 1: Brand & Vision */}
           <div className="lg:col-span-2 space-y-4">
-            <Link to="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-green-600 to-emerald-500 flex items-center justify-center text-white shadow-md shadow-emerald-600/30">
-                <Sprout className="w-6 h-6" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-heading font-extrabold tracking-tight text-white">
-                  Agro<span className="text-emerald-400">Mitra</span>
-                </span>
-                <span className="text-[10px] text-emerald-400/90 font-bold tracking-wide uppercase -mt-0.5">
-                  {t('brandTagline', 'Smart Farming • Better Decisions • Stronger Connections')}
-                </span>
-              </div>
+            <Link to="/" className="flex items-center">
+              <AgroMitraLogo variant="horizontal" size="md" showTagline={true} />
             </Link>
 
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-sm">

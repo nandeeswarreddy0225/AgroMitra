@@ -29,6 +29,7 @@ import { Scheme } from '../types/scheme';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useTranslation } from '../context/LanguageContext';
+import { AgroMitraLogo } from '../components/common/AgroMitraLogo';
 
 export const HomePage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
@@ -151,14 +152,14 @@ export const HomePage: React.FC = () => {
             
             {/* Brand Pill */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-md border border-emerald-400/40 text-emerald-300 text-xs font-bold tracking-wide shadow-sm">
-              <Sprout className="w-4 h-4 text-emerald-400" />
-              <span>{t('brandName', 'AgroMitra')} • {t('brandTagline', 'Smart Farming. Better Decisions. Stronger Connections.')}</span>
+              <AgroMitraLogo variant="mark" size="sm" />
+              <span>{t('brandName', 'AgroMitra')} • {t('brandTagline', 'Smart Farming. Better Crops. Better Future.')}</span>
             </div>
 
             {/* Main Headline */}
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-heading font-extrabold tracking-tight leading-[1.12] text-white">
               Smart Farming.<br />
-              <span className="text-emerald-400">Better Decisions.</span>
+              <span className="text-emerald-400">Better Crops. Better Future.</span>
             </h1>
 
             {/* Supporting Text */}

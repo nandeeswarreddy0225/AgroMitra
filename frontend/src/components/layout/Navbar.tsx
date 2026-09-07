@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Sprout,
   Menu,
   X,
   UserPlus,
@@ -24,6 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from '../../context/LanguageContext';
+import { AgroMitraLogo } from '../common/AgroMitraLogo';
 
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -93,18 +93,8 @@ export const Navbar: React.FC = () => {
           
           {/* Logo & Brand */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-green-600 to-emerald-500 flex items-center justify-center text-white shadow-md shadow-emerald-600/25 group-hover:scale-105 transition-transform">
-                <Sprout className="w-6 h-6" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-heading font-extrabold tracking-tight text-slate-900 dark:text-white">
-                  Agro<span className="text-emerald-600 dark:text-emerald-400">Mitra</span>
-                </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold tracking-wide uppercase -mt-1 hidden sm:block">
-                  Smart Farming • Stronger Connections
-                </span>
-              </div>
+            <Link to="/" className="flex items-center group">
+              <AgroMitraLogo variant="horizontal" size="md" showTagline={true} />
             </Link>
           </div>
 
