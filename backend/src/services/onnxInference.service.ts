@@ -228,16 +228,25 @@ export class NodeOnnxPathologyEngine {
       }
       const jointClass = classesList[topJointIdx] || 'Unknown___unsupported';
 
-      // Map raw condition to user-facing health status
+      // Map raw condition to user-facing health status with multi-task consensus
+      const jointIsHealthy = jointClass.endsWith('___healthy');
+      const conditionIsHealthy = (rawCondition === 'Healthy');
+
       let healthStatus = 'Diseased';
-      if (rawCondition === 'Healthy' || jointClass.endsWith('___healthy')) {
+      if (rawCondition === 'Non_Foliar_Background' || predSpecies === 'Background' || predSpecies === 'Unknown') {
+        healthStatus = 'Unknown';
+      } else if (jointIsHealthy && conditionIsHealthy) {
         healthStatus = 'Healthy';
-      } else if (rawCondition === 'Viral_Infection' || jointClass.includes('virus') || jointClass.includes('Virus')) {
+      } else if (jointIsHealthy && !conditionIsHealthy && topJointProb >= 0.55) {
+        healthStatus = 'Healthy';
+      } else if (rawCondition === 'Viral_Infection' || jointClass.includes('virus') || jointClass.includes('Virus') || jointClass.includes('greening')) {
         healthStatus = 'Viral Infection';
       } else if (rawCondition === 'Pest_Damage' || jointClass.includes('mite') || jointClass.includes('Mite')) {
         healthStatus = 'Pest Damage';
-      } else if (rawCondition === 'Non_Foliar_Background' || predSpecies === 'Background' || predSpecies === 'Unknown') {
-        healthStatus = 'Unknown';
+      } else if (!jointIsHealthy) {
+        healthStatus = 'Diseased';
+      } else {
+        healthStatus = 'Healthy';
       }
 
       // Resolve plant display name
