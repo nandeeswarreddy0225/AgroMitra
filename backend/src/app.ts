@@ -1,6 +1,8 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
 import healthRouter from './routes/health.routes';
 import authRouter from './routes/auth.routes';
 import productRouter from './routes/product.routes';
@@ -80,9 +82,21 @@ app.use('/api/location', locationRouter);
 app.use('/api/market-owner', marketOwnerRouter);
 app.use('/api/notifications', notificationRouter);
 
+// Static frontend serving if dist directory exists
+const frontendDistPath = path.resolve(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
+  });
+}
 
 // 404 & Global Error Handling
 app.use(notFoundHandler);
 app.use(errorHandler);
 
 export default app;
+

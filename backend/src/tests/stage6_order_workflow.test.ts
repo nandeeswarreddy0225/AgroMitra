@@ -72,10 +72,13 @@ const runStage6WorkflowTests = async () => {
   console.log('  AGRIMART STAGE 6 — ORDER WORKFLOW & LIFECYCLE     ');
   console.log('====================================================\n');
 
+  process.env.NODE_ENV = 'test';
+  delete process.env.MONGODB_URI;
   await connectDB();
 
   server = app.listen(TEST_PORT);
   console.log(`🧪 Test Server running on http://127.0.0.1:${TEST_PORT}\n`);
+
 
   try {
     // ---------------------------------------------------------
