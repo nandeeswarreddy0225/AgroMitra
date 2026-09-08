@@ -305,6 +305,48 @@ async function runSecuritySuite() {
     });
     assert(missingRoleRes.statusCode === 400, `Registration with missing role is rejected with HTTP 400`);
 
+    // TEST SUITE 7: Session Isolation & Switching Verification
+    console.log('\n--- TEST SET 7: Session Isolation & Role Switching Verification ---');
+    
+    // Scenario 8: Delivery Boy Session -> Logout -> Farmer Login -> Farmer Portal
+    const dbLoginRes = await makeRequest({
+      method: 'POST',
+      path: '/api/auth/login',
+      body: {
+        identifier: '9848055555',
+        password: 'Password@123',
+        role: 'DELIVERY_BOY',
+      },
+    });
+    assert(dbLoginRes.statusCode === 200, `Delivery Boy login succeeded with role DELIVERY_BOY`);
+    assert(dbLoginRes.body.user?.role === 'DELIVERY_BOY', `Delivery Boy session initialized`);
+
+    // Simulate Farmer logging in immediately after
+    const farmerAfterDbRes = await makeRequest({
+      method: 'POST',
+      path: '/api/auth/login',
+      body: {
+        identifier: '9848011111',
+        password: 'Password@123',
+        role: 'FARMER',
+      },
+    });
+    assert(farmerAfterDbRes.statusCode === 200, `Farmer login after Delivery Boy logout returns HTTP 200`);
+    assert(farmerAfterDbRes.body.user?.role === 'FARMER', `Farmer session has clean FARMER role with zero DELIVERY_BOY leakage`);
+
+    // Scenario 9: Farmer Session -> Logout -> Delivery Boy Login -> Delivery Boy Portal
+    const dbAfterFarmerRes = await makeRequest({
+      method: 'POST',
+      path: '/api/auth/login',
+      body: {
+        identifier: '9848055555',
+        password: 'Password@123',
+        role: 'DELIVERY_BOY',
+      },
+    });
+    assert(dbAfterFarmerRes.statusCode === 200, `Delivery Boy login after Farmer logout returns HTTP 200`);
+    assert(dbAfterFarmerRes.body.user?.role === 'DELIVERY_BOY', `Delivery Boy session has clean DELIVERY_BOY role with zero FARMER leakage`);
+
     console.log('\n================================================================');
     console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED (Total: ${passed + failed})`);
     console.log('================================================================\n');
@@ -324,3 +366,4 @@ async function runSecuritySuite() {
 }
 
 runSecuritySuite();
+

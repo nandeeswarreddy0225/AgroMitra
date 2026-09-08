@@ -87,7 +87,6 @@ const UserSchema = new Schema<IUser>(
         message: '{VALUE} is not a valid role',
       },
       required: [true, 'Role is required'],
-      default: 'FARMER',
     },
     address: {
       type: AddressSchema,
