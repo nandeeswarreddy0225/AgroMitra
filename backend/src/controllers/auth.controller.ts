@@ -13,13 +13,13 @@ import { normalizePhoneNumber, isValidIndianPhoneNumber, buildPhoneVariants } fr
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, phone, password, role = 'FARMER', email, address } = req.body;
+    const { name, phone, password, role, email, address } = req.body;
 
     // Validate presence of required fields
-    if (!name || !phone || !password) {
+    if (!name || !phone || !password || !role) {
       res.status(400).json({
         success: false,
-        message: 'Name, phone number, and password are required.',
+        message: 'Name, phone number, password, and account role are required.',
       });
       return;
     }
@@ -43,7 +43,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       return;
     }
 
-    const normalizedRole = (role as string).toUpperCase() as UserRole;
+    const normalizedRole = (role as string).toString().trim().toUpperCase() as UserRole;
     if (!['FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', 'DELIVERY_BOY', 'MARKET_OWNER'].includes(normalizedRole)) {
       res.status(400).json({
         success: false,

@@ -254,18 +254,56 @@ async function runSecuritySuite() {
     });
     assert(missingPwdRes.statusCode === 400, `Missing password returns HTTP 400 Bad Request`);
 
-    // TEST SUITE 5: Legacy/Unspecified Portal Login Backward Compatibility
-    console.log('\n--- TEST SET 5: Unspecified Role (Direct API) Compatibility ---');
-    const noRoleRes = await makeRequest({
+    // TEST SUITE 6: Registration Strict Role Creation Tests
+    console.log('\n--- TEST SET 6: Registration Strict Role Tests ---');
+    const regRoles: Array<{ role: UserRole; phone: string; name: string }> = [
+      { role: 'SHOP_OWNER', phone: '9848077771', name: 'New Shop Owner' },
+      { role: 'FARMER', phone: '9848077772', name: 'New Farmer' },
+      { role: 'AGRI_PARTNER', phone: '9848077773', name: 'New Agri Partner' },
+      { role: 'DELIVERY_BOY', phone: '9848077774', name: 'New Delivery Boy' },
+      { role: 'MARKET_OWNER', phone: '9848077775', name: 'New Market Owner' },
+    ];
+
+    for (const item of regRoles) {
+      const regRes = await makeRequest({
+        method: 'POST',
+        path: '/api/auth/register',
+        body: {
+          name: item.name,
+          phone: item.phone,
+          password: 'Password@123',
+          role: item.role,
+        },
+      });
+      assert(regRes.statusCode === 201, `Registering ${item.role} returns HTTP 201 Created`);
+      assert(regRes.body.user?.role === item.role, `Registered user has exact role '${item.role}' (NOT default FARMER)`);
+      assert(!!regRes.body.token, `Registered user receives valid JWT token`);
+    }
+
+    // Public Admin Registration Rejection
+    const adminRegRes = await makeRequest({
       method: 'POST',
-      path: '/api/auth/login',
+      path: '/api/auth/register',
       body: {
-        identifier: '9848011111',
+        name: 'Hacker Admin',
+        phone: '9848077776',
+        password: 'Password@123',
+        role: 'ADMIN',
+      },
+    });
+    assert(adminRegRes.statusCode === 400, `Public ADMIN registration is rejected with HTTP 400`);
+
+    // Invalid / Missing Role Registration Rejection
+    const missingRoleRes = await makeRequest({
+      method: 'POST',
+      path: '/api/auth/register',
+      body: {
+        name: 'No Role User',
+        phone: '9848077777',
         password: 'Password@123',
       },
     });
-    assert(noRoleRes.statusCode === 200, `Login without role parameter defaults to standard authentication`);
-    assert(noRoleRes.body.user?.role === 'FARMER', `Returns user role FARMER`);
+    assert(missingRoleRes.statusCode === 400, `Registration with missing role is rejected with HTTP 400`);
 
     console.log('\n================================================================');
     console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED (Total: ${passed + failed})`);

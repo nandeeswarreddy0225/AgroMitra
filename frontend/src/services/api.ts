@@ -82,17 +82,13 @@ apiClient.interceptors.request.use(
 );
 
 
-// Auto-handle 401 Unauthorized across protected requests
+// Auto-handle 401 Unauthorized across all requests
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      const url = error.config?.url || '';
-      // Clear credentials if token expired or invalid
-      if (!url.includes('/auth/login') && !url.includes('/auth/register')) {
-        localStorage.removeItem('agrimart_token');
-        localStorage.removeItem('agrimart_user');
-      }
+      localStorage.removeItem('agrimart_token');
+      localStorage.removeItem('agrimart_user');
     }
     return Promise.reject(error);
   }

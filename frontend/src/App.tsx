@@ -152,7 +152,7 @@ export const App: React.FC = () => {
                 }
               />
 
-              {/* Protected Fertilizer & Pesticide Shop Owner Routes */}
+              {/* Protected Fertilizer & Pesticide Shop Owner & Agri Partner Routes */}
               <Route
                 path="shop-owner/dashboard"
                 element={
@@ -166,6 +166,38 @@ export const App: React.FC = () => {
                 element={
                   <ProtectedRoute allowedRoles={['SHOP_OWNER', 'AGRI_PARTNER']}>
                     <ShopOwnerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="agri-partner/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['AGRI_PARTNER', 'SHOP_OWNER']}>
+                    <ShopOwnerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="agri-partner"
+                element={
+                  <ProtectedRoute allowedRoles={['AGRI_PARTNER', 'SHOP_OWNER']}>
+                    <ShopOwnerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="agri-partner/products"
+                element={
+                  <ProtectedRoute allowedRoles={['AGRI_PARTNER', 'SHOP_OWNER', 'ADMIN']}>
+                    <ShopOwnerProductsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="agri-partner/orders"
+                element={
+                  <ProtectedRoute allowedRoles={['AGRI_PARTNER', 'SHOP_OWNER']}>
+                    <ShopOwnerOrdersPage />
                   </ProtectedRoute>
                 }
               />

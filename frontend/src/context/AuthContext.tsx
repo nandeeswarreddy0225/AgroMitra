@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, LoginCredentials, RegisterData, getRoleDashboardPath as getRoleDashboardPathHelper } from '../types/auth';
+import { User, UserRole, LoginCredentials, RegisterData, getRoleDashboardPath as getRoleDashboardPathHelper } from '../types/auth';
 import { loginApi, registerApi, getMeApi } from '../services/api';
+
+const VALID_ROLES: UserRole[] = ['FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', 'DELIVERY_BOY', 'ADMIN', 'MARKET_OWNER'];
+
+const isValidRole = (r: unknown): r is UserRole => {
+  return typeof r === 'string' && VALID_ROLES.includes(r.trim().toUpperCase() as UserRole);
+};
 
 interface AuthContextType {
   user: User | null;
@@ -18,16 +24,32 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
-    const cachedUser = localStorage.getItem('agrimart_user');
-    return cachedUser ? JSON.parse(cachedUser) : null;
+    try {
+      const cachedUser = localStorage.getItem('agrimart_user');
+      if (!cachedUser) return null;
+      const parsed = JSON.parse(cachedUser);
+      if (parsed && (parsed.id || parsed._id) && isValidRole(parsed.role)) {
+        return parsed;
+      }
+      localStorage.removeItem('agrimart_user');
+      localStorage.removeItem('agrimart_token');
+      return null;
+    } catch {
+      localStorage.removeItem('agrimart_user');
+      localStorage.removeItem('agrimart_token');
+      return null;
+    }
   });
+
   const [token, setToken] = useState<string | null>(() => {
     return localStorage.getItem('agrimart_token');
   });
+
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const getRoleDashboardPath = (role?: string): string => {
-    return getRoleDashboardPathHelper(role || user?.role);
+    const targetRole = role || user?.role;
+    return getRoleDashboardPathHelper(targetRole);
   };
 
   // Check and sync user state with backend on mount
@@ -38,8 +60,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
           const data: any = await getMeApi();
           const rawUser = data.user || data.data?.user || data.data;
-          if (rawUser && (rawUser.id || rawUser._id || rawUser.role)) {
-            const normalizedRole = (rawUser.role || 'FARMER').toString().trim().toUpperCase() as import('../types/auth').UserRole;
+          if (rawUser && (rawUser.id || rawUser._id) && isValidRole(rawUser.role)) {
+            const normalizedRole = rawUser.role.toString().trim().toUpperCase() as UserRole;
             const syncedUser: User = {
               id: rawUser.id || rawUser._id || '',
               name: rawUser.name || '',
@@ -55,6 +77,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             };
             setUser(syncedUser);
             localStorage.setItem('agrimart_user', JSON.stringify(syncedUser));
+          } else {
+            // Invalid user object or missing role from backend -> clear session
+            logout();
           }
         } catch (err: any) {
           // Only log out if backend explicitly rejected the token with 401 Unauthorized
@@ -84,11 +109,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const rawUser = response.user || response.data?.user || response.data || response;
       const rawToken = response.token || response.data?.token || '';
 
-      const normalizedRole = (rawUser.role || 'FARMER').toString().trim().toUpperCase() as import('../types/auth').UserRole;
+      if (!rawUser || !isValidRole(rawUser.role)) {
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('agrimart_token');
+        localStorage.removeItem('agrimart_user');
+        throw new Error('Invalid account role received from server.');
+      }
+
+      const normalizedRole = rawUser.role.toString().trim().toUpperCase() as UserRole;
 
       // Strict role verification against selected portal
       if (credentials.role) {
-        const expectedRole = credentials.role.toString().trim().toUpperCase() as import('../types/auth').UserRole;
+        const expectedRole = credentials.role.toString().trim().toUpperCase() as UserRole;
         if (normalizedRole !== expectedRole) {
           setToken(null);
           setUser(null);
@@ -133,12 +166,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const register = async (data: RegisterData): Promise<User> => {
     setIsLoading(true);
+    // Explicitly purge any stale authentication state and tokens before register attempt
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('agrimart_token');
+    localStorage.removeItem('agrimart_user');
+
     try {
       const response: any = await registerApi(data);
       const rawUser = response.user || response.data?.user || response.data || response;
       const rawToken = response.token || response.data?.token || '';
 
-      const normalizedRole = (rawUser.role || data.role || 'FARMER').toString().trim().toUpperCase() as import('../types/auth').UserRole;
+      const returnedRole = rawUser?.role || data.role;
+      if (!returnedRole || !isValidRole(returnedRole)) {
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('agrimart_token');
+        localStorage.removeItem('agrimart_user');
+        throw new Error('Invalid account role during registration.');
+      }
+
+      const normalizedRole = returnedRole.toString().trim().toUpperCase() as UserRole;
       const userObj: User = {
         id: rawUser.id || rawUser._id || '',
         name: rawUser.name || data.name || '',
@@ -160,6 +208,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       localStorage.setItem('agrimart_user', JSON.stringify(userObj));
       return userObj;
+    } catch (err) {
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem('agrimart_token');
+      localStorage.removeItem('agrimart_user');
+      throw err;
     } finally {
       setIsLoading(false);
     }
