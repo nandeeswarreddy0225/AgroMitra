@@ -73,12 +73,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (credentials: LoginCredentials): Promise<User> => {
     setIsLoading(true);
+    // Explicitly purge any stale authentication state and tokens before login attempt
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('agrimart_token');
+    localStorage.removeItem('agrimart_user');
+
     try {
       const response: any = await loginApi(credentials);
       const rawUser = response.user || response.data?.user || response.data || response;
       const rawToken = response.token || response.data?.token || '';
 
       const normalizedRole = (rawUser.role || 'FARMER').toString().trim().toUpperCase() as import('../types/auth').UserRole;
+
+      // Strict role verification against selected portal
+      if (credentials.role) {
+        const expectedRole = credentials.role.toString().trim().toUpperCase() as import('../types/auth').UserRole;
+        if (normalizedRole !== expectedRole) {
+          setToken(null);
+          setUser(null);
+          localStorage.removeItem('agrimart_token');
+          localStorage.removeItem('agrimart_user');
+          throw new Error('These credentials are not registered for the selected portal. Please select the correct portal or use the correct account.');
+        }
+      }
+
       const userObj: User = {
         id: rawUser.id || rawUser._id || '',
         name: rawUser.name || '',
@@ -100,6 +119,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       localStorage.setItem('agrimart_user', JSON.stringify(userObj));
       return userObj;
+    } catch (err) {
+      // Ensure failed login never leaves stale session
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem('agrimart_token');
+      localStorage.removeItem('agrimart_user');
+      throw err;
     } finally {
       setIsLoading(false);
     }

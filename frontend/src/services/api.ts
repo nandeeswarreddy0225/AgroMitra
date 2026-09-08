@@ -16,11 +16,16 @@ import {
   SingleOrderResponse,
 } from '../types/order';
 
-const getApiBaseUrl = (): string => {
+export const getApiBaseUrl = (): string => {
+  // 1. Production bundle or Native Mobile Runtime (Android / iOS): ALWAYS route to production HTTPS backend
   const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform();
+  const isCapacitorScheme = typeof window !== 'undefined' && window.location && (
+    window.location.protocol === 'capacitor:' ||
+    window.location.protocol === 'ionic:' ||
+    (window.location.hostname === 'localhost' && window.location.port === '')
+  );
 
-  // 1. Native mobile runtime (Android / iOS): Never route to device loopback (localhost)
-  if (isNative) {
+  if (import.meta.env?.PROD || isNative || isCapacitorScheme) {
     const envUrl = (import.meta.env?.VITE_PRODUCTION_API_URL || import.meta.env?.VITE_API_URL || '').trim();
     if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
       const cleanUrl = envUrl.replace(/\/+$/, '');
@@ -29,8 +34,8 @@ const getApiBaseUrl = (): string => {
     return 'https://agromitra-ytqb.onrender.com/api';
   }
 
-  // 2. Desktop/Laptop Browser runtime check: if running on localhost or local network, talk to local backend on port 5000
-  if (typeof window !== 'undefined' && window.location) {
+  // 2. Local development runtime in desktop browser (npm run dev on port 5173): talk to local backend on port 5000
+  if (import.meta.env?.DEV && typeof window !== 'undefined' && window.location) {
     const hostname = window.location.hostname;
     if (
       hostname === 'localhost' ||
@@ -43,14 +48,7 @@ const getApiBaseUrl = (): string => {
     }
   }
 
-  // 3. Explicit environment variable for web deployment
-  const envUrl = (import.meta.env?.VITE_API_URL || '').trim();
-  if (envUrl) {
-    const cleanUrl = envUrl.replace(/\/+$/, '');
-    return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
-  }
-
-  // 4. Default production fallback
+  // 3. Fallback
   return 'https://agromitra-ytqb.onrender.com/api';
 };
 
@@ -61,9 +59,10 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
-// Attach Authorization header if token exists in localStorage
+// Attach dynamic baseURL and Authorization header
 apiClient.interceptors.request.use(
   (config) => {
+    config.baseURL = getApiBaseUrl();
     const token = localStorage.getItem('agrimart_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

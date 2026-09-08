@@ -143,6 +143,19 @@ export const Navbar: React.FC = () => {
               <span>Mandi Rates</span>
             </Link>
 
+            {/* Mandi Owner Portal (Direct Access) */}
+            <Link
+              to={user?.role === 'MARKET_OWNER' ? '/market-owner/dashboard' : '/market-owner/dashboard'}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                isActive('/market-owner/dashboard') || isActive('/market-owner')
+                  ? 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span>Mandi Portal</span>
+            </Link>
+
             {isAuthenticated && user ? (
               <>
                 {/* Farmer Navigation */}
@@ -477,6 +490,14 @@ export const Navbar: React.FC = () => {
               className="block px-3 py-2 rounded-xl text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               Live Mandi Rates
+            </Link>
+
+            <Link
+              to="/market-owner/dashboard"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-xl text-sm font-bold text-purple-600 dark:text-purple-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              🏛️ Mandi Owner Portal
             </Link>
 
             {isAuthenticated && user ? (

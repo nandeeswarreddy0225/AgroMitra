@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Compass,
   Check,
+  Building2,
 } from 'lucide-react';
 import {
   getProductsApi,
@@ -323,7 +324,7 @@ export const HomePage: React.FC = () => {
 
 
       {/* ========================================================================= */}
-      {/* 3. THREE PRIMARY USERS: Farmer, Agri Store Partner, Delivery Partner */}
+      {/* 3. FOUR PRIMARY USERS: Farmer, Agri Store Partner, Delivery Partner, Market Owner */}
       {/* ========================================================================= */}
 
       <section id="users" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -335,11 +336,11 @@ export const HomePage: React.FC = () => {
             {t('builtForAgriTitle', 'Built for Agriculture')}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            {t('builtForAgriSub', 'Empowering all three pillars of Indian agriculture with specialized digital tools.')}
+            Empowering all four pillars of Indian agriculture with specialized digital tools.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           
           {/* Card 1: FARMER */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-emerald-100 dark:border-emerald-950/80 p-7 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow space-y-6">
@@ -497,6 +498,59 @@ export const HomePage: React.FC = () => {
               className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
             >
               <span>{t('deliveryCta', 'Manage Deliveries')}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {/* Card 4: MARKET / MANDI OWNER */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-indigo-100 dark:border-indigo-950/80 p-7 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow space-y-6">
+            <div className="space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-700 dark:text-indigo-300">
+                <Building2 className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-xl font-heading font-extrabold text-slate-900 dark:text-white">
+                  🏛️ MARKET OWNER
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Manage APMC Mandi daily spot prices and market transparency.
+                </p>
+              </div>
+
+              {/* Feature Checklist */}
+              <ul className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <span>Daily Commodity Spot Price Publishing</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <span>Min, Max & Modal Price Validation</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <span>Real-time Price Audit & History Logs</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <span>APMC Yard Profile & Operating Hours</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <span>Mandi Hyperlocal Weather Advisory</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <span>Instant Sync to Public Farmer Portal</span>
+                </li>
+              </ul>
+            </div>
+
+            <Link
+              to={isAuthenticated && user?.role === 'MARKET_OWNER' ? '/market-owner/dashboard' : '/register'}
+              className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
+            >
+              <span>{isAuthenticated && user?.role === 'MARKET_OWNER' ? 'Mandi Dashboard' : 'Join as Market Owner'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

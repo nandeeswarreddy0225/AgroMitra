@@ -1,25 +1,61 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogIn, Lock, Phone, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import {
+  LogIn,
+  Lock,
+  Phone,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2,
+  Sprout,
+  Store,
+  Building2,
+  Truck,
+  HeartHandshake,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
-import { getPostLoginRedirectPath } from '../types/auth';
+import { getPostLoginRedirectPath, UserRole } from '../types/auth';
 import { AgroMitraLogo } from '../components/common/AgroMitraLogo';
 import axios from 'axios';
 
 export const LoginPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const initialRoleParam = (searchParams.get('role') || searchParams.get('portal') || '').toUpperCase();
+  const validRoles: UserRole[] = ['FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', 'MARKET_OWNER', 'DELIVERY_BOY', 'ADMIN'];
+  const defaultPortal: UserRole = validRoles.includes(initialRoleParam as UserRole)
+    ? (initialRoleParam as UserRole)
+    : 'FARMER';
+
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedPortal, setSelectedPortal] = useState<UserRole>(defaultPortal);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
+  // On LoginPage mount, sync portal from URL query parameter if present
+  useEffect(() => {
+    if (initialRoleParam && validRoles.includes(initialRoleParam as UserRole)) {
+      setSelectedPortal(initialRoleParam as UserRole);
+    }
+  }, [initialRoleParam]);
+
   const isEmailInput = phone.includes('@') || /[a-zA-Z]/.test(phone);
+
+  const portals = [
+    { role: 'FARMER' as UserRole, label: 'Farmer', icon: Sprout, color: 'emerald', desc: 'Inputs & AI health' },
+    { role: 'SHOP_OWNER' as UserRole, label: 'Shop Owner', icon: Store, color: 'amber', desc: 'Inventory & sales' },
+    { role: 'AGRI_PARTNER' as UserRole, label: 'Agri Partner', icon: HeartHandshake, color: 'teal', desc: 'Partner services' },
+    { role: 'MARKET_OWNER' as UserRole, label: 'Market Owner', icon: Building2, color: 'indigo', desc: 'Mandi spot rates' },
+    { role: 'DELIVERY_BOY' as UserRole, label: 'Delivery Boy', icon: Truck, color: 'blue', desc: 'Field deliveries' },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +75,7 @@ export const LoginPage: React.FC = () => {
         email: cleanIdentifier,
         identifier: cleanIdentifier,
         password: cleanPassword,
+        role: selectedPortal,
       });
 
       const rawRole =
@@ -46,8 +83,15 @@ export const LoginPage: React.FC = () => {
         (authenticatedUser as any)?.user?.role ||
         (authenticatedUser as any)?.data?.role ||
         (authenticatedUser as any)?.data?.user?.role ||
-        'FARMER';
-      const userRole = rawRole.toString().trim().toUpperCase();
+        '';
+      const userRole = rawRole.toString().trim().toUpperCase() as UserRole;
+
+      // Strict enforcement: The authenticated account MUST match the selected portal
+      if (userRole !== selectedPortal) {
+        logout();
+        setErrorMsg('These credentials are not registered for the selected portal. Please select the correct portal or use the correct account.');
+        return;
+      }
 
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
       const destination = getPostLoginRedirectPath(from, userRole);
@@ -67,7 +111,7 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-[calc(100vh-160px)] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+      <div className="sm:mx-auto sm:w-full sm:max-w-xl text-center">
         <div className="flex justify-center mb-2">
           <AgroMitraLogo variant="stacked" size="lg" showTagline={false} />
         </div>
@@ -76,13 +120,42 @@ export const LoginPage: React.FC = () => {
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
           {t('newToKrishiSetu', 'New to AgroMitra? Create account')}{' '}
-          <Link to="/register" className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+          <Link to={`/register?role=${selectedPortal}`} className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
             {t('navRegister', 'Register')}
           </Link>
         </p>
+
+        {/* 5-Portal Selector Chips */}
+        <div className="mt-6 px-2 sm:px-0">
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2.5">
+            Select Your Agricultural Portal:
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            {portals.map((p) => {
+              const Icon = p.icon;
+              const isSel = selectedPortal === p.role;
+              return (
+                <button
+                  key={p.role}
+                  type="button"
+                  onClick={() => setSelectedPortal(p.role)}
+                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 transition-all ${
+                    isSel
+                      ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-200 font-bold shadow-xs scale-102'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 mb-1 ${isSel ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
+                  <span className="text-[11px] font-bold truncate max-w-full">{p.label}</span>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 truncate max-w-full hidden sm:inline">{p.desc}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-white dark:bg-slate-900 py-8 px-6 shadow-sm border border-slate-200 dark:border-slate-800 rounded-3xl sm:px-10 transition-colors">
           {errorMsg && (
             <div className="mb-6 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-700 text-sm text-rose-800 dark:text-rose-200 flex items-start gap-2.5">

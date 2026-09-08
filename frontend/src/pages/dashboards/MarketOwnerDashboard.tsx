@@ -31,6 +31,7 @@ import {
   updateMyMarketApi,
 } from '../../services/api';
 import { lookupPincode } from '../../utils/pincode';
+import { getAccurateDeviceLocation } from '../../utils/geolocation';
 import {
   MarketOwnerDashboardData,
   MarketPriceRecord,
@@ -159,25 +160,19 @@ export const MarketOwnerDashboard: React.FC = () => {
   };
 
   // Handle GPS Auto-Detect for Market
-  const handleDetectGps = () => {
-    if (!navigator.geolocation) {
-      setErrorMsg('Geolocation is not supported by your browser.');
-      return;
-    }
+  const handleDetectGps = async () => {
     setIsDetectingGps(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setIsDetectingGps(false);
-        setMarketLatInput(String(Number(pos.coords.latitude.toFixed(5))));
-        setMarketLonInput(String(Number(pos.coords.longitude.toFixed(5))));
-        setSuccessMsg(`GPS Coordinates acquired: (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
-      },
-      (err) => {
-        setIsDetectingGps(false);
-        setErrorMsg(`GPS detection failed: ${err.message}`);
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
+    setErrorMsg(null);
+    try {
+      const pos = await getAccurateDeviceLocation();
+      setIsDetectingGps(false);
+      setMarketLatInput(String(Number(pos.latitude.toFixed(5))));
+      setMarketLonInput(String(Number(pos.longitude.toFixed(5))));
+      setSuccessMsg(`GPS Coordinates acquired: (${pos.latitude.toFixed(4)}, ${pos.longitude.toFixed(4)})`);
+    } catch (err: any) {
+      setIsDetectingGps(false);
+      setErrorMsg(`GPS detection failed: ${err.message}`);
+    }
   };
 
   // Open Daily Price Modal for a Commodity

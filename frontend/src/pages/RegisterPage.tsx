@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   UserPlus,
   Lock,
@@ -10,6 +10,7 @@ import {
   Store,
   Truck,
   Building2,
+  HeartHandshake,
   Eye,
   EyeOff,
   AlertCircle,
@@ -22,7 +23,20 @@ import { LocationAutofillWidget } from '../components/common/LocationAutofillWid
 import axios from 'axios';
 
 export const RegisterPage: React.FC = () => {
-  const [role, setRole] = useState<'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'MARKET_OWNER'>('FARMER');
+  const [searchParams] = useSearchParams();
+  const initialRoleParam = (searchParams.get('role') || '').toUpperCase();
+  const validRoles: Array<'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'MARKET_OWNER'> = [
+    'FARMER',
+    'SHOP_OWNER',
+    'AGRI_PARTNER',
+    'DELIVERY_BOY',
+    'MARKET_OWNER',
+  ];
+  const defaultRole = validRoles.includes(initialRoleParam as any)
+    ? (initialRoleParam as 'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'MARKET_OWNER')
+    : 'FARMER';
+
+  const [role, setRole] = useState<'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'MARKET_OWNER'>(defaultRole);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -177,11 +191,11 @@ export const RegisterPage: React.FC = () => {
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
                 {t('registerAs', 'Register as:')} <span className="text-rose-500">*</span>
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 <button
                   type="button"
                   onClick={() => setRole('FARMER')}
-                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${
+                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 transition-all ${
                     role === 'FARMER'
                       ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-200 font-bold shadow-sm'
                       : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600 dark:text-slate-400'
@@ -190,55 +204,71 @@ export const RegisterPage: React.FC = () => {
                   <Sprout className={`w-5 h-5 mb-1 ${role === 'FARMER' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
                   <span className="text-xs font-bold">{t('roleFarmer', 'Farmer')}</span>
                   <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
-                    Buy inputs & AI health
+                    Inputs & AI health
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRole('SHOP_OWNER')}
+                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 transition-all ${
+                    role === 'SHOP_OWNER'
+                      ? 'border-amber-600 bg-amber-50 dark:bg-amber-950/70 text-amber-950 dark:text-amber-200 font-bold shadow-sm'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  <Store className={`w-5 h-5 mb-1 ${role === 'SHOP_OWNER' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
+                  <span className="text-xs font-bold text-center">Shop Owner</span>
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
+                    Store inventory & sales
                   </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setRole('AGRI_PARTNER')}
-                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${
-                    role === 'AGRI_PARTNER' || role === 'SHOP_OWNER'
-                      ? 'border-amber-600 bg-amber-50 dark:bg-amber-950/70 text-amber-950 dark:text-amber-200 font-bold shadow-sm'
+                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 transition-all ${
+                    role === 'AGRI_PARTNER'
+                      ? 'border-teal-600 bg-teal-50 dark:bg-teal-950/70 text-teal-950 dark:text-teal-200 font-bold shadow-sm'
                       : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  <Store className={`w-5 h-5 mb-1 ${role === 'AGRI_PARTNER' || role === 'SHOP_OWNER' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
-                  <span className="text-xs font-bold text-center">Store Partner</span>
+                  <HeartHandshake className={`w-5 h-5 mb-1 ${role === 'AGRI_PARTNER' ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400'}`} />
+                  <span className="text-xs font-bold text-center">Agri Partner</span>
                   <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
-                    Sell seeds & fertilizers
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setRole('DELIVERY_BOY')}
-                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${
-                    role === 'DELIVERY_BOY'
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/70 text-blue-950 dark:text-blue-200 font-bold shadow-sm'
-                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600 dark:text-slate-400'
-                  }`}
-                >
-                  <Truck className={`w-5 h-5 mb-1 ${role === 'DELIVERY_BOY' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`} />
-                  <span className="text-xs font-bold">Delivery</span>
-                  <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
-                    Deliver farm inputs
+                    Partner services
                   </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setRole('MARKET_OWNER')}
-                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${
+                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 transition-all ${
                     role === 'MARKET_OWNER'
-                      ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/70 text-purple-950 dark:text-purple-200 font-bold shadow-sm'
+                      ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/70 text-indigo-950 dark:text-indigo-200 font-bold shadow-sm'
                       : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  <Building2 className={`w-5 h-5 mb-1 ${role === 'MARKET_OWNER' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400'}`} />
+                  <Building2 className={`w-5 h-5 mb-1 ${role === 'MARKET_OWNER' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
                   <span className="text-xs font-bold text-center">Market Owner</span>
                   <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
-                    Publish Mandi rates
+                    Mandi spot rates
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRole('DELIVERY_BOY')}
+                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 transition-all ${
+                    role === 'DELIVERY_BOY'
+                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/70 text-blue-950 dark:text-blue-200 font-bold shadow-sm'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  <Truck className={`w-5 h-5 mb-1 ${role === 'DELIVERY_BOY' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`} />
+                  <span className="text-xs font-bold">Delivery Boy</span>
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
+                    Field deliveries
                   </span>
                 </button>
               </div>

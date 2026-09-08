@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import axios from 'axios';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { User, UserRole, IUser } from '../models/User.model';
@@ -176,7 +177,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
 
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { identifier: rawIdentifier, phone, email, password } = req.body;
+    const { identifier: rawIdentifier, phone, email, password, role } = req.body;
 
     const rawInput = (rawIdentifier || phone || email || '').toString();
     const identifier = rawInput.replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '').trim();
@@ -258,6 +259,20 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       return;
     }
 
+    // 3. Strict Role-Specific Portal Validation
+    const requestedRole = (role || req.body.intendedRole || req.body.portalRole || '').toString().trim().toUpperCase() as UserRole;
+    if (requestedRole) {
+      const userRole = (user.role || '').toString().trim().toUpperCase() as UserRole;
+      if (userRole !== requestedRole) {
+        console.warn(`🔒 [Auth]: Role mismatch for user '${user.phone || user.email}'. User role in DB is '${userRole}', but requested portal role is '${requestedRole}'. Login rejected.`);
+        res.status(403).json({
+          success: false,
+          message: 'These credentials are not registered for the selected portal. Please select the correct portal or use the correct account.',
+        });
+        return;
+      }
+    }
+
     // Auto-normalize stored phone number if it had legacy non-standard formatting (+91 etc.)
     if (user.phone && typeof user.phone === 'string') {
       const canonicalPhone = normalizePhoneNumber(user.phone);
@@ -273,7 +288,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
 
     console.log(`✅ [Auth]: Login successful for user '${user.phone || user.email}' (${user.role}).`);
 
-    // 3. Generate JWT
+    // 4. Generate JWT
     const token = generateToken({
       id: user._id.toString(),
       role: user.role,

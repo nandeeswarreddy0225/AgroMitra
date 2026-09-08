@@ -20,6 +20,7 @@ import {
 import { getLiveWeatherApi } from '../../services/api';
 import { WeatherData } from '../../types/weather';
 import { useAuth } from '../../context/AuthContext';
+import { getAccurateDeviceLocation } from '../../utils/geolocation';
 
 interface LiveWeatherCardProps {
   initialCity?: string;
@@ -123,74 +124,62 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
     }
   }, [user?.address?.city, user?.address?.state, initialCity, initialState, fetchWeather]);
 
-  // Browser Geolocation Function with High-Accuracy GPS
+  // Device Geolocation Function with High-Accuracy GPS (Native + Web)
   const handleUseBrowserLocation = useCallback(
-    (isInitialAutoCheck: boolean = false) => {
-      if (!navigator.geolocation) {
-        if (!isInitialAutoCheck) {
-          setErrorMsg('Geolocation is not supported by your browser. Please choose a location manually.');
-        }
-        fallbackToFarmProfile();
-        return;
-      }
-
+    async (isInitialAutoCheck: boolean = false) => {
       setIsLocatingGeo(true);
       setIsLoading(true);
       setErrorMsg(null);
       setPermissionNotice(null);
 
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setIsLocatingGeo(false);
-          const { latitude, longitude, accuracy } = pos.coords;
-          const roundedAccuracy = typeof accuracy === 'number' && !isNaN(accuracy) ? Math.round(accuracy) : null;
-          setGpsAccuracy(roundedAccuracy);
+      try {
+        const pos = await getAccurateDeviceLocation();
+        setIsLocatingGeo(false);
+        const { latitude, longitude, accuracy } = pos;
+        const roundedAccuracy = typeof accuracy === 'number' && !isNaN(accuracy) ? Math.round(accuracy) : null;
+        setGpsAccuracy(roundedAccuracy);
 
-          // Preserve full precision coordinates
-          const coords = {
-            lat: latitude,
-            lon: longitude,
-          };
-          console.log(`[LiveWeatherCard] High-accuracy GPS acquired: lat=${latitude}, lon=${longitude}, accuracy=±${roundedAccuracy}m`);
-          activeLocationRef.current = coords;
-          setIsEditingLocation(false);
-          fetchWeather(coords, 'live_gps');
-        },
-        (err) => {
-          setIsLocatingGeo(false);
-          setGpsAccuracy(null);
-          console.warn(`[LiveWeatherCard] Geolocation error (code ${err.code}):`, err.message);
+        // Preserve full precision coordinates
+        const coords = {
+          lat: latitude,
+          lon: longitude,
+        };
+        console.log(`[LiveWeatherCard] High-accuracy GPS acquired: lat=${latitude}, lon=${longitude}, accuracy=±${roundedAccuracy}m`);
+        activeLocationRef.current = coords;
+        setIsEditingLocation(false);
+        fetchWeather(coords, 'live_gps');
+      } catch (err: any) {
+        setIsLocatingGeo(false);
+        setGpsAccuracy(null);
+        console.warn(`[LiveWeatherCard] Geolocation error:`, err.message);
 
-          if (err.code === 1 /* PERMISSION_DENIED */) {
-            setPermissionNotice(
-              'Location permission was denied. Please enable GPS/location permissions in your browser to get real-time farm weather.'
-            );
-            if (!isInitialAutoCheck) {
-              setErrorMsg('Location permission denied by browser. Please enable location access or select a location manually.');
-            }
-          } else if (err.code === 2 /* POSITION_UNAVAILABLE */) {
-            setPermissionNotice('Device GPS position unavailable. Please ensure device location is enabled.');
-            if (!isInitialAutoCheck) {
-              setErrorMsg('GPS sensor position unavailable. Please check your device location settings.');
-            }
-          } else if (err.code === 3 /* TIMEOUT */) {
-            setPermissionNotice('High-accuracy GPS request timed out (15s). Please retry in an open area.');
-            if (!isInitialAutoCheck) {
-              setErrorMsg('GPS positioning timed out. Please click "Use Current Location" to retry.');
-            }
-          } else {
-            setPermissionNotice('Unable to acquire GPS coordinates.');
-            if (!isInitialAutoCheck) {
-              setErrorMsg('Unable to detect high-accuracy GPS position.');
-            }
+        const msg = err.message || '';
+        if (msg.toLowerCase().includes('denied') || msg.toLowerCase().includes('permission')) {
+          setPermissionNotice('Location permission was denied. Please allow location access in device Settings.');
+          if (!isInitialAutoCheck) {
+            setErrorMsg('Location permission was denied. Please allow location access or choose a location manually.');
           }
-
-          if (isInitialAutoCheck) {
-            fallbackToFarmProfile();
+        } else if (msg.toLowerCase().includes('unavailable')) {
+          setPermissionNotice('Device GPS position unavailable. Please ensure device location is turned ON.');
+          if (!isInitialAutoCheck) {
+            setErrorMsg('GPS sensor position unavailable. Please check your device location settings.');
           }
-        },
-        { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
-      );
+        } else if (msg.toLowerCase().includes('timeout') || msg.toLowerCase().includes('timed out')) {
+          setPermissionNotice('GPS request timed out. Please retry in an open area.');
+          if (!isInitialAutoCheck) {
+            setErrorMsg('GPS positioning timed out. Please click "Use Current Location" to retry.');
+          }
+        } else {
+          setPermissionNotice(msg || 'Unable to acquire GPS coordinates.');
+          if (!isInitialAutoCheck) {
+            setErrorMsg(msg || 'Unable to detect high-accuracy GPS position.');
+          }
+        }
+
+        if (isInitialAutoCheck) {
+          fallbackToFarmProfile();
+        }
+      }
     },
     [fallbackToFarmProfile, fetchWeather]
   );

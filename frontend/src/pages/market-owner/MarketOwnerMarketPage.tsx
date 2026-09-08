@@ -13,6 +13,7 @@ import {
   updateMyMarketApi,
 } from '../../services/api';
 import { lookupPincode } from '../../utils/pincode';
+import { getAccurateDeviceLocation } from '../../utils/geolocation';
 import { MarketOwnerDashboardData } from '../../types/marketOwner';
 import axios from 'axios';
 
@@ -93,26 +94,19 @@ export const MarketOwnerMarketPage: React.FC = () => {
   };
 
   // Handle GPS Auto-Detect
-  const handleDetectGps = () => {
-    if (!navigator.geolocation) {
-      setErrorMsg('Geolocation is not supported by your browser.');
-      return;
-    }
+  const handleDetectGps = async () => {
     setIsDetectingGps(true);
     setErrorMsg(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setIsDetectingGps(false);
-        setMarketLat(String(Number(pos.coords.latitude.toFixed(5))));
-        setMarketLon(String(Number(pos.coords.longitude.toFixed(5))));
-        setSuccessMsg(`GPS Coordinates acquired: (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
-      },
-      (err) => {
-        setIsDetectingGps(false);
-        setErrorMsg(`GPS detection: ${err.message}`);
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
+    try {
+      const pos = await getAccurateDeviceLocation();
+      setIsDetectingGps(false);
+      setMarketLat(String(Number(pos.latitude.toFixed(5))));
+      setMarketLon(String(Number(pos.longitude.toFixed(5))));
+      setSuccessMsg(`GPS Coordinates acquired: (${pos.latitude.toFixed(4)}, ${pos.longitude.toFixed(4)})`);
+    } catch (err: any) {
+      setIsDetectingGps(false);
+      setErrorMsg(`GPS detection: ${err.message}`);
+    }
   };
 
   // Handle Form Submit

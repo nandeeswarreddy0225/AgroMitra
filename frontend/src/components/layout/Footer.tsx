@@ -7,6 +7,7 @@ import {
   QrCode,
   HeartHandshake,
   Truck,
+  Building2,
 } from 'lucide-react';
 import { useTranslation } from '../../context/LanguageContext';
 import { AgroMitraLogo } from '../common/AgroMitraLogo';
@@ -17,7 +18,7 @@ export const Footer: React.FC = () => {
   return (
     <footer className="bg-slate-900 dark:bg-slate-950 border-t border-slate-800 text-slate-300 mt-auto transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-12 border-b border-slate-800">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 pb-12 border-b border-slate-800">
           
           {/* Col 1: Brand & Vision */}
           <div className="lg:col-span-2 space-y-4">
@@ -71,7 +72,7 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/dashboard" className="hover:text-emerald-400 transition-colors">
+                <Link to="/market/prices" className="hover:text-emerald-400 transition-colors">
                   APMC Mandi Spot Rates
                 </Link>
               </li>
@@ -106,15 +107,44 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/register" className="hover:text-amber-400 transition-colors">
+                <Link to="/register?role=SHOP_OWNER" className="hover:text-amber-400 transition-colors">
                   Store Partner Registration
                 </Link>
               </li>
             </ul>
           </div>
 
+          {/* Col 4: For Market Owners */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider font-heading flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Market Owners</span>
+            </h4>
+            <ul className="space-y-2 text-xs text-slate-400">
+              <li>
+                <Link to="/market-owner/dashboard" className="hover:text-indigo-400 transition-colors">
+                  Mandi Owner Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link to="/market-owner/prices" className="hover:text-indigo-400 transition-colors">
+                  Publish Daily Spot Rates
+                </Link>
+              </li>
+              <li>
+                <Link to="/market/prices" className="hover:text-indigo-400 transition-colors">
+                  Mandi Price Comparisons
+                </Link>
+              </li>
+              <li>
+                <Link to="/register?role=MARKET_OWNER" className="hover:text-indigo-400 transition-colors">
+                  Market Owner Registration
+                </Link>
+              </li>
+            </ul>
+          </div>
 
-          {/* Col 4: For Delivery Partners */}
+          {/* Col 5: For Delivery Partners */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider font-heading flex items-center gap-1.5">
               <Truck className="w-3.5 h-3.5 text-blue-400" />
@@ -132,7 +162,7 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/register" className="hover:text-blue-400 transition-colors">
+                <Link to="/register?role=DELIVERY_BOY" className="hover:text-blue-400 transition-colors">
                   Delivery Partner Registration
                 </Link>
               </li>

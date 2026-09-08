@@ -84,6 +84,7 @@ mobile/.expo/
 mobile/package-lock.json
 
 # Scratch & Temporary Diagnostic Scripts
+backend/backup_old_model/
 backend/src/scripts/check_current_users.ts
 backend/src/scripts/inspect_vercel_bundle.ts
 backend/src/tests/inspect_onnx_model.ts

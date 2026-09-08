@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Building2,
   Compass,
@@ -18,6 +19,7 @@ import {
   Info,
   X,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import {
   getCommoditiesApi,
   getMarketPricesTodayApi,
@@ -25,6 +27,7 @@ import {
   compareNearbyMarketsApi,
 } from '../../services/api';
 import { lookupPincode } from '../../utils/pincode';
+import { getAccurateDeviceLocation } from '../../utils/geolocation';
 import {
   Commodity,
   MarketPriceRecord,
@@ -35,6 +38,7 @@ import {
 import { AgroMitraLogo } from '../../components/common/AgroMitraLogo';
 
 export const FarmerMarketPricesPage: React.FC = () => {
+  const { user } = useAuth();
   const [commodities, setCommodities] = useState<Commodity[]>([]);
   const [selectedCommodity, setSelectedCommodity] = useState<string>('');
   const [selectedCommodityDoc, setSelectedCommodityDoc] = useState<Commodity | null>(null);
@@ -66,24 +70,18 @@ export const FarmerMarketPricesPage: React.FC = () => {
 
   // 1. Initial Load: GPS Location & Commodities
   useEffect(() => {
-    if (navigator.geolocation) {
-      setIsDetectingGps(true);
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setIsDetectingGps(false);
-          const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-          setFarmerCoords(coords);
-          setGpsLocationLabel(`GPS (${coords.lat.toFixed(2)}°, ${coords.lon.toFixed(2)}°)`);
-        },
-        () => {
-          setIsDetectingGps(false);
-          setGpsLocationLabel('Set Location / PIN');
-        },
-        { timeout: 8000, enableHighAccuracy: true }
-      );
-    } else {
-      setGpsLocationLabel('Set Location / PIN');
-    }
+    setIsDetectingGps(true);
+    getAccurateDeviceLocation()
+      .then((pos) => {
+        setIsDetectingGps(false);
+        const coords = { lat: pos.latitude, lon: pos.longitude };
+        setFarmerCoords(coords);
+        setGpsLocationLabel(`GPS (${coords.lat.toFixed(2)}°, ${coords.lon.toFixed(2)}°)`);
+      })
+      .catch(() => {
+        setIsDetectingGps(false);
+        setGpsLocationLabel('Set Location / PIN');
+      });
 
     const init = async () => {
       setIsLoadingCommodities(true);
@@ -164,27 +162,20 @@ export const FarmerMarketPricesPage: React.FC = () => {
     setSelectedCommodityDoc(comm);
   };
 
-  const handleRequestGps = () => {
-    if (!navigator.geolocation) {
-      setErrorMsg('Geolocation is not supported by your browser.');
-      return;
-    }
+  const handleRequestGps = async () => {
     setIsDetectingGps(true);
     setErrorMsg(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setIsDetectingGps(false);
-        const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-        setFarmerCoords(coords);
-        setGpsLocationLabel(`GPS (${coords.lat.toFixed(2)}°, ${coords.lon.toFixed(2)}°)`);
-        setIsLocationModalOpen(false);
-      },
-      (err) => {
-        setIsDetectingGps(false);
-        setErrorMsg(`GPS detection: ${err.message}`);
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
+    try {
+      const pos = await getAccurateDeviceLocation();
+      setIsDetectingGps(false);
+      const coords = { lat: pos.latitude, lon: pos.longitude };
+      setFarmerCoords(coords);
+      setGpsLocationLabel(`GPS (${coords.lat.toFixed(2)}°, ${coords.lon.toFixed(2)}°)`);
+      setIsLocationModalOpen(false);
+    } catch (err: any) {
+      setIsDetectingGps(false);
+      setErrorMsg(`GPS detection: ${err.message}`);
+    }
   };
 
   const handlePincodeSearch = async (e: React.FormEvent) => {
@@ -367,7 +358,7 @@ export const FarmerMarketPricesPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Location Selector Button */}
+        {/* Location & Mandi Portal Buttons */}
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
           <button
             onClick={() => setIsLocationModalOpen(true)}
@@ -376,6 +367,14 @@ export const FarmerMarketPricesPage: React.FC = () => {
             <Compass className={`w-3.5 h-3.5 ${isDetectingGps ? 'animate-spin' : ''}`} />
             <span>{gpsLocationLabel}</span>
           </button>
+
+          <Link
+            to={user?.role === 'MARKET_OWNER' ? '/market-owner/dashboard' : '/market-owner'}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs"
+          >
+            <Building2 className="w-3.5 h-3.5" />
+            <span>{user?.role === 'MARKET_OWNER' ? 'Mandi Dashboard' : 'Mandi Owner Portal'}</span>
+          </Link>
         </div>
       </div>
 

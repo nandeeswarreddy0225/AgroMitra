@@ -4,16 +4,7 @@ import { StorePaymentConfig } from '../models/StorePaymentConfig.model';
 
 export const autoSeedDefaultData = async (): Promise<void> => {
   try {
-    const seedAccounts = [
-      {
-        name: 'KrishiSetu Admin',
-        email: 'admin@agrimart.com',
-        phone: '9876543211',
-        role: 'ADMIN' as const,
-        shopName: 'AgroMitra Super Store',
-        upiId: 'partnerB.kurnool@hdfcbank',
-      },
-    ];
+    const seedAccounts: Array<{ name: string; email: string; phone: string; role: any; shopName?: string; upiId?: string }> = [];
 
     for (const acc of seedAccounts) {
       let user: any = await User.findOne({ email: acc.email }).select('+password');
