@@ -11,8 +11,8 @@
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "build:backend": "npm --prefix backend run build",
-    "build:frontend": "npm --prefix frontend run build",
-    "build": "npm --prefix frontend run build",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "build": "cd frontend && npm install && npm run build",
     "test:backend": "npm --prefix backend test",
     "audit:master": "npm --prefix backend run audit:master"
   },
