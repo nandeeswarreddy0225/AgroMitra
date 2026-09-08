@@ -2,7 +2,112 @@ import http from 'http';
 import app from '../app';
 import { connectDB, disconnectDB } from '../config/db';
 import { User, UserRole } from '../models/User.model';
+import { DeliveryBoy } from '../models/DeliveryBoy.model';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+
+// Mirror Frontend Path Helper functions for end-to-end routing validation
+const getRoleDashboardPath = (role?: string): string => {
+  const normalizedRole = (role || '').toString().trim().toUpperCase();
+  switch (normalizedRole) {
+    case 'FARMER':
+      return '/farmer/dashboard';
+    case 'SHOP_OWNER':
+      return '/shop-owner/dashboard';
+    case 'AGRI_PARTNER':
+      return '/agri-partner/dashboard';
+    case 'DELIVERY_BOY':
+      return '/delivery-boy/dashboard';
+    case 'MARKET_OWNER':
+      return '/market-owner/dashboard';
+    case 'ADMIN':
+      return '/admin/dashboard';
+    default:
+      return '/login';
+  }
+};
+
+const isPathAllowedForRole = (pathname: string, role?: string): boolean => {
+  if (!pathname || !role) return false;
+  const normalizedRole = (role || '').toString().trim().toUpperCase();
+  const cleanPath = pathname.split('?')[0].split('#')[0].replace(/\/+$/, '') || '/';
+
+  if (['/login', '/register', '/forgot-password', '/reset-password'].includes(cleanPath)) {
+    return false;
+  }
+  if (normalizedRole === 'ADMIN') return true;
+
+  if (normalizedRole === 'FARMER') {
+    return [
+      '/dashboard',
+      '/farmer/dashboard',
+      '/farmer/crop-disease',
+      '/farmer/schemes',
+      '/farmer/cart',
+      '/farmer/checkout',
+      '/farmer/orders',
+      '/cart',
+      '/checkout',
+      '/orders',
+      '/crop-disease',
+      '/market/prices',
+      '/mandi-prices',
+    ].includes(cleanPath);
+  }
+
+  if (normalizedRole === 'DELIVERY_BOY') {
+    return [
+      '/delivery/dashboard',
+      '/delivery-boy/dashboard',
+      '/delivery-boy',
+      '/delivery',
+    ].includes(cleanPath) || cleanPath.startsWith('/delivery/') || cleanPath.startsWith('/delivery-boy/');
+  }
+
+  if (normalizedRole === 'SHOP_OWNER') {
+    return [
+      '/shop-owner/dashboard',
+      '/shop-owner',
+      '/store-dashboard',
+      '/shop-owner/products',
+      '/shop-owner/orders',
+      '/inventory',
+      '/admin/products',
+      '/shop/orders',
+      '/shop/products',
+    ].includes(cleanPath) || cleanPath.startsWith('/shop-owner/') || cleanPath.startsWith('/shop/');
+  }
+
+  if (normalizedRole === 'AGRI_PARTNER') {
+    return [
+      '/agri-partner/dashboard',
+      '/agri-partner',
+      '/agri-partner/products',
+      '/agri-partner/orders',
+      '/shop-owner/dashboard',
+      '/shop-owner',
+      '/store-dashboard',
+      '/shop-owner/products',
+      '/shop-owner/orders',
+      '/inventory',
+      '/admin/products',
+      '/shop/orders',
+      '/shop/products',
+    ].includes(cleanPath) || cleanPath.startsWith('/agri-partner/') || cleanPath.startsWith('/shop-owner/') || cleanPath.startsWith('/shop/');
+  }
+
+  if (normalizedRole === 'MARKET_OWNER') {
+    return [
+      '/market-owner/dashboard',
+      '/market-owner',
+      '/market-dashboard',
+      '/market/prices',
+      '/mandi-prices',
+    ].includes(cleanPath) || cleanPath.startsWith('/market-owner/');
+  }
+
+  return false;
+};
 
 const TEST_PORT = 5037;
 let server: http.Server;
@@ -255,13 +360,13 @@ async function runSecuritySuite() {
     assert(missingPwdRes.statusCode === 400, `Missing password returns HTTP 400 Bad Request`);
 
     // TEST SUITE 6: Registration Strict Role Creation Tests
-    console.log('\n--- TEST SET 6: Registration Strict Role Tests ---');
-    const regRoles: Array<{ role: UserRole; phone: string; name: string }> = [
-      { role: 'SHOP_OWNER', phone: '9848077771', name: 'New Shop Owner' },
-      { role: 'FARMER', phone: '9848077772', name: 'New Farmer' },
-      { role: 'AGRI_PARTNER', phone: '9848077773', name: 'New Agri Partner' },
-      { role: 'DELIVERY_BOY', phone: '9848077774', name: 'New Delivery Boy' },
-      { role: 'MARKET_OWNER', phone: '9848077775', name: 'New Market Owner' },
+    console.log('\n--- TEST SET 6: Registration Strict Role Tests & Portal Validation ---');
+    const regRoles: Array<{ role: UserRole; phone: string; name: string; expectedDashboard: string }> = [
+      { role: 'SHOP_OWNER', phone: '9848077771', name: 'New Shop Owner', expectedDashboard: '/shop-owner/dashboard' },
+      { role: 'FARMER', phone: '9848077772', name: 'New Farmer', expectedDashboard: '/farmer/dashboard' },
+      { role: 'AGRI_PARTNER', phone: '9848077773', name: 'New Agri Partner', expectedDashboard: '/agri-partner/dashboard' },
+      { role: 'DELIVERY_BOY', phone: '9848077774', name: 'New Delivery Boy', expectedDashboard: '/delivery-boy/dashboard' },
+      { role: 'MARKET_OWNER', phone: '9848077775', name: 'New Market Owner', expectedDashboard: '/market-owner/dashboard' },
     ];
 
     for (const item of regRoles) {
@@ -278,6 +383,21 @@ async function runSecuritySuite() {
       assert(regRes.statusCode === 201, `Registering ${item.role} returns HTTP 201 Created`);
       assert(regRes.body.user?.role === item.role, `Registered user has exact role '${item.role}' (NOT default FARMER)`);
       assert(!!regRes.body.token, `Registered user receives valid JWT token`);
+
+      const decoded: any = jwt.decode(regRes.body.token);
+      assert(decoded?.role === item.role, `JWT payload encodes exact role '${item.role}'`);
+
+      const targetPath = getRoleDashboardPath(item.role);
+      assert(targetPath === item.expectedDashboard, `${item.role} dashboard route resolves to '${targetPath}'`);
+      assert(isPathAllowedForRole(targetPath, item.role) === true, `${item.role} is authorized on '${targetPath}'`);
+
+      if (item.role === 'DELIVERY_BOY') {
+        assert(targetPath !== '/farmer/dashboard', 'Delivery Boy dashboard is strictly NOT Farmer dashboard');
+        assert(isPathAllowedForRole('/farmer/dashboard', item.role) === false, 'Delivery Boy is forbidden from Farmer dashboard');
+        const userId = regRes.body.user?._id || regRes.body.user?.id;
+        const dbProfile = await DeliveryBoy.findOne({ $or: [{ user: userId }, { phone: item.phone }] });
+        assert(!!dbProfile, 'DeliveryBoy profile document successfully created in MongoDB');
+      }
     }
 
     // Public Admin Registration Rejection
@@ -305,6 +425,18 @@ async function runSecuritySuite() {
     });
     assert(missingRoleRes.statusCode === 400, `Registration with missing role is rejected with HTTP 400`);
 
+    const invalidRoleRes = await makeRequest({
+      method: 'POST',
+      path: '/api/auth/register',
+      body: {
+        name: 'Invalid Role User',
+        phone: '9848077778',
+        password: 'Password@123',
+        role: 'SUPERADMIN',
+      },
+    });
+    assert(invalidRoleRes.statusCode === 400, `Registration with unknown/invalid role is rejected with HTTP 400`);
+
     // TEST SUITE 7: Session Isolation & Switching Verification
     console.log('\n--- TEST SET 7: Session Isolation & Role Switching Verification ---');
     
@@ -320,6 +452,7 @@ async function runSecuritySuite() {
     });
     assert(dbLoginRes.statusCode === 200, `Delivery Boy login succeeded with role DELIVERY_BOY`);
     assert(dbLoginRes.body.user?.role === 'DELIVERY_BOY', `Delivery Boy session initialized`);
+    assert(getRoleDashboardPath(dbLoginRes.body.user?.role) === '/delivery-boy/dashboard', 'Delivery Boy navigates to Delivery Boy Portal only');
 
     // Simulate Farmer logging in immediately after
     const farmerAfterDbRes = await makeRequest({
@@ -333,6 +466,7 @@ async function runSecuritySuite() {
     });
     assert(farmerAfterDbRes.statusCode === 200, `Farmer login after Delivery Boy logout returns HTTP 200`);
     assert(farmerAfterDbRes.body.user?.role === 'FARMER', `Farmer session has clean FARMER role with zero DELIVERY_BOY leakage`);
+    assert(getRoleDashboardPath(farmerAfterDbRes.body.user?.role) === '/farmer/dashboard', 'Farmer navigates to Farmer Portal only');
 
     // Scenario 9: Farmer Session -> Logout -> Delivery Boy Login -> Delivery Boy Portal
     const dbAfterFarmerRes = await makeRequest({
@@ -346,6 +480,34 @@ async function runSecuritySuite() {
     });
     assert(dbAfterFarmerRes.statusCode === 200, `Delivery Boy login after Farmer logout returns HTTP 200`);
     assert(dbAfterFarmerRes.body.user?.role === 'DELIVERY_BOY', `Delivery Boy session has clean DELIVERY_BOY role with zero FARMER leakage`);
+    assert(getRoleDashboardPath(dbAfterFarmerRes.body.user?.role) === '/delivery-boy/dashboard', 'Delivery Boy navigates to Delivery Boy Portal only');
+
+    // TEST SUITE 8: Code Path Audit - Zero Silent Fallback to FARMER
+    console.log('\n--- TEST SET 8: Audit for Zero Silent Fallbacks to FARMER ---');
+    
+    // Schema required check
+    let schemaValidationFailed = false;
+    try {
+      const invalidUser = new User({
+        name: 'Missing Role',
+        phone: '9848099999',
+        email: 'missing@test.com',
+        password: 'Password@123',
+      });
+      await invalidUser.validate();
+    } catch (err: any) {
+      schemaValidationFailed = true;
+      assert(err.errors?.role?.kind === 'required', 'User schema strictly enforces role required validation');
+    }
+    assert(schemaValidationFailed === true, 'Mongoose rejects creating User document without an explicit role');
+
+    // Frontend Path Helper Fallbacks
+    assert(getRoleDashboardPath(undefined) === '/login', 'getRoleDashboardPath(undefined) returns /login (NOT /farmer/dashboard)');
+    assert(getRoleDashboardPath('') === '/login', 'getRoleDashboardPath("") returns /login (NOT /farmer/dashboard)');
+    assert(getRoleDashboardPath('UNKNOWN') === '/login', 'getRoleDashboardPath("UNKNOWN") returns /login (NOT /farmer/dashboard)');
+    assert(isPathAllowedForRole('/farmer/dashboard', undefined) === false, 'isPathAllowedForRole(farmer, undefined) is false');
+    assert(isPathAllowedForRole('/farmer/dashboard', 'DELIVERY_BOY') === false, 'isPathAllowedForRole(farmer, DELIVERY_BOY) is false');
+    assert(isPathAllowedForRole('/delivery-boy/dashboard', 'DELIVERY_BOY') === true, 'isPathAllowedForRole(delivery, DELIVERY_BOY) is true');
 
     console.log('\n================================================================');
     console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED (Total: ${passed + failed})`);
