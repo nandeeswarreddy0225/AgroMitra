@@ -83,8 +83,18 @@ app.use('/api/market-owner', marketOwnerRouter);
 app.use('/api/notifications', notificationRouter);
 
 // Static frontend serving if dist directory exists
-const frontendDistPath = path.resolve(__dirname, '../../frontend/dist');
-if (fs.existsSync(frontendDistPath)) {
+const possibleDistPaths = [
+  path.resolve(__dirname, '../../frontend/dist'),
+  path.resolve(__dirname, '../frontend/dist'),
+  path.resolve(process.cwd(), 'frontend/dist'),
+  path.resolve(process.cwd(), '../frontend/dist'),
+  path.resolve(__dirname, '../../dist'),
+];
+
+const frontendDistPath = possibleDistPaths.find((p) => fs.existsSync(p) && fs.existsSync(path.join(p, 'index.html')));
+
+if (frontendDistPath) {
+  console.log(`🌐 [Static Web]: Serving production frontend from '${frontendDistPath}'`);
   app.use(express.static(frontendDistPath));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
