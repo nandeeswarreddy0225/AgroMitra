@@ -1,6 +1,6 @@
 {
-  "installCommand": "npm install",
-  "buildCommand": "npm --workspace=frontend run build && node -e \"const fs=require('fs');if(fs.existsSync('frontend/dist')){fs.cpSync('frontend/dist','dist',{recursive:true})}\"",
+  "installCommand": "cd frontend && npm install",
+  "buildCommand": "cd frontend && npm run build && node -e \"const fs=require('fs');if(fs.existsSync('dist')){fs.cpSync('dist','../dist',{recursive:true})}\"",
   "outputDirectory": "dist",
   "headers": [
     {
