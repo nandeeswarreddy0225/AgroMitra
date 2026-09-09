@@ -3,18 +3,13 @@
   "version": "2.0.0",
   "description": "AgroMitra — Intelligent Indian Agriculture Platform connecting Farmers, Agri Store Partners and Delivery Partners.",
   "private": true,
-  "workspaces": [
-    "backend",
-    "frontend"
-  ],
   "scripts": {
-    "dev:backend": "npm --prefix backend run dev",
-    "dev:frontend": "npm --prefix frontend run dev",
-    "build:backend": "npm --prefix backend run build",
-    "build:frontend": "node -e \"const cp=require('child_process'),fs=require('fs');cp.execSync('npm --prefix frontend install && npm --prefix frontend run build',{stdio:'inherit'});if(fs.existsSync('frontend/dist')){fs.cpSync('frontend/dist','dist',{recursive:true});}\"",
-    "build": "node -e \"const cp=require('child_process'),fs=require('fs');cp.execSync('npm --prefix frontend install && npm --prefix frontend run build',{stdio:'inherit'});if(fs.existsSync('frontend/dist')){fs.cpSync('frontend/dist','dist',{recursive:true});}\"",
-    "test:backend": "npm --prefix backend test",
-    "audit:master": "npm --prefix backend run audit:master"
+    "dev:backend": "node -e \"const cp=require('child_process');process.chdir('backend');cp.execSync('npm run dev',{stdio:'inherit'});\"",
+    "dev:frontend": "node -e \"const cp=require('child_process');process.chdir('frontend');cp.execSync('npm run dev',{stdio:'inherit'});\"",
+    "build:backend": "node -e \"const cp=require('child_process');process.chdir('backend');cp.execSync('npm install && npm run build',{stdio:'inherit'});\"",
+    "build:frontend": "node -e \"const cp=require('child_process'),fs=require('fs');process.chdir('frontend');cp.execSync('npm install && npm run build',{stdio:'inherit'});if(fs.existsSync('dist')){fs.cpSync('dist','../dist',{recursive:true});}\"",
+    "build": "node -e \"const cp=require('child_process'),fs=require('fs');process.chdir('frontend');cp.execSync('npm install && npm run build',{stdio:'inherit'});if(fs.existsSync('dist')){fs.cpSync('dist','../dist',{recursive:true});}\"",
+    "test:backend": "node -e \"const cp=require('child_process');process.chdir('backend');cp.execSync('npm test',{stdio:'inherit'});\""
   },
   "keywords": [
     "agriculture",
