@@ -167,7 +167,7 @@ export const HomePage: React.FC = () => {
             <p className="text-sm sm:text-base lg:text-lg text-stone-200/90 leading-relaxed max-w-xl font-normal">
               {t(
                 'brandHeroSubtitle',
-                'AgroMitra connects farmers, agri store partners and delivery partners in one intelligent agricultural platform.'
+                'AgroMitra connects farmers, agri store partners, mandi owners and delivery partners in one intelligent agricultural platform.'
               )}
 
             </p>

@@ -2,10 +2,13 @@
 
 **Smart Farming. Better Decisions. Stronger Connections.**
 
-AgroMitra is a modern, full-stack digital agriculture platform designed to connect three foundational stakeholders of the agricultural supply chain:
+AgroMitra is a modern, full-stack digital agriculture platform designed to seamlessly connect all key stakeholders across the agricultural supply chain and Mandi network:
 - **🌾 Farmers** — Accessing AI crop diagnostics, live weather advisories, national mandi price intelligence, verified government welfare schemes, and direct input procurement.
-- **🏪 Agri Store Partners** — Managing digital catalogs, inventory pricing, direct merchant UPI QR payment collection, and delivery partner dispatch.
-- **🚚 Delivery Partners** — Handling real-time assignment requests, pickup routing, 4-stage delivery status progression, and doorstep confirmation.
+- **🏪 Shop Owners** — Managing store catalogs, inventory pricing, direct merchant UPI QR payment collection, and delivery partner dispatch.
+- **🤝 Agri Partners** — Extended agricultural retail partner services, rural input distribution, and store management.
+- **🏛️ Market / Mandi Owners** — Publishing daily APMC Mandi commodity spot rates (Min, Max, Modal prices), managing mandi yard profiles, operating hours, and price audit logs.
+- **🚚 Delivery Partners** — Handling real-time assignment requests, store pickup routing, 4-stage delivery status progression, and doorstep confirmation.
+- **🛡️ Administrators** — Platform governance, store payment & UPI configuration, catalog auditing, and system monitoring.
 
 ---
 
@@ -27,46 +30,52 @@ AgroMitra is a modern, full-stack digital agriculture platform designed to conne
 - **Direct Agri Store Partner UPI QR**: Dynamically generated merchant UPI QR code encoding the store's verified VPA, exact payable amount, and unique order reference for direct payment with UTR tracking.
 - **Razorpay Online Gateway**: Integrated card, net banking, and UPI checkout with server-side cryptographic HMAC-SHA256 signature verification.
 
-### 5. 🏪 Agri Store Partner Workflow
+### 5. 🏪 Shop Owner & Agri Partner Store Workflow
 - Multi-tenant inventory management allowing store partners to add, update, price, and track agricultural products.
 - Store order queue with payment status inspection, order preparation (`PROCESSING`), and local delivery partner assignment.
 
-### 6. 🚚 Delivery Partner Dispatch & Tracking
+### 6. 🏛️ Market / Mandi Owner Spot Rate Publishing Portal
+- Dedicated Mandi portal for authorized market owners to publish daily commodity rates (Min, Max, Modal).
+- Real-time synchronization to public farmer price feeds and historical market audit logs.
+
+### 7. 🚚 Delivery Partner Dispatch & Tracking
 - Dedicated delivery partner dashboard displaying pending assignments, store pickups, and customer destinations.
 - 4-stage persisted delivery progression: `ASSIGNED` → `ACCEPTED` → `OUT_FOR_DELIVERY` → `DELIVERED`.
 - Order status synchronization visible to farmers in real time.
 
-### 7. 🌦️ Hyperlocal Live Agro Weather
+### 8. 🌦️ Hyperlocal Live Agro Weather
 - Coordinate-based live weather feeds displaying temperature, humidity, wind velocity, precipitation likelihood, and tailored agricultural spraying/harvesting guidance.
 
-### 8. 📊 Mandi / Market Price Intelligence
+### 9. 📊 Mandi / Market Price Intelligence
 - APMC wholesale mandi spot prices across Indian agricultural commodity markets.
 - Market intelligence module providing modal price trend analysis and historical context.
 
-### 9. 🏛️ Government Schemes Portal
+### 10. 🏛️ Government Schemes Portal
 - Searchable catalog of 17+ Central and State agricultural subsidy and welfare schemes (PM-KISAN, PMFBY, AIF, PKVY, etc.) with official application links and eligibility criteria.
 
-### 10. 🧪 Seasonal Soil-to-Crop Advisor
+### 11. 🧪 Seasonal Soil-to-Crop Advisor
 - Agronomic recommendation engine evaluating soil texture, seasonal calendar (Kharif, Rabi, Zaid), and regional climate to suggest suitable crops, expected yields, and cultivation practices.
 
-### 11. 🔬 AI Crop Disease & Leaf Scanner
+### 12. 🔬 AI Crop Disease & Leaf Scanner
 - Deep-learning plant pathology diagnostic engine powered by FastAPI and PyTorch.
 - Analyzes uploaded leaf imagery to detect crop diseases, assess confidence levels, flag low-confidence predictions, and provide actionable chemical and organic treatment remedies.
 
-### 12. 🌐 Multi-Language & Theme Support
+### 13. 🌐 Multi-Language & Theme Support
 - Dynamic language switching across 6 regional Indian languages: **English**, **Telugu (తెలుగు)**, **Hindi (हिन्दी)**, **Kannada (ಕನ್ನಡ)**, **Tamil (தமிழ்)**, and **Marathi (मराठी)**.
 - High-contrast **Light Mode** and battery-efficient **Dark Mode** optimized for outdoor daylight conditions and low-light environments.
 
 ---
 
-## 👥 User Roles & Responsibilities
+## 👥 User Roles & Portals
 
-| Primary User Role | Internal Role Code | Primary Responsibilities & Access Scope |
+| Primary User Role | Internal Role Code | Primary Responsibilities & Dedicated Portal |
 | :--- | :---: | :--- |
-| **🌾 Farmer** | `FARMER` | Procures agricultural supplies, scans crops for disease, tracks orders, monitors weather, views mandi prices, and explores welfare schemes. |
-| **🏪 Agri Store Partner** | `SHOP_OWNER` | Manages store catalog/pricing, receives farmer orders, verifies payment records, and assigns local delivery partners. |
-| **🚚 Delivery Partner** | `DELIVERY_BOY` | Accepts delivery assignments, picks up packages from stores, navigates to farmers, and confirms delivery completion. |
-| **🛡️ Administrator** | `ADMIN` | Monitors system health, manages platform integrity, and oversees multi-tenant operations. |
+| **🌾 Farmer** | `FARMER` | Procures supplies, scans crops with AI, tracks orders, views weather & mandi spot rates, and explores welfare schemes. (`/farmer/dashboard`) |
+| **🏪 Shop Owner** | `SHOP_OWNER` | Manages store inventory/pricing, fulfills farmer orders, configures store UPI QR, and assigns delivery partners. (`/shop-owner/dashboard`) |
+| **🤝 Agri Partner** | `AGRI_PARTNER` | Agri retail partner hub, inventory catalog management, and local distribution operations. (`/agri-partner/dashboard`) |
+| **🏛️ Market / Mandi Owner** | `MARKET_OWNER` | Publishes daily APMC mandi commodity spot rates (Min/Max/Modal), manages yard operating hours and price audit logs. (`/market-owner/dashboard`) |
+| **🚚 Delivery Partner** | `DELIVERY_BOY` | Accepts delivery assignments, picks up orders from retail stores, navigates to farms, and records doorstep delivery. (`/delivery-boy/dashboard`) |
+| **🛡️ Administrator** | `ADMIN` | System health monitoring, catalog auditing, store payment & UPI configuration, and platform management. (`/admin/dashboard`) |
 
 ---
 

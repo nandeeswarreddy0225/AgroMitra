@@ -22,7 +22,7 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
     brandName: 'AgroMitra',
     brandTagline: 'Smart Farming. Better Crops. Better Future.',
     brandHeroTitle: 'Smart Farming. Better Crops. Better Future.',
-    brandHeroSubtitle: 'AgroMitra connects farmers, agri store partners and delivery partners in one intelligent agricultural platform.',
+    brandHeroSubtitle: 'AgroMitra connects farmers, agri store partners, mandi owners and delivery partners in one intelligent agricultural platform.',
 
     // Navigation
     navHome: 'Home',

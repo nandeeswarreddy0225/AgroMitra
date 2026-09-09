@@ -6,10 +6,13 @@
 
 ## 1. Executive Overview
 
-**AgroMitra** is a comprehensive, production-ready digital agriculture platform designed to empower all three critical pillars of the agricultural supply chain:
+**AgroMitra** is a comprehensive, production-ready digital agriculture platform designed to empower all key pillars of the agricultural supply chain and Mandi ecosystem:
 1. **🌾 Farmer** — Empowered with AI crop disease diagnosis, hyperlocal weather, real-time APMC mandi market intelligence, verified government welfare schemes, and direct input procurement.
-2. **🏪 Agri Store Partner** — Equipped with a digital catalog, inventory pricing controls, direct UPI QR payment collection, order preparation, and delivery partner dispatch tools.
-3. **🚚 Delivery Partner** — Connected via dedicated assignment queues, real-time dispatch status management, and doorstep delivery lifecycle progression.
+2. **🏪 Shop Owner** — Equipped with a digital catalog, inventory pricing controls, direct UPI QR payment collection, order preparation, and delivery partner dispatch tools.
+3. **🤝 Agri Partner** — Dedicated rural agri partner hub for regional input distribution and catalog management.
+4. **🏛️ Market / Mandi Owner** — Specialized APMC Mandi portal to publish daily commodity spot prices (Min/Max/Modal), manage yard profiles, operating hours, and price audit logs.
+5. **🚚 Delivery Partner** — Connected via dedicated assignment queues, real-time dispatch status management, and doorstep delivery lifecycle progression.
+6. **🛡️ Administrator** — Platform governance, store payment & UPI configuration, catalog auditing, and system monitoring.
 
 ---
 
@@ -48,6 +51,7 @@
 | :--- | :--- |
 | **AI Leaf Pathology Scanner** | Deep learning leaf image scanner detecting plant diseases with confidence scoring and targeted treatment recommendations. |
 | **APMC Mandi Intelligence** | Real-time market spot rates across national mandis with AI-assisted modal price trend analysis. |
+| **Mandi Owner Rate Publishing** | Dedicated portal for market owners to publish daily commodity spot rates directly into the live public feed. |
 | **Hyperlocal Agro Weather** | Location-aware hourly and multi-day meteorological forecasts tailored for spraying and harvesting. |
 | **Seasonal Crop Advisor** | Multi-factor agronomic recommendations based on soil type, seasonal calendar, and regional climate. |
 | **Government Schemes Portal** | Searchable database of 17+ verified Central and State agricultural subsidy and welfare schemes. |
@@ -96,17 +100,19 @@ npm run dev
 
 ---
 
-## 5. Demonstration Accounts
+## 5. Demonstration Accounts & Dedicated Portals
 
 > [!NOTE]
 > For security standards, only role identifiers/usernames are documented below. Standard credentials configured during system setup are used for authentication.
 
-| Primary Role | Registered Account Identifier | Access Scope |
-| :--- | :--- | :--- |
-| 🌾 **Farmer** | `nandeeswarreddy2852@gmail.com` | AI Tools, Crop Advisor, Mandi Rates, Marketplace, Cart, Orders, Tracking |
-| 🏪 **Agri Store Partner** | `nandeeswarreddy1346@gmail.com` | Store Inventory, Catalog Pricing, UPI QR Settings, Order Fulfillment & Dispatch |
-| 🚚 **Delivery Partner** | `delivery@agrimart.com` | Delivery Dashboard, Request Acceptance, Status Progression & Delivery History |
-| 🛡️ **Administrator** | `admin@agrimart.com` | System Health Monitoring & Global Infrastructure Administration |
+| Primary Role | Registered Account Identifier | Dedicated Portal URL | Access Scope |
+| :--- | :--- | :--- | :--- |
+| 🌾 **Farmer** | `nandeeswarreddy2852@gmail.com` | `/farmer/dashboard` | AI Tools, Crop Advisor, Mandi Rates, Marketplace, Cart, Orders, Tracking |
+| 🏪 **Shop Owner** | `nandeeswarreddy1346@gmail.com` | `/shop-owner/dashboard` | Store Inventory, Catalog Pricing, UPI QR Settings, Order Fulfillment & Dispatch |
+| 🤝 **Agri Partner** | `sallu@student.gitam.edu` | `/agri-partner/dashboard` | Partner Services Hub, Store Inventory, Order Management & Distribution |
+| 🏛️ **Market Owner** | `nyannam@student.gitam.edu` | `/market-owner/dashboard` | APMC Mandi Spot Rate Publishing, Operating Hours, Mandi Profile & Audit Logs |
+| 🚚 **Delivery Partner** | `delivery@agromitra.local` | `/delivery-boy/dashboard` | Delivery Dashboard, Request Acceptance, Status Progression & Delivery History |
+| 🛡️ **Administrator** | `admin@agromitra.local` | `/admin/dashboard` | System Health Monitoring, Catalog Auditing & Global Infrastructure Administration |
 
 ---
 
