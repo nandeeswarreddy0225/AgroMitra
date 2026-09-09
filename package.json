@@ -11,8 +11,8 @@
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "build:backend": "npm --prefix backend run build",
-    "build:frontend": "cd frontend && npm install && npm run build && node -e \"const fs=require('fs');if(fs.existsSync('dist')){fs.cpSync('dist','../dist',{recursive:true})}\"",
-    "build": "cd frontend && npm install && npm run build && node -e \"const fs=require('fs');if(fs.existsSync('dist')){fs.cpSync('dist','../dist',{recursive:true})}\"",
+    "build:frontend": "node -e \"const cp=require('child_process'),fs=require('fs');cp.execSync('npm --prefix frontend install && npm --prefix frontend run build',{stdio:'inherit'});if(fs.existsSync('frontend/dist')){fs.cpSync('frontend/dist','dist',{recursive:true});}\"",
+    "build": "node -e \"const cp=require('child_process'),fs=require('fs');cp.execSync('npm --prefix frontend install && npm --prefix frontend run build',{stdio:'inherit'});if(fs.existsSync('frontend/dist')){fs.cpSync('frontend/dist','dist',{recursive:true});}\"",
     "test:backend": "npm --prefix backend test",
     "audit:master": "npm --prefix backend run audit:master"
   },
