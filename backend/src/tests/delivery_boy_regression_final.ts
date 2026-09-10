@@ -32,12 +32,19 @@ const API_BASE = 'https://agromitra-ytqb.onrender.com/api';
 // Unique test run ID to avoid conflicts
 const RUN_ID = Date.now().toString().slice(-6);
 
+// Generate valid 10-digit Indian phone numbers
+// Must be exactly 10 digits, starting with 6-9
+// Format: 9876[role_index][last_5_of_timestamp]
+const TS5 = Date.now().toString().slice(-5);
+
+const makePhone = (roleIdx: number): string => `9876${roleIdx}${TS5}`;
+
 // Unique test user credentials (isolated test environment)
 const TEST_USERS = {
   DELIVERY_BOY: {
     name: `TestDelivery${RUN_ID}`,
     email: `testdelivery${RUN_ID}@agrotestonly.invalid`,
-    phone: `98500${RUN_ID}`,
+    phone: makePhone(0),  // e.g. 987600XXXXX
     password: `DelivTest${RUN_ID}!`,
     role: 'DELIVERY_BOY' as const,
     address: { street: 'Test Colony', city: 'Testpur', state: 'Andhra Pradesh', pincode: '518001' },
@@ -45,7 +52,7 @@ const TEST_USERS = {
   FARMER: {
     name: `TestFarmer${RUN_ID}`,
     email: `testfarmer${RUN_ID}@agrotestonly.invalid`,
-    phone: `98501${RUN_ID}`,
+    phone: makePhone(1),
     password: `FarmTest${RUN_ID}!`,
     role: 'FARMER' as const,
     address: { street: 'Farm Road', city: 'Agriville', state: 'Andhra Pradesh', pincode: '518002' },
@@ -53,7 +60,7 @@ const TEST_USERS = {
   SHOP_OWNER: {
     name: `TestShop${RUN_ID}`,
     email: `testshop${RUN_ID}@agrotestonly.invalid`,
-    phone: `98502${RUN_ID}`,
+    phone: makePhone(2),
     password: `ShopTest${RUN_ID}!`,
     role: 'SHOP_OWNER' as const,
     address: { street: 'Market Street', city: 'Shoptown', state: 'Andhra Pradesh', pincode: '518003' },
@@ -61,7 +68,7 @@ const TEST_USERS = {
   AGRI_PARTNER: {
     name: `TestAgri${RUN_ID}`,
     email: `testagri${RUN_ID}@agrotestonly.invalid`,
-    phone: `98503${RUN_ID}`,
+    phone: makePhone(3),
     password: `AgriTest${RUN_ID}!`,
     role: 'AGRI_PARTNER' as const,
     address: { street: 'Partner Lane', city: 'Agripark', state: 'Andhra Pradesh', pincode: '518004' },
@@ -69,7 +76,7 @@ const TEST_USERS = {
   MARKET_OWNER: {
     name: `TestMarket${RUN_ID}`,
     email: `testmarket${RUN_ID}@agrotestonly.invalid`,
-    phone: `98504${RUN_ID}`,
+    phone: makePhone(4),
     password: `MarketTest${RUN_ID}!`,
     role: 'MARKET_OWNER' as const,
     address: { street: 'Mandi Road', city: 'Marketville', state: 'Andhra Pradesh', pincode: '518005' },
