@@ -103,6 +103,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     localStorage.removeItem('agrimart_token');
     localStorage.removeItem('agrimart_user');
+    // Also clear sessionStorage
+    try {
+      sessionStorage.removeItem('agrimart_token');
+      sessionStorage.removeItem('agrimart_user');
+      sessionStorage.removeItem('agrimart_role');
+    } catch {
+      // sessionStorage may not be available in all environments
+    }
 
     try {
       const response: any = await loginApi(credentials);
@@ -177,16 +185,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const rawUser = response.user || response.data?.user || response.data || response;
       const rawToken = response.token || response.data?.token || '';
 
-      const returnedRole = rawUser?.role || data.role;
-      if (!returnedRole || !isValidRole(returnedRole)) {
+      // STRICT RULE: ONLY use the role returned by the backend server.
+      // NEVER fall back to the client-supplied role. The backend is the authority on roles.
+      const serverRole = rawUser?.role;
+      if (!serverRole || !isValidRole(serverRole)) {
         setToken(null);
         setUser(null);
         localStorage.removeItem('agrimart_token');
         localStorage.removeItem('agrimart_user');
-        throw new Error('Invalid account role during registration.');
+        throw new Error('Invalid or missing account role in server response during registration.');
       }
 
-      const normalizedRole = returnedRole.toString().trim().toUpperCase() as UserRole;
+      const normalizedRole = serverRole.toString().trim().toUpperCase() as UserRole;
+
+      // Strict cross-role validation: the server role MUST match what the user requested
+      const requestedRole = data.role.toString().trim().toUpperCase() as UserRole;
+      if (normalizedRole !== requestedRole) {
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('agrimart_token');
+        localStorage.removeItem('agrimart_user');
+        throw new Error(`Registration role mismatch: requested '${requestedRole}' but server assigned '${normalizedRole}'. Please contact support.`);
+      }
+
       const userObj: User = {
         id: rawUser.id || rawUser._id || '',
         name: rawUser.name || data.name || '',
@@ -227,8 +248,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     setUser(null);
     setToken(null);
+    // Clear all agrimart auth keys from localStorage
     localStorage.removeItem('agrimart_token');
     localStorage.removeItem('agrimart_user');
+    // Also clear sessionStorage to prevent any stale role contamination
+    try {
+      sessionStorage.removeItem('agrimart_token');
+      sessionStorage.removeItem('agrimart_user');
+      sessionStorage.removeItem('agrimart_role');
+    } catch {
+      // sessionStorage may not be available in all environments
+    }
   };
 
   return (
