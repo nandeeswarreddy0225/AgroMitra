@@ -27,7 +27,7 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { analyzeCropImageApi, getCropAnalysisHistoryApi, deleteCropAnalysisApi } from '../../services/api';
-import { CropAnalysis } from '../../types/cropHealth';
+import { CropAnalysis, StructuredRecommendation } from '../../types/cropHealth';
 import { useTranslation } from '../../context/LanguageContext';
 import axios from 'axios';
 
@@ -299,14 +299,30 @@ export const CropDiseasePage: React.FC = () => {
 
     try {
       const res = await analyzeCropImageApi(selectedFile);
-      if (res.success && res.analysis) {
+      if (res.success && (res.analysis || res.crop)) {
+        const baseAnalysis = res.analysis || ({} as any);
         const fullResult: CropAnalysis = {
-          ...res.analysis,
-          plant: res.plant || res.analysis.plant,
-          health: res.health || res.analysis.health,
-          diagnosis: res.diagnosis !== undefined ? res.diagnosis : res.analysis.diagnosis,
-          severity: res.severity || res.analysis.severity,
-          recommendation: res.recommendation || res.analysis.recommendation,
+          ...baseAnalysis,
+          id: baseAnalysis.id || String(Date.now()),
+          farmer: baseAnalysis.farmer || '',
+          imageName: baseAnalysis.imageName || selectedFile.name,
+          crop: res.crop || baseAnalysis.crop || 'Unknown Plant',
+          disease: res.condition || baseAnalysis.disease || 'Unknown Condition',
+          confidence: res.confidence !== undefined ? res.confidence : (baseAnalysis.confidence ?? 0),
+          isHealthy: res.is_healthy !== undefined ? res.is_healthy : (baseAnalysis.isHealthy ?? false),
+          isConfident: res.confidence !== undefined ? res.confidence >= 0.35 : (baseAnalysis.isConfident ?? true),
+          plant: res.plant || baseAnalysis.plant,
+          health: res.health || baseAnalysis.health,
+          diagnosis: res.diagnosis !== undefined ? res.diagnosis : baseAnalysis.diagnosis,
+          severity: res.severity || baseAnalysis.severity || 'Unknown',
+          recommendation: res.recommendation || baseAnalysis.recommendation,
+          safety_note: res.safety_note || (typeof res.recommendation === 'object' ? (res.recommendation as any)?.safety_note : undefined),
+          top5: res.top5 || baseAnalysis.top5,
+          symptoms: baseAnalysis.symptoms || [],
+          recommendedActions: baseAnalysis.recommendedActions || [],
+          disclaimer: res.safety_note || baseAnalysis.disclaimer || 'AgroMitra AI decision-support tool.',
+          createdAt: baseAnalysis.createdAt || new Date().toISOString(),
+          updatedAt: baseAnalysis.updatedAt || new Date().toISOString(),
         };
         setCurrentResult(fullResult);
         setShowTop5(true);
@@ -821,16 +837,131 @@ export const CropDiseasePage: React.FC = () => {
                 </div>
               )}
 
-              {/* 4. Recommendation Card */}
-              <div className="bg-blue-50/50 dark:bg-blue-950/30 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/40 space-y-1.5">
-                <div className="text-xs font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
-                  <Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <span>💡 Recommended Action:</span>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                  {currentResult.recommendation || currentResult.recommendedActions?.[0] || 'Continue regular crop care and periodic scouting.'}
-                </p>
-              </div>
+              {/* 4. Structured Agricultural Guidance Section */}
+              {(() => {
+                const structuredRec: StructuredRecommendation | null =
+                  typeof currentResult.recommendation === 'object' && currentResult.recommendation !== null
+                    ? (currentResult.recommendation as StructuredRecommendation)
+                    : null;
+
+                const explanationText =
+                  structuredRec?.explanation ||
+                  (typeof currentResult.recommendation === 'string'
+                    ? currentResult.recommendation
+                    : currentResult.recommendedActions?.[0] || 'Continue regular crop care and periodic scouting.');
+
+                const fertilizerItems = structuredRec?.fertilizer || [];
+                const diseaseMgmtItems = structuredRec?.disease_management || [];
+                const preventionItems = structuredRec?.prevention || [];
+                const safetyNoteText = structuredRec?.safety_note || currentResult.safety_note;
+
+                return (
+                  <div className="space-y-4">
+                    {/* A. Diagnostic Explanation */}
+                    <div className="bg-blue-50/60 dark:bg-blue-950/40 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/50 space-y-1.5">
+                      <div className="text-xs font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                        <Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <span>💡 Diagnostic Explanation & Rationale:</span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                        {explanationText}
+                      </p>
+                    </div>
+
+                    {/* B. Disease Management & Direct Controls */}
+                    {diseaseMgmtItems.length > 0 && (
+                      <div className="bg-rose-50/60 dark:bg-rose-950/40 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/50 space-y-2">
+                        <div className="text-xs font-bold text-rose-900 dark:text-rose-300 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Stethoscope className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                            <span>🛡️ Targeted Disease Management & Remedies:</span>
+                          </span>
+                          <span className="text-[10px] font-mono font-bold bg-rose-100 dark:bg-rose-900/80 text-rose-800 dark:text-rose-200 px-2 py-0.5 rounded-full">
+                            Pathology Control
+                          </span>
+                        </div>
+                        <ul className="space-y-1.5">
+                          {diseaseMgmtItems.map((item, idx) => (
+                            <li
+                              key={idx}
+                              className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 flex items-start gap-2 bg-white/70 dark:bg-slate-900/60 p-2.5 rounded-xl border border-rose-100/60 dark:border-rose-900/40"
+                            >
+                              <CheckCircle2 className="w-4 h-4 text-rose-600 dark:text-rose-400 mt-0.5 shrink-0" />
+                              <span className="leading-relaxed">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* C. Nutrient / Fertilizer Guidance */}
+                    {fertilizerItems.length > 0 && (
+                      <div className="bg-emerald-50/60 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 space-y-2">
+                        <div className="text-xs font-bold text-emerald-900 dark:text-emerald-300 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Leaf className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                            <span>🌱 Crop Nutrition & Soil Fertility Advice:</span>
+                          </span>
+                          <span className="text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200 px-2 py-0.5 rounded-full">
+                            Nutrition Only
+                          </span>
+                        </div>
+                        {!currentResult.isHealthy && (
+                          <div className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 px-2.5 py-1.5 rounded-lg border border-amber-200/80 dark:border-amber-800/80 flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            <span>Notice: Fertilizers promote vegetative vigor but DO NOT cure active fungal, bacterial, or viral disease infections.</span>
+                          </div>
+                        )}
+                        <ul className="space-y-1.5">
+                          {fertilizerItems.map((item, idx) => (
+                            <li
+                              key={idx}
+                              className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 flex items-start gap-2 bg-white/70 dark:bg-slate-900/60 p-2.5 rounded-xl border border-emerald-100/60 dark:border-emerald-900/40"
+                            >
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+                              <span className="leading-relaxed">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* D. Preventive Agronomic Measures */}
+                    {preventionItems.length > 0 && (
+                      <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-2">
+                        <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                          <span>🛡️ Proactive Prevention & Field Hygiene:</span>
+                        </div>
+                        <ul className="space-y-1.5">
+                          {preventionItems.map((item, idx) => (
+                            <li
+                              key={idx}
+                              className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 flex items-start gap-2 bg-white/60 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
+                              <span className="leading-relaxed">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* E. Safety Note / Extension Officer Advisory */}
+                    {safetyNoteText && (
+                      <div className="bg-amber-50 dark:bg-amber-950/50 p-3.5 rounded-2xl border border-amber-200 dark:border-amber-800/70 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                        <div className="space-y-0.5">
+                          <span className="font-bold block">Agronomist Safety Advisory:</span>
+                          <span className="text-slate-700 dark:text-slate-300 leading-relaxed text-[11px] block">
+                            {safetyNoteText}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Top 5 Predictions Accordion */}
               {currentResult.top5 && currentResult.top5.length > 0 && (
@@ -895,8 +1026,8 @@ export const CropDiseasePage: React.FC = () => {
                 </div>
               )}
 
-              {/* Recommended Actions */}
-              {currentResult.recommendedActions && currentResult.recommendedActions.length > 0 && (
+              {/* Recommended Actions (Fallback for legacy string recommendations) */}
+              {(!currentResult.recommendation || typeof currentResult.recommendation === 'string') && currentResult.recommendedActions && currentResult.recommendedActions.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                     <Stethoscope className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />

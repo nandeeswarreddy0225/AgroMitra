@@ -58,7 +58,8 @@ def health_check():
         "status": "healthy",
         "service": "KrishiSetu AI Service",
         "model_loaded": True,
-        "classes_count": ai_classifier.num_classes
+        "classes_count": ai_classifier.num_classes,
+        "model_version": getattr(ai_classifier, "version", 3)
     }
 
 @app.post("/predict")

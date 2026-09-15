@@ -1,36 +1,4 @@
 {
-  "species_list": [
-    "Apple",
-    "Background",
-    "Banana",
-    "Blueberry",
-    "Cherry",
-    "Chilli",
-    "Citrus",
-    "Corn",
-    "Cotton",
-    "Grape",
-    "Mango",
-    "Neem",
-    "Peach",
-    "Potato",
-    "Raspberry",
-    "Rice",
-    "Soybean",
-    "Strawberry",
-    "Tomato",
-    "Unknown"
-  ],
-  "condition_list": [
-    "Bacterial_Infection",
-    "Fungal_Blight_Spot",
-    "Healthy",
-    "Non_Foliar_Background",
-    "Pest_Damage",
-    "Rust_Mildew",
-    "Unsupported_OOD",
-    "Viral_Infection"
-  ],
   "classes": [
     "Apple___Apple_scab",
     "Apple___Black_rot",
@@ -81,5 +49,41 @@
     "Tomato___Yellow_Leaf_Curl_Virus",
     "Tomato___healthy",
     "Unknown___unsupported"
-  ]
+  ],
+  "species_list": [
+    "Apple",
+    "Background",
+    "Banana",
+    "Blueberry",
+    "Cherry",
+    "Chilli",
+    "Citrus",
+    "Corn",
+    "Cotton",
+    "Grape",
+    "Mango",
+    "Neem",
+    "Peach",
+    "Potato",
+    "Raspberry",
+    "Rice",
+    "Soybean",
+    "Strawberry",
+    "Tomato",
+    "Unknown"
+  ],
+  "condition_list": [
+    "Bacterial_Infection",
+    "Fungal_Blight_Spot",
+    "Healthy",
+    "Non_Foliar_Background",
+    "Pest_Damage",
+    "Rust_Mildew",
+    "Unsupported_OOD",
+    "Viral_Infection"
+  ],
+  "num_classes": 49,
+  "num_species": 20,
+  "num_conditions": 8,
+  "version": 3
 }

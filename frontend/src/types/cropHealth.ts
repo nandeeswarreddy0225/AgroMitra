@@ -14,6 +14,14 @@ export interface DiagnosisInfo {
   confidence?: number;
 }
 
+export interface StructuredRecommendation {
+  explanation: string;
+  fertilizer: string[];
+  disease_management: string[];
+  prevention: string[];
+  safety_note?: string;
+}
+
 export interface CropAnalysis {
   id: string;
   farmer: string;
@@ -28,7 +36,8 @@ export interface CropAnalysis {
   health?: HealthInfo;
   diagnosis?: DiagnosisInfo | null;
   severity?: 'None' | 'Mild' | 'Moderate' | 'Severe' | 'Unknown';
-  recommendation?: string;
+  recommendation?: string | StructuredRecommendation;
+  safety_note?: string;
   top5?: Array<{
     className: string;
     crop: string;
@@ -47,13 +56,27 @@ export interface CropAnalysis {
 export interface AnalyzeCropResponse {
   success: boolean;
   message: string;
+  crop?: string;
+  condition?: string;
+  confidence?: number;
+  is_healthy?: boolean;
   plant?: PlantInfo;
   health?: HealthInfo;
   diagnosis?: DiagnosisInfo | null;
   severity?: 'None' | 'Mild' | 'Moderate' | 'Severe' | 'Unknown';
-  recommendation?: string;
+  recommendation?: string | StructuredRecommendation;
+  safety_note?: string;
+  top5?: Array<{
+    className: string;
+    crop: string;
+    plant?: string;
+    disease: string;
+    health_status?: string;
+    probability: number;
+  }>;
   analysis: CropAnalysis;
   error?: string;
+  reason?: string;
 }
 
 export interface PredictionHistoryResponse {
@@ -61,3 +84,4 @@ export interface PredictionHistoryResponse {
   count: number;
   history: CropAnalysis[];
 }
+

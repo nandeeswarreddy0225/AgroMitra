@@ -406,96 +406,11 @@ for (const [k, v] of Object.entries(UNIVERSAL_PATHOLOGY_DATABASE)) {
   };
 }
 
-/**
- * Computer vision agronomic feature analysis on raw image buffer bytes
- */
-export function analyzeLeafBuffer(buffer: Buffer): {
-  foliageRatio: number;
-  colorVariance: number;
-  greenMean: number;
-  redMean: number;
-  blueMean: number;
-  necroticRatio: number;
-  yellowRatio: number;
-  rustRatio: number;
-  isFoliar: boolean;
-} {
-  const step = Math.max(1, Math.floor(buffer.length / 30000));
-  let redSum = 0;
-  let greenSum = 0;
-  let blueSum = 0;
-  let count = 0;
-  let foliageCount = 0;
-  let necroticCount = 0;
-  let yellowCount = 0;
-  let rustCount = 0;
-  const values: number[] = [];
-
-  for (let i = 0; i < buffer.length - 3; i += step * 3) {
-    const r = buffer[i] / 255.0;
-    const g = buffer[i + 1] / 255.0;
-    const b = buffer[i + 2] / 255.0;
-
-    redSum += r;
-    greenSum += g;
-    blueSum += b;
-    count++;
-
-    values.push((r + g + b) / 3.0);
-
-    // Excess Green Index (ExG = 2*G - R - B)
-    const exg = 2.0 * g - r - b;
-    if (exg > -0.15) {
-      foliageCount++;
-    }
-
-    // Necrotic lesion: dark brown/black pixels
-    if (r > 0.15 && r < 0.55 && g > 0.1 && g < 0.45 && b < 0.3 && r > g) {
-      necroticCount++;
-    }
-
-    // Chlorosis: yellowing (high R & G, low B)
-    if (r > 0.45 && g > 0.45 && b < 0.35) {
-      yellowCount++;
-    }
-
-    // Rust: red-orange hue
-    if (r > 0.5 && g > 0.2 && g < 0.45 && b < 0.2) {
-      rustCount++;
-    }
-  }
-
-  const redMean = count > 0 ? redSum / count : 0.33;
-  const greenMean = count > 0 ? greenSum / count : 0.33;
-  const blueMean = count > 0 ? blueSum / count : 0.33;
-  const foliageRatio = count > 0 ? foliageCount / count : 0.5;
-  const necroticRatio = count > 0 ? necroticCount / count : 0;
-  const yellowRatio = count > 0 ? yellowCount / count : 0;
-  const rustRatio = count > 0 ? rustCount / count : 0;
-
-  const meanVal = (redMean + greenMean + blueMean) / 3.0;
-  let varSum = 0;
-  for (const val of values) {
-    varSum += (val - meanVal) ** 2;
-  }
-  const colorVariance = values.length > 0 ? varSum / values.length : 0.01;
-  const isFoliar = colorVariance >= 0.003 && (foliageRatio >= 0.08 || greenMean >= 0.20);
-
-  return {
-    foliageRatio,
-    colorVariance,
-    greenMean,
-    redMean,
-    blueMean,
-    necroticRatio,
-    yellowRatio,
-    rustRatio,
-    isFoliar,
-  };
-}
+import { StructuredRecommendation } from '../services/diseaseGuidance.service';
 
 export interface UniversalScannerResult {
   success: boolean;
+  modelVersion?: number;
   plant: {
     name: string;
     displayName?: string;
@@ -510,7 +425,9 @@ export interface UniversalScannerResult {
     confidence?: number;
   } | null;
   severity: string;
-  recommendation: string;
+  recommendation: any;
+  structuredRecommendation?: StructuredRecommendation;
+  safety_note?: string;
   // Legacy / backward compatibility
   is_confident?: boolean;
   crop?: string;
@@ -529,226 +446,8 @@ export interface UniversalScannerResult {
   recommended_actions?: string[];
   disclaimer?: string;
   error?: string;
+  reason?: string;
   message?: string;
-}
-
-/**
- * Universal Multi-Crop Neural Pathology Classifier
- */
-export function runNeuralPathologyInference(buffer: Buffer, originalname: string = 'image.jpg', mimetype: string = 'image/jpeg'): UniversalScannerResult {
-  const feat = analyzeLeafBuffer(buffer);
-  const fileSize = buffer.length;
-
-  // 1. Stage 0: Image Quality & Non-Foliar Rejection Check
-  if (!feat.isFoliar) {
-    return {
-      success: false,
-      error: 'INVALID_IMAGE_QUALITY',
-      message: 'Please upload a clear photo of a plant leaf.',
-      plant: { name: 'Unknown', confidence: 0 },
-      health: { status: 'Unknown', confidence: 0 },
-      diagnosis: null,
-      severity: 'Unknown',
-      recommendation: 'Please upload a clear close-up photo of a plant leaf in natural daylight.',
-      is_confident: false,
-      crop: 'Unknown Plant',
-      disease: 'Please upload a clear photo of a plant leaf.',
-      is_healthy: false,
-      confidence: 0,
-      disclaimer: DEFAULT_DISCLAIMER,
-    };
-  }
-
-  // 2. Stage 1 & 2: Multi-Crop Feature Modeling across 25+ Species
-  const rawLogits: Record<string, number> = {};
-  for (const cls of STANDARD_CLASSES) {
-    rawLogits[cls] = -2.0;
-  }
-  rawLogits['Unknown___unsupported'] = 1.0;
-
-  // Botanical Morphometric Discriminators:
-  // Mango (Anthracnose vs Healthy leathery lanceolate)
-  if (feat.greenMean >= 0.22 && feat.greenMean <= 0.38 && feat.redMean < 0.28) {
-    if (feat.necroticRatio > 0.05) {
-      rawLogits['Mango___Anthracnose'] = 5.2 + feat.necroticRatio * 10.0;
-    } else if (feat.necroticRatio < 0.02) {
-      rawLogits['Mango___healthy'] = 4.8 + feat.greenMean * 2.0;
-    }
-  }
-
-  // Neem (Pinnate falcate leaflets)
-  if (feat.greenMean > 0.32 && feat.foliageRatio > 0.40) {
-    if (feat.necroticRatio > 0.05) {
-      rawLogits['Neem___leaf_spot_blight'] = 5.1 + feat.necroticRatio * 9.0;
-    } else if (feat.necroticRatio < 0.025 && feat.yellowRatio < 0.03) {
-      rawLogits['Neem___healthy'] = 5.0 + feat.greenMean * 2.0;
-    }
-  }
-
-  // Corn Common Rust (Cinnamon-red / orange pustules)
-  if (feat.rustRatio > 0.035) {
-    rawLogits['Corn___Common_rust'] = 5.5 + feat.rustRatio * 20.0;
-  } else if (feat.greenMean > 0.30 && feat.rustRatio < 0.015 && feat.necroticRatio < 0.02) {
-    rawLogits['Corn___healthy'] = 4.5 + feat.greenMean * 2.0;
-  }
-
-  // Rice Brown Spot (Oval spots on narrow blade)
-  if (feat.necroticRatio > 0.035 && feat.greenMean > 0.34 && feat.rustRatio < 0.02) {
-    rawLogits['Rice___Brown_Spot'] = 5.0 + feat.necroticRatio * 8.0;
-  } else if (feat.greenMean > 0.36 && feat.necroticRatio < 0.02) {
-    rawLogits['Rice___healthy'] = 4.6 + feat.greenMean * 2.0;
-  }
-
-  // Chilli Bacterial Spot
-  if (feat.necroticRatio > 0.045 && feat.greenMean > 0.30 && feat.yellowRatio < 0.04) {
-    rawLogits['Chilli___Bacterial_spot'] = 5.0 + feat.necroticRatio * 10.0;
-  } else if (feat.greenMean > 0.32 && feat.necroticRatio < 0.02) {
-    rawLogits['Chilli___healthy'] = 4.7 + feat.greenMean * 2.0;
-  }
-
-  // Apple Scab
-  if (feat.necroticRatio > 0.045 && feat.greenMean >= 0.20 && feat.greenMean <= 0.30 && feat.redMean < 0.25) {
-    rawLogits['Apple___Apple_scab'] = 5.0 + feat.necroticRatio * 9.0;
-  } else if (feat.greenMean >= 0.25 && feat.greenMean <= 0.32 && feat.necroticRatio < 0.02) {
-    rawLogits['Apple___healthy'] = 4.5 + feat.greenMean * 2.0;
-  }
-
-  // Potato Early / Late Blight
-  if (feat.necroticRatio > 0.06 && feat.greenMean < 0.28 && feat.yellowRatio > 0.03) {
-    rawLogits['Potato___Early_blight'] = 5.1 + feat.necroticRatio * 10.0;
-  } else if (feat.greenMean >= 0.26 && feat.greenMean <= 0.34 && feat.necroticRatio < 0.02) {
-    rawLogits['Potato___healthy'] = 4.6 + feat.greenMean * 2.0;
-  }
-
-  // Tomato Early / Late Blight / Curl Virus
-  if (feat.necroticRatio > 0.08 && feat.yellowRatio > 0.06 && feat.greenMean >= 0.30) {
-    rawLogits['Tomato___Early_blight'] = 5.2 + feat.necroticRatio * 10.0;
-  } else if (feat.yellowRatio > 0.12 && feat.necroticRatio < 0.03) {
-    rawLogits['Tomato___Yellow_Leaf_Curl_Virus'] = 5.0 + feat.yellowRatio * 12.0;
-  } else if (feat.greenMean > 0.42 && feat.necroticRatio < 0.02 && feat.yellowRatio < 0.02) {
-    rawLogits['Tomato___healthy'] = 4.4 + feat.greenMean * 2.0;
-  }
-
-  // Grape Black Rot
-  if (feat.necroticRatio > 0.04 && feat.redMean > 0.28 && feat.greenMean >= 0.25) {
-    rawLogits['Grape___Black_rot'] = 4.8 + feat.necroticRatio * 8.0;
-  } else if (feat.greenMean > 0.32 && feat.necroticRatio < 0.02) {
-    rawLogits['Grape___healthy'] = 4.5 + feat.greenMean * 2.0;
-  }
-
-  // Banana Black Sigatoka
-  if (feat.necroticRatio > 0.05 && feat.greenMean > 0.35 && feat.yellowRatio > 0.04) {
-    rawLogits['Banana___Black_Sigatoka'] = 4.9 + feat.necroticRatio * 8.0;
-  }
-
-  // Citrus Canker
-  if (feat.yellowRatio > 0.06 && feat.necroticRatio > 0.03 && feat.greenMean > 0.28) {
-    rawLogits['Citrus___Citrus_canker'] = 4.8 + feat.yellowRatio * 8.0;
-  }
-
-  // Cotton Bacterial Blight
-  if (feat.necroticRatio > 0.04 && feat.greenMean > 0.34 && feat.rustRatio < 0.02) {
-    rawLogits['Cotton___Bacterial_Blight'] = 4.7 + feat.necroticRatio * 8.0;
-  }
-
-  // 3. Compute Softmax Distribution
-  const maxLogit = Math.max(...Object.values(rawLogits));
-  let sumExp = 0;
-  const expScores: Record<string, number> = {};
-  for (const cls of STANDARD_CLASSES) {
-    const e = Math.exp(rawLogits[cls] - maxLogit);
-    expScores[cls] = e;
-    sumExp += e;
-  }
-
-  const sortedClasses = STANDARD_CLASSES.map((cls) => {
-    const prob = expScores[cls] / (sumExp || 1);
-    const info = UNIVERSAL_PATHOLOGY_DATABASE[cls] || {
-      plant: cls.split('___')[0],
-      plant_display: cls.split('___')[0],
-      health_status: 'Healthy',
-      diagnosis: null,
-      severity: 'None',
-      is_healthy: true,
-      recommendation: '',
-    };
-    return {
-      className: cls,
-      crop: info.plant_display,
-      plant: info.plant,
-      disease: info.diagnosis || (info.is_healthy ? 'Healthy Crop' : 'Pathology'),
-      health_status: info.health_status,
-      probability: Number(prob.toFixed(4)),
-    };
-  }).sort((a, b) => b.probability - a.probability);
-
-  const top5List = sortedClasses.slice(0, 5);
-  const top1 = top5List[0];
-  const topProb = top1.probability;
-  const selectedClass = top1.className;
-
-  // 4. Resolve Diagnosis
-  const CONFIDENCE_THRESHOLD = 0.40;
-  if (topProb < CONFIDENCE_THRESHOLD || selectedClass === 'Unknown___unsupported') {
-    return {
-      success: true,
-      plant: {
-        name: 'Unknown',
-        confidence: Math.round(topProb * 100),
-      },
-      health: {
-        status: 'Unknown',
-        confidence: 35,
-      },
-      diagnosis: null,
-      severity: 'Unknown',
-      recommendation: 'The image could not be reliably identified. Please upload a clear close-up image of the leaf.',
-      is_confident: false,
-      crop: 'Unknown Plant',
-      disease: 'Insufficient visual evidence or unsupported plant species.',
-      is_healthy: false,
-      confidence: Number(topProb.toFixed(4)),
-      top5: top5List,
-      symptoms: ['Visual leaf morphology does not match known high-confidence plant categories in the database.'],
-      recommended_actions: ['Capture a sharp close-up photo of the leaf in natural daylight.', 'Consult your local Agricultural Extension Officer (AEO) for field confirmation.'],
-      disclaimer: DEFAULT_DISCLAIMER,
-    };
-  }
-
-  const pathology = UNIVERSAL_PATHOLOGY_DATABASE[selectedClass];
-  const plantConf = Math.round(topProb * 100);
-  const healthConf = Math.round(Math.min(99, topProb * 100 + 3));
-  const diseaseConf = pathology.health_status !== 'Healthy' ? Math.round(topProb * 100) : undefined;
-
-  const diagnosisObj = pathology.health_status !== 'Healthy' && pathology.diagnosis ? {
-    name: pathology.diagnosis,
-    confidence: diseaseConf,
-  } : null;
-
-  return {
-    success: true,
-    plant: {
-      name: pathology.plant,
-      displayName: pathology.plant_display,
-      confidence: plantConf,
-    },
-    health: {
-      status: pathology.health_status,
-      confidence: healthConf,
-    },
-    diagnosis: diagnosisObj,
-    severity: pathology.severity,
-    recommendation: pathology.recommendation,
-    is_confident: true,
-    crop: pathology.plant_display,
-    disease: pathology.diagnosis || 'Healthy Crop (ఆరోగ్యకరమైన పంట)',
-    is_healthy: pathology.is_healthy,
-    confidence: Number(topProb.toFixed(4)),
-    top5: top5List,
-    symptoms: pathology.symptoms,
-    recommended_actions: [pathology.recommendation],
-    disclaimer: DEFAULT_DISCLAIMER,
-  };
 }
 
 /**
@@ -756,11 +455,15 @@ export function runNeuralPathologyInference(buffer: Buffer, originalname: string
  * GET /api/crop-health/health
  */
 export const getCropHealthServiceStatus = async (_req: Request, res: Response): Promise<void> => {
+  const modelInfo = onnxPathologyEngine.getModelInfo();
   res.status(200).json({
     success: true,
     status: 'healthy',
     service: 'AgroMitra Universal Leaf Scanner & Plant Health Diagnostic Engine',
     model: 'Universal-MobileNetV3-PlantTaxonomy',
+    modelVersion: modelInfo.version,
+    modelPath: modelInfo.modelPath,
+    engineInitialized: modelInfo.initialized,
     speciesCount: Object.keys(PLANT_SPECIES_DATABASE).length,
     classesCount: STANDARD_CLASSES.length,
     supportedSpecies: Object.keys(PLANT_SPECIES_DATABASE),
@@ -808,6 +511,7 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         const aiResponse = await axios.post(`${AI_SERVICE_URL}/predict`, formData, {
           headers: { ...formData.getHeaders() },
           timeout: 10000,
+          validateStatus: () => true,
         });
 
         if (aiResponse.data) {
@@ -818,26 +522,22 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       }
     }
 
-    // 3. Fallback to heuristic classifier if both neural models are unavailable
     if (!predictionData) {
-      predictionData = runNeuralPathologyInference(buffer, originalname, mimetype);
-    }
-
-    if (!predictionData) {
-      res.status(500).json({
+      res.status(503).json({
         success: false,
-        error: 'EMPTY_PREDICTION',
-        message: 'The AI service did not return a valid diagnostic prediction.',
+        error: 'SERVICE_UNAVAILABLE',
+        message: 'AI leaf analysis is temporarily unavailable. Please try again.',
       });
       return;
     }
 
-    // If Stage 0 Image Quality check failed (non-leaf/bad photo), return 400 rejection
-    if (!predictionData.success && predictionData.error === 'INVALID_IMAGE_QUALITY') {
+    // If Stage 0 Image Quality check failed or low confidence, return user-facing 400 rejection
+    if (!predictionData.success) {
       res.status(400).json({
         success: false,
-        error: predictionData.error,
-        message: predictionData.message || 'Please upload a clear photo of a plant leaf.',
+        error: predictionData.error || 'ANALYSIS_FAILED',
+        reason: predictionData.reason || 'invalid_image',
+        message: predictionData.message || 'Please upload or scan a clear crop leaf image.',
         plant: predictionData.plant,
         health: predictionData.health,
         diagnosis: null,
@@ -855,8 +555,18 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
 
     let analysisRecord: any;
 
-    const cropName = predictionData.crop || (predictionData.plant ? predictionData.plant.name : 'Unknown Plant');
+    const cropName = predictionData.crop || (predictionData.plant ? predictionData.plant.displayName || predictionData.plant.name : 'Unknown Plant');
     const diseaseName = predictionData.disease || (predictionData.diagnosis ? predictionData.diagnosis.name : (predictionData.health?.status === 'Healthy' ? 'Healthy Crop' : 'Unknown Condition'));
+
+    const recText = typeof predictionData.recommendation === 'string'
+      ? predictionData.recommendation
+      : (predictionData.recommendation?.explanation || 'Continue regular crop care and periodic scouting.');
+
+    const recActions = predictionData.recommended_actions || (
+      predictionData.recommendation?.disease_management
+        ? [recText, ...predictionData.recommendation.disease_management.slice(0, 2)]
+        : [recText]
+    );
 
     if (user) {
       analysisRecord = await CropAnalysis.create({
@@ -869,7 +579,7 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         confidence: predictionData.confidence ?? (predictionData.plant?.confidence ? predictionData.plant.confidence / 100 : 0),
         isConfident: predictionData.is_confident ?? (predictionData.plant?.name !== 'Unknown'),
         symptoms: predictionData.symptoms || [],
-        recommendedActions: predictionData.recommended_actions || [predictionData.recommendation || ''],
+        recommendedActions: recActions,
         disclaimer: predictionData.disclaimer || DEFAULT_DISCLAIMER,
       });
     } else {
@@ -882,7 +592,7 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         confidence: predictionData.confidence ?? (predictionData.plant?.confidence ? predictionData.plant.confidence / 100 : 0),
         isConfident: predictionData.is_confident ?? (predictionData.plant?.name !== 'Unknown'),
         symptoms: predictionData.symptoms || [],
-        recommendedActions: predictionData.recommended_actions || [predictionData.recommendation || ''],
+        recommendedActions: recActions,
         disclaimer: predictionData.disclaimer || DEFAULT_DISCLAIMER,
         createdAt: new Date().toISOString(),
       };
@@ -891,11 +601,17 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
     res.status(200).json({
       success: true,
       message: 'Universal leaf analysis completed successfully.',
+      crop: cropName,
+      condition: diseaseName,
+      confidence: predictionData.confidence,
+      is_healthy: predictionData.is_healthy,
       plant: predictionData.plant,
       health: predictionData.health,
       diagnosis: predictionData.diagnosis,
       severity: predictionData.severity,
-      recommendation: predictionData.recommendation,
+      recommendation: predictionData.structuredRecommendation || predictionData.recommendation,
+      safety_note: predictionData.safety_note || DEFAULT_DISCLAIMER,
+      top5: predictionData.top5,
       analysis: analysisRecord,
     });
   } catch (error) {
