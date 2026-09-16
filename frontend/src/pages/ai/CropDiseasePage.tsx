@@ -765,6 +765,19 @@ export const CropDiseasePage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Low-Confidence Warning Card */}
+              {(!currentResult.isConfident || (currentResult.plant?.confidence !== undefined && currentResult.plant.confidence < 60) || currentResult.plant?.name === 'Unknown' || currentResult.crop === 'Unknown Plant') && (
+                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700/80 text-amber-900 dark:text-amber-200 text-xs space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>⚠️ Low Confidence Notice</span>
+                  </div>
+                  <p className="leading-relaxed text-slate-700 dark:text-slate-300 text-[11px] sm:text-xs">
+                    The visual leaf characteristics could not be matched with high certainty. For accurate diagnosis, capture a sharp photo in natural daylight with the leaf blade covering at least 70% of the frame, or consult a qualified local Agriculture Officer (KVK / AEO).
+                  </p>
+                </div>
+              )}
+
               {/* Universal Leaf Diagnostics Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* 1. Plant Species */}
@@ -1068,6 +1081,18 @@ export const CropDiseasePage: React.FC = () => {
                   </Link>
                 </div>
               )}
+
+              {/* Scan Another Leaf Action Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleResetScanner}
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-heading font-extrabold text-sm transition-all shadow-md"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Scan Another Leaf</span>
+                </button>
+              </div>
 
               {/* Disclaimer */}
               <div className="text-[11px] text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
