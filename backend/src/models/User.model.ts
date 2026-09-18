@@ -9,6 +9,8 @@ export interface IAddress {
   city?: string;
   state?: string;
   pincode?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface IUser extends Document {
@@ -38,6 +40,8 @@ const AddressSchema = new Schema<IAddress>(
     city: { type: String, trim: true, default: '' },
     state: { type: String, trim: true, default: '' },
     pincode: { type: String, trim: true, default: '' },
+    latitude: { type: Number, default: undefined },
+    longitude: { type: Number, default: undefined },
   },
   { _id: false }
 );

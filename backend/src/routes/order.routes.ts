@@ -7,6 +7,10 @@ import {
   getOrderById,
   updateOrderStatus,
   cancelOrder,
+  acceptShopOrder,
+  rejectShopOrder,
+  prepareShopOrder,
+  readyForPickupShopOrder,
 } from '../controllers/order.controller';
 
 const router = Router();
@@ -17,7 +21,6 @@ router.use(authenticate);
 router.post('/', authorize('FARMER'), createOrder);
 router.get('/', authorize('FARMER', 'ADMIN'), getFarmerOrders);
 router.get('/my-orders', authorize('FARMER', 'ADMIN'), getFarmerOrders);
-
 
 // Shop Owner & Agri Partner orders list (supports both /shop-owner and /shop-orders)
 router.get('/shop-owner', authorize('SHOP_OWNER', 'AGRI_PARTNER', 'ADMIN'), getShopOwnerOrders);
@@ -32,5 +35,12 @@ router.patch('/:id/cancel', authorize('FARMER', 'ADMIN'), cancelOrder);
 router.put('/:id/status', authorize('SHOP_OWNER', 'AGRI_PARTNER', 'ADMIN'), updateOrderStatus);
 router.patch('/:id/status', authorize('SHOP_OWNER', 'AGRI_PARTNER', 'ADMIN'), updateOrderStatus);
 
+// Nearby Shop Routing Specific Actions
+router.post('/:id/accept', authorize('SHOP_OWNER', 'AGRI_PARTNER', 'ADMIN'), acceptShopOrder);
+router.post('/:id/reject', authorize('SHOP_OWNER', 'AGRI_PARTNER', 'ADMIN'), rejectShopOrder);
+router.put('/:id/prepare', authorize('SHOP_OWNER', 'AGRI_PARTNER', 'ADMIN'), prepareShopOrder);
+router.patch('/:id/prepare', authorize('SHOP_OWNER', 'AGRI_PARTNER', 'ADMIN'), prepareShopOrder);
+router.put('/:id/ready-for-pickup', authorize('SHOP_OWNER', 'AGRI_PARTNER', 'ADMIN'), readyForPickupShopOrder);
+router.patch('/:id/ready-for-pickup', authorize('SHOP_OWNER', 'AGRI_PARTNER', 'ADMIN'), readyForPickupShopOrder);
 
 export default router;

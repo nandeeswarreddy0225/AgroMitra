@@ -12,11 +12,10 @@ let mongoMemoryServer: MongoMemoryServer | null = null;
  */
 export const configureDnsResolvers = (): void => {
   try {
-    if (process.env.DNS_SERVERS) {
-      const servers = process.env.DNS_SERVERS.split(',').map((s) => s.trim()).filter(Boolean);
-      if (servers.length > 0) {
-        dns.setServers(servers);
-      }
+    const raw = process.env.DNS_SERVERS || '8.8.8.8,1.1.1.1';
+    const servers = raw.split(',').map((s) => s.trim()).filter(Boolean);
+    if (servers.length > 0) {
+      dns.setServers(servers);
     }
   } catch (err) {
     console.warn('⚠️ [Database]: DNS resolver setup note:', err instanceof Error ? err.message : err);

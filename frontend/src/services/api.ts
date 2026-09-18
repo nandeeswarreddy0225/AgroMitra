@@ -17,26 +17,17 @@ import {
 } from '../types/order';
 
 export const getApiBaseUrl = (): string => {
-  // 1. Production bundle or Native Mobile Runtime (Android / iOS): ALWAYS route to production HTTPS backend
+  // 1. Native Mobile Runtime (Android / iOS) or Capacitor schemes
   const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform();
   const isCapacitorScheme = typeof window !== 'undefined' && window.location && (
     window.location.protocol === 'capacitor:' ||
-    window.location.protocol === 'ionic:' ||
-    (window.location.hostname === 'localhost' && window.location.port === '')
+    window.location.protocol === 'ionic:'
   );
 
-  if (import.meta.env?.PROD || isNative || isCapacitorScheme) {
-    const envUrl = (import.meta.env?.VITE_PRODUCTION_API_URL || import.meta.env?.VITE_API_URL || '').trim();
-    if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
-      const cleanUrl = envUrl.replace(/\/+$/, '');
-      return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
-    }
-    return 'https://agromitra-ytqb.onrender.com/api';
-  }
-
-  // 2. Local development runtime in desktop browser (npm run dev on port 5173): talk to local backend on port 5000
-  if (import.meta.env?.DEV && typeof window !== 'undefined' && window.location) {
-    const hostname = window.location.hostname;
+  // 2. If running inside a desktop/mobile browser on localhost or local network:
+  // ALWAYS talk to the local backend on port 5000 regardless of build mode (PROD or DEV)
+  if (!isNative && !isCapacitorScheme && typeof window !== 'undefined' && window.location) {
+    const { hostname, port } = window.location;
     if (
       hostname === 'localhost' ||
       hostname === '127.0.0.1' ||
@@ -44,11 +35,20 @@ export const getApiBaseUrl = (): string => {
       /^10\./.test(hostname) ||
       /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
     ) {
+      if (port === '5000') {
+        return '/api';
+      }
       return `http://${hostname}:5000/api`;
     }
   }
 
-  // 3. Fallback
+  // 3. Explicit production API URL override or Capacitor / Public Render deployment
+  const envUrl = (import.meta.env?.VITE_PRODUCTION_API_URL || import.meta.env?.VITE_API_URL || '').trim();
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    const cleanUrl = envUrl.replace(/\/+$/, '');
+    return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+  }
+
   return 'https://agromitra-ytqb.onrender.com/api';
 };
 
@@ -295,6 +295,28 @@ export const updateOrderStatusApi = async (
   return response.data;
 };
 
+export const acceptShopOrderApi = async (id: string): Promise<SingleOrderResponse> => {
+  const response = await apiClient.post<SingleOrderResponse>(`/orders/${id}/accept`);
+  return response.data;
+};
+
+export const rejectShopOrderApi = async (id: string, rejectionReason: string): Promise<SingleOrderResponse> => {
+  const response = await apiClient.post<SingleOrderResponse>(`/orders/${id}/reject`, {
+    rejectionReason,
+  });
+  return response.data;
+};
+
+export const prepareShopOrderApi = async (id: string): Promise<SingleOrderResponse> => {
+  const response = await apiClient.put<SingleOrderResponse>(`/orders/${id}/prepare`);
+  return response.data;
+};
+
+export const readyForPickupShopOrderApi = async (id: string): Promise<SingleOrderResponse> => {
+  const response = await apiClient.put<SingleOrderResponse>(`/orders/${id}/ready-for-pickup`);
+  return response.data;
+};
+
 // Payment API endpoints (Razorpay & Store UPI)
 export const getStorePaymentConfigApi = async (): Promise<import('../types/payment').StorePaymentConfigResponse> => {
   const response = await apiClient.get<import('../types/payment').StorePaymentConfigResponse>(
@@ -419,11 +441,17 @@ export const getSchemeCategoriesApi = async (): Promise<
 
 // AI Crop Disease Detection API endpoints
 export const analyzeCropImageApi = async (
-  file: File
+  file: File,
+  coords?: { latitude?: number; longitude?: number }
 ): Promise<import('../types/cropHealth').AnalyzeCropResponse> => {
   const formData = new FormData();
   formData.append('image', file, file.name || `leaf-scan-${Date.now()}.jpg`);
-
+  if (coords?.latitude !== undefined && !isNaN(coords.latitude)) {
+    formData.append('latitude', String(coords.latitude));
+  }
+  if (coords?.longitude !== undefined && !isNaN(coords.longitude)) {
+    formData.append('longitude', String(coords.longitude));
+  }
 
   const token = localStorage.getItem('agrimart_token');
   const response = await apiClient.post<import('../types/cropHealth').AnalyzeCropResponse>(

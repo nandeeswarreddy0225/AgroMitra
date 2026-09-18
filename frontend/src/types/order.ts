@@ -1,8 +1,11 @@
 export type OrderStatus =
   | 'PENDING'
+  | 'WAITING_FOR_SHOP'
+  | 'SHOP_ACCEPTED'
   | 'ACCEPTED'
   | 'PREPARING'
   | 'PROCESSING'
+  | 'READY_FOR_PICKUP'
   | 'READY_FOR_DELIVERY'
   | 'PACKED'
   | 'OUT_FOR_DELIVERY'
@@ -66,6 +69,8 @@ export interface OrderDeliveryAddress {
   city: string;
   state: string;
   pincode: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export type PaymentMethod = 'UPI_QR' | 'RAZORPAY' | 'CASH_ON_DELIVERY';
@@ -91,6 +96,11 @@ export interface Order {
   payment?: string;
   rejectionReason?: string;
   statusTimeline?: StatusTimelineItem[];
+  // Nearby shop routing
+  assignedShopOwner?: string;
+  acceptedShopOwner?: string;
+  acceptedAt?: string;
+  distanceKm?: number;
   // Delivery Boy assignment
   deliveryBoy?: string;
   deliveryBoyName?: string;
@@ -125,6 +135,13 @@ export interface ShopOwnerOrderView {
   allOrderItemsCount: number;
   shopSubtotal: number;
   orderTotal: number;
+  assignedShopOwner?: string;
+  acceptedShopOwner?: string;
+  acceptedAt?: string;
+  distanceKm?: number;
+  isAssignedToMe?: boolean;
+  isAcceptedByMe?: boolean;
+  canAccept?: boolean;
   deliveryBoy?: string;
   deliveryBoyName?: string;
   deliveryBoyPhone?: string;
@@ -159,6 +176,10 @@ export interface SingleOrderResponse {
 }
 
 export interface CreateOrderInput {
+  productId?: string;
+  quantity?: number;
+  shopOwnerId?: string;
+  items?: Array<{ productId: string; quantity: number; shopOwnerId?: string }>;
   deliveryAddress?: Partial<OrderDeliveryAddress>;
   paymentMethod?: PaymentMethod;
 }

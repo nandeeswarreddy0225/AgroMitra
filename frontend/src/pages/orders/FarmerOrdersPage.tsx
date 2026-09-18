@@ -97,12 +97,19 @@ export const FarmerOrdersPage: React.FC = () => {
 
   const getStatusBadge = (status: OrderStatus) => {
     switch (status) {
+      case 'WAITING_FOR_SHOP':
+        return 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700';
+      case 'SHOP_ACCEPTED':
       case 'ACCEPTED':
         return 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700';
+      case 'PREPARING':
       case 'PROCESSING':
         return 'bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-700';
+      case 'READY_FOR_PICKUP':
+      case 'READY_FOR_DELIVERY':
       case 'PACKED':
         return 'bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700';
+      case 'OUT_FOR_DELIVERY':
       case 'DISPATCHED':
         return 'bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700';
       case 'DELIVERED':
@@ -135,12 +142,15 @@ export const FarmerOrdersPage: React.FC = () => {
   const getTimelineStepIndex = (status: OrderStatus) => {
     switch (status) {
       case 'PENDING':
+      case 'WAITING_FOR_SHOP':
         return 0;
+      case 'SHOP_ACCEPTED':
       case 'ACCEPTED':
         return 1;
       case 'PREPARING':
       case 'PROCESSING':
         return 2;
+      case 'READY_FOR_PICKUP':
       case 'READY_FOR_DELIVERY':
       case 'PACKED':
         return 3;
@@ -155,11 +165,22 @@ export const FarmerOrdersPage: React.FC = () => {
     }
   };
 
-
   const filteredOrders = orders.filter((order) => {
     if (activeTab === 'ALL') return true;
     if (activeTab === 'ACTIVE') {
-      return ['PENDING', 'ACCEPTED', 'PROCESSING', 'PACKED', 'DISPATCHED'].includes(order.status);
+      return [
+        'PENDING',
+        'WAITING_FOR_SHOP',
+        'SHOP_ACCEPTED',
+        'ACCEPTED',
+        'PREPARING',
+        'PROCESSING',
+        'READY_FOR_PICKUP',
+        'READY_FOR_DELIVERY',
+        'PACKED',
+        'OUT_FOR_DELIVERY',
+        'DISPATCHED',
+      ].includes(order.status);
     }
     if (activeTab === 'DELIVERED') {
       return ['DELIVERED', 'COMPLETED'].includes(order.status);
@@ -173,7 +194,19 @@ export const FarmerOrdersPage: React.FC = () => {
   const counts = {
     ALL: orders.length,
     ACTIVE: orders.filter((o) =>
-      ['PENDING', 'ACCEPTED', 'PROCESSING', 'PACKED', 'DISPATCHED'].includes(o.status)
+      [
+        'PENDING',
+        'WAITING_FOR_SHOP',
+        'SHOP_ACCEPTED',
+        'ACCEPTED',
+        'PREPARING',
+        'PROCESSING',
+        'READY_FOR_PICKUP',
+        'READY_FOR_DELIVERY',
+        'PACKED',
+        'OUT_FOR_DELIVERY',
+        'DISPATCHED',
+      ].includes(o.status)
     ).length,
     DELIVERED: orders.filter((o) => ['DELIVERED', 'COMPLETED'].includes(o.status)).length,
     CANCELLED: orders.filter((o) => ['CANCELLED', 'REJECTED'].includes(o.status)).length,
@@ -410,6 +443,40 @@ export const FarmerOrdersPage: React.FC = () => {
                     </span>
                   )}
                 </div>
+
+                {/* Live Order Routing & Fulfillment Status Notice */}
+                {order.status === 'WAITING_FOR_SHOP' && (
+                  <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2.5">
+                    <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-pulse shrink-0" />
+                    <span>
+                      <strong>Finding nearby shop:</strong> We are routing your order to an eligible nearby agri store and awaiting acceptance.
+                    </span>
+                  </div>
+                )}
+                {order.status === 'SHOP_ACCEPTED' && (
+                  <div className="p-3.5 bg-blue-50 dark:bg-blue-950/40 border-b border-blue-200 dark:border-blue-800/60 text-blue-900 dark:text-blue-200 text-xs flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span>
+                      <strong>Order accepted by shop:</strong> A local store has accepted your order and will begin preparing your supplies.
+                    </span>
+                  </div>
+                )}
+                {order.status === 'PREPARING' && (
+                  <div className="p-3.5 bg-purple-50 dark:bg-purple-950/40 border-b border-purple-200 dark:border-purple-800/60 text-purple-900 dark:text-purple-200 text-xs flex items-center gap-2.5">
+                    <Box className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                    <span>
+                      <strong>Preparing your order:</strong> Your agricultural items are currently being packed and quality-checked.
+                    </span>
+                  </div>
+                )}
+                {order.status === 'READY_FOR_PICKUP' && (
+                  <div className="p-3.5 bg-indigo-50 dark:bg-indigo-950/40 border-b border-indigo-200 dark:border-indigo-800/60 text-indigo-900 dark:text-indigo-200 text-xs flex items-center gap-2.5">
+                    <Truck className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                    <span>
+                      <strong>Ready for pickup:</strong> Your order is packaged and waiting for delivery partner pickup.
+                    </span>
+                  </div>
+                )}
 
                 {/* Visual Order Progress Tracker */}
                 {stepIdx >= 0 && (

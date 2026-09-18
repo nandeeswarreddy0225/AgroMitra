@@ -160,15 +160,36 @@ export class NodeOnnxPathologyEngine {
     }
   }
 
-  private validateDecodedFoliarQuality(decoded: DecodedImage): { isValid: boolean; message: string } {
+  private validateDecodedFoliarQuality(decoded: DecodedImage): {
+    isValid: boolean;
+    isNonPlant?: boolean;
+    message: string;
+    foliarRatio: number;
+    greenRatio: number;
+    chlorophyllRatio: number;
+    meanLum: number;
+    stdLum: number;
+    lapVar: number;
+  } {
     const { width, height, data } = decoded;
     if (width < 64 || height < 64) {
-      return { isValid: false, message: 'Please upload or scan a clear crop leaf image (minimum 100x100 pixels).' };
+      return {
+        isValid: false,
+        message: 'Please upload or scan a clear crop leaf image (minimum 100x100 pixels).',
+        foliarRatio: 0,
+        greenRatio: 0,
+        chlorophyllRatio: 0,
+        meanLum: 0,
+        stdLum: 0,
+        lapVar: 0,
+      };
     }
 
     const totalPixels = width * height;
     const sampleStep = Math.max(1, Math.floor(totalPixels / 10000));
     let foliarCount = 0;
+    let greenCount = 0;
+    let chloroCount = 0;
     let lumSum = 0;
     let lumSqSum = 0;
     let sampledCount = 0;
@@ -185,11 +206,17 @@ export class NodeOnnxPathologyEngine {
       sampledCount++;
 
       // Check foliar spectral characteristics on decoded RGB
-      const isGreen = g > r * 0.88 && g > b * 1.05 && g > 30;
-      const isYellowChlorotic = r > 100 && g > 100 && b < 110 && Math.abs(r - g) < 55;
-      const isNecroticBrown = r > 60 && g > 35 && b < 65 && r > g && g > b;
-      const isOlive = g > b && g > 25 && r < 140 && (2 * g - r - b) > -10;
+      const isGreen = g > r * 0.95 && g > b * 1.05 && g > 25;
+      const isYellowChlorotic = r > 100 && g > 90 && b < 110 && Math.abs(r - g) < 45 && g > r * 0.88;
+      const isNecroticBrown = r > 50 && r < 155 && g > 30 && g < 120 && b < 70 && r > g && g > b;
+      const isOlive = g > b * 1.08 && g > 25 && r < 140 && g > r * 0.85 && (2 * g - r - b) > 0;
 
+      if (isGreen) {
+        greenCount++;
+      }
+      if (isGreen || isOlive) {
+        chloroCount++;
+      }
       if (isGreen || isYellowChlorotic || isNecroticBrown || isOlive) {
         foliarCount++;
       }
@@ -199,35 +226,36 @@ export class NodeOnnxPathologyEngine {
     const varLum = sampledCount > 0 ? (lumSqSum / sampledCount) - (meanLum * meanLum) : 100;
     const stdLum = Math.sqrt(Math.max(0, varLum));
     const foliarRatio = sampledCount > 0 ? foliarCount / sampledCount : 0;
+    const greenRatio = sampledCount > 0 ? greenCount / sampledCount : 0;
+    const chlorophyllRatio = sampledCount > 0 ? chloroCount / sampledCount : 0;
 
-    if (meanLum < 10) {
-      return { isValid: false, message: 'Image is too dark to analyze. Please capture a clear leaf photo in daylight.' };
-    }
-    if (meanLum > 248 && stdLum < 8) {
-      return { isValid: false, message: 'Image is overexposed or blank. Please upload a clear photo of a crop leaf.' };
-    }
-    if (foliarRatio < 0.03 && stdLum < 40) {
-      return { isValid: false, message: 'Please upload or scan a clear crop leaf image.' };
-    }
-
-    // Discrete Laplacian variance check for blurriness
+    let lapVar = 100;
+    // Discrete Laplacian variance check on normalized 224x224 grid to prevent false rejection of high-resolution images
     if (width >= 10 && height >= 10) {
+      const targetW = 224;
+      const targetH = 224;
+      const gray = new Float32Array(targetW * targetH);
+
+      for (let y = 0; y < targetH; y++) {
+        const srcY = Math.floor(y * (height / targetH));
+        for (let x = 0; x < targetW; x++) {
+          const srcX = Math.floor(x * (width / targetW));
+          const idx = (srcY * width + srcX) * 4;
+          gray[y * targetW + x] = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+        }
+      }
+
       let lapSum = 0;
       let lapSqSum = 0;
       let lapCount = 0;
-      for (let y = 1; y < height - 1; y += 2) {
-        for (let x = 1; x < width - 1; x += 2) {
-          const cIdx = (y * width + x) * 4;
-          const uIdx = ((y - 1) * width + x) * 4;
-          const dIdx = ((y + 1) * width + x) * 4;
-          const lIdx = (y * width + (x - 1)) * 4;
-          const rIdx = (y * width + (x + 1)) * 4;
 
-          const gC = 0.299 * data[cIdx] + 0.587 * data[cIdx + 1] + 0.114 * data[cIdx + 2];
-          const gU = 0.299 * data[uIdx] + 0.587 * data[uIdx + 1] + 0.114 * data[uIdx + 2];
-          const gD = 0.299 * data[dIdx] + 0.587 * data[dIdx + 1] + 0.114 * data[dIdx + 2];
-          const gL = 0.299 * data[lIdx] + 0.587 * data[lIdx + 1] + 0.114 * data[lIdx + 2];
-          const gR = 0.299 * data[rIdx] + 0.587 * data[rIdx + 1] + 0.114 * data[rIdx + 2];
+      for (let y = 1; y < targetH - 1; y++) {
+        for (let x = 1; x < targetW - 1; x++) {
+          const gC = gray[y * targetW + x];
+          const gU = gray[(y - 1) * targetW + x];
+          const gD = gray[(y + 1) * targetW + x];
+          const gL = gray[y * targetW + (x - 1)];
+          const gR = gray[y * targetW + (x + 1)];
 
           const lap = gU + gD + gL + gR - 4 * gC;
           lapSum += lap;
@@ -235,16 +263,72 @@ export class NodeOnnxPathologyEngine {
           lapCount++;
         }
       }
-      const lapVar = lapCount > 0 ? (lapSqSum / lapCount) - Math.pow(lapSum / lapCount, 2) : 100;
-      if (lapVar < 20.0) {
-        return {
-          isValid: false,
-          message: 'The image is too blurry or out of focus. Please hold the camera steady and capture a sharp photo of the leaf.'
-        };
-      }
+
+      lapVar = lapCount > 0 ? (lapSqSum / lapCount) - Math.pow(lapSum / lapCount, 2) : 100;
     }
 
-    return { isValid: true, message: 'OK' };
+    if (meanLum <= 15) {
+      return {
+        isValid: false,
+        message: 'Image is too dark to analyze. Please capture a clear leaf photo in daylight.',
+        foliarRatio,
+        greenRatio,
+        chlorophyllRatio,
+        meanLum,
+        stdLum,
+        lapVar,
+      };
+    }
+    if (meanLum > 248 && stdLum < 8) {
+      return {
+        isValid: false,
+        message: 'Image is overexposed or blank. Please upload a clear photo of a crop leaf.',
+        foliarRatio,
+        greenRatio,
+        chlorophyllRatio,
+        meanLum,
+        stdLum,
+        lapVar,
+      };
+    }
+    // Plant leaves must exhibit genuine foliar chromaticity
+    if (foliarRatio < 0.06) {
+      return {
+        isValid: false,
+        isNonPlant: true,
+        message: 'Non-foliar or non-plant image detected. Please upload a clear crop leaf image.',
+        foliarRatio,
+        greenRatio,
+        chlorophyllRatio,
+        meanLum,
+        stdLum,
+        lapVar,
+      };
+    }
+
+    if (lapVar < 15.0) {
+      return {
+        isValid: false,
+        message: 'The image is too blurry or out of focus. Please hold the camera steady and capture a sharp photo of the leaf.',
+        foliarRatio,
+        greenRatio,
+        chlorophyllRatio,
+        meanLum,
+        stdLum,
+        lapVar,
+      };
+    }
+
+    return {
+      isValid: true,
+      message: 'OK',
+      foliarRatio,
+      greenRatio,
+      chlorophyllRatio,
+      meanLum,
+      stdLum,
+      lapVar,
+    };
   }
 
   private preprocessImage(decoded: DecodedImage): Float32Array {
@@ -311,28 +395,58 @@ export class NodeOnnxPathologyEngine {
 
     const decoded = this.decodeImageBuffer(buffer, mimetype);
     if (!decoded) {
-      // Decode not supported by jpeg-js (e.g. webp or progressive jpeg)
-      return null;
-    }
-
-    // Stage 0: True Decoded Foliar Quality Check
-    const quality = this.validateDecodedFoliarQuality(decoded);
-    if (!quality.isValid) {
+      console.log(`[AI SCANNER] image received: ${originalname}`);
+      console.log(`[AI SCANNER] image decode = FAILED (unsupported or malformed image format)`);
+      console.log(`[AI SCANNER] species prediction = UNKNOWN`);
+      console.log(`[AI SCANNER] FINAL = REJECT`);
+      console.log(`[AI SCANNER] disease inference = NOT RUN`);
       return {
         success: false,
-        error: 'INVALID_IMAGE_QUALITY',
-        message: quality.message,
-        plant: { name: 'Unknown', confidence: 0 },
-        health: { status: 'Unknown', confidence: 0 },
-        diagnosis: null,
-        severity: 'Unknown',
-        recommendation: quality.message,
-        is_confident: false,
-        crop: 'Unknown Plant',
-        disease: quality.message,
-        is_healthy: false,
-        confidence: 0,
-        disclaimer: DEFAULT_DISCLAIMER,
+        isValid: false,
+        is_valid: false,
+        isSupportedSpecies: false,
+        species: null,
+        speciesConfidence: 0,
+        disease: null,
+        diseaseConfidence: 0,
+        error: 'IMAGE_DECODE_FAILED',
+        reason: 'invalid_image',
+        message: 'Unable to decode image. Please upload a clear photo of a crop leaf.',
+        is_tomato: false,
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // STAGE 0 — IMAGE VALIDITY / FOLIAR QUALITY
+    // -------------------------------------------------------------------------
+    const quality = this.validateDecodedFoliarQuality(decoded);
+    if (!quality.isValid) {
+      console.log(`[AI SCANNER] image received: ${originalname}`);
+      console.log(`[AI SCANNER] IMAGE QUALITY = FAIL (${quality.message})`);
+      console.log(`[AI SCANNER] TOP SPECIES = UNKNOWN`);
+      console.log(`[AI SCANNER] SPECIES CONFIDENCE = 0.0%`);
+      console.log(`[AI SCANNER] SPECIES MARGIN = 0.0%`);
+      console.log(`[AI SCANNER] JOINT TOP = Unknown`);
+      console.log(`[AI SCANNER] PLANT EVIDENCE = LOW`);
+      console.log(`[AI SCANNER] SPECIES CONSISTENCY = FAIL`);
+      console.log(`[AI SCANNER] species prediction = UNKNOWN/NON_PLANT`);
+      console.log(`[AI SCANNER] FINAL = REJECT`);
+      console.log(`[AI SCANNER] disease inference = NOT RUN`);
+
+      return {
+        success: false,
+        isValid: false,
+        is_valid: false,
+        isSupportedSpecies: false,
+        species: null,
+        speciesConfidence: 0,
+        disease: null,
+        diseaseConfidence: 0,
+        error: quality.isNonPlant ? 'NON_PLANT_REJECTED' : 'INVALID_IMAGE_QUALITY',
+        reason: quality.isNonPlant ? 'non_plant_rejection' : 'invalid_image',
+        message: quality.message || 'Please upload a clear agricultural plant/leaf image.',
+        detectedCrop: quality.isNonPlant ? 'Non-Plant' : 'Invalid Image',
+        is_tomato: false,
       };
     }
 
@@ -342,33 +456,165 @@ export class NodeOnnxPathologyEngine {
       const tensor = new ort.Tensor('float32', floatData, [1, 3, 224, 224]);
       const results = await this.session.run({ image: tensor });
 
-      // 1. Stage 1: Crop/Species Identification via Species Head ONLY
+      // -----------------------------------------------------------------------
+      // STAGE 1 — SPECIES HEAD
+      // -----------------------------------------------------------------------
       const speciesLogits = results.species_logits.data as Float32Array;
       const speciesProbs = this.softmax(speciesLogits);
       const speciesList = this.metadata.species_list || [];
 
+      // Rank top species and calculate margin
       let bestSpeciesIdx = 0;
-      let bestCropProb = speciesProbs[0] || 0;
-      for (let i = 1; i < speciesProbs.length; i++) {
-        if (speciesProbs[i] > bestCropProb) {
-          bestCropProb = speciesProbs[i];
+      let secondSpeciesIdx = 1;
+      if (speciesProbs[1] > speciesProbs[0]) {
+        bestSpeciesIdx = 1;
+        secondSpeciesIdx = 0;
+      }
+      for (let i = 2; i < speciesProbs.length; i++) {
+        if (speciesProbs[i] > speciesProbs[bestSpeciesIdx]) {
+          secondSpeciesIdx = bestSpeciesIdx;
           bestSpeciesIdx = i;
+        } else if (speciesProbs[i] > speciesProbs[secondSpeciesIdx]) {
+          secondSpeciesIdx = i;
         }
       }
       const bestCrop = speciesList[bestSpeciesIdx] || 'Unknown';
+      const bestCropProb = speciesProbs[bestSpeciesIdx] || 0;
+      const secondCropProb = speciesProbs[secondSpeciesIdx] || 0;
+      const confidenceMargin = bestCropProb - secondCropProb;
 
-      const CONFIDENCE_THRESHOLD = 0.35;
-      const isNonLeaf =
-        bestCrop === 'Background' ||
-        bestCrop === 'Unknown' ||
-        bestCropProb < CONFIDENCE_THRESHOLD;
-
-      // 2. Stage 2: Crop-Constrained Pathology Diagnostic Head with Hard Masking
+      // -----------------------------------------------------------------------
+      // STAGE 2 — GLOBAL JOINT-HEAD CONSISTENCY
+      // -----------------------------------------------------------------------
       const jointLogits = results.joint_logits.data as Float32Array;
-      const classesList = this.metadata.classes;
-      const subIndices = this.cropToIndices[bestCrop] || [];
+      const globalJointProbs = this.softmax(jointLogits);
+      let bestGlobalJointIdx = 0;
+      let maxGlobalJointProb = globalJointProbs[0] || 0;
+      for (let i = 1; i < globalJointProbs.length; i++) {
+        if (globalJointProbs[i] > maxGlobalJointProb) {
+          maxGlobalJointProb = globalJointProbs[i];
+          bestGlobalJointIdx = i;
+        }
+      }
+      const globalTopClass = this.metadata.classes[bestGlobalJointIdx] || 'Unknown';
+      const globalTopCrop = this.extractCrop(globalTopClass);
 
-      let selectedClass = 'Unknown___unsupported';
+      const bestCropIndices = this.cropToIndices[bestCrop] || [];
+      const bestCropJointMass = bestCropIndices.reduce((sum, idx) => sum + (globalJointProbs[idx] || 0), 0);
+
+      // Rejection class evidence check
+      const bgIdx = speciesList.indexOf('Background');
+      const unkIdx = speciesList.indexOf('Unknown');
+      const rejectionProb = (bgIdx >= 0 ? speciesProbs[bgIdx] : 0) + (unkIdx >= 0 ? speciesProbs[unkIdx] : 0);
+
+      // -----------------------------------------------------------------------
+      // STAGE 3 — PLANT-LEAF EVIDENCE / AMBIGUITY CHECK
+      // -----------------------------------------------------------------------
+      // Multi-signal evaluation:
+      // 1. Botanical Identity Support (must be one of 18 supported agricultural crops, not Background/Unknown)
+      const isSupported =
+        bestCrop !== 'Background' &&
+        bestCrop !== 'Unknown' &&
+        globalTopCrop !== 'Background' &&
+        globalTopCrop !== 'Unknown' &&
+        speciesList.includes(bestCrop);
+
+      // 2. Dual-Head Strict Agreement: Species Head top crop MUST match Joint Head top crop
+      const speciesAgreement = bestCrop === globalTopCrop;
+
+      // 3. Absolute Confidence & Margin Policy
+      const hasSufficientConfidence =
+        bestCropProb >= 0.45 && (bestCropProb >= 0.60 || confidenceMargin >= 0.12);
+
+      // 4. Joint Head Probability Mass for Detected Species
+      const hasSufficientJointMass = bestCropJointMass >= 0.25;
+
+      // 5. In-Model Non-Plant Rejection Probability Evidence
+      const isRejectionLow = rejectionProb < 0.35;
+
+      // 6. Physiological & Foliar Structural Evidence:
+      // A) If claimed condition is 'Healthy', genuine plant leaves MUST contain active chlorophyll (green/olive >= 0.02).
+      //    Diseased leaves (blight, scorch, curl, rust, canker) are NOT required to be green.
+      const isClaimedHealthy = globalTopClass.endsWith('___healthy');
+      const chlorophyllEvidence = !isClaimedHealthy || quality.chlorophyllRatio >= 0.02;
+
+      // B) Structural Foliar Evidence:
+      // Texture gradient (lapVar >= 15.0), meaningful foliar area (foliarRatio >= 0.06), natural lighting spread (stdLum >= 8)
+      // GREEN PIXELS ARE NOT THE SOLE VALIDATION CRITERION (supports olive, yellow chlorotic, and necrotic lesions)
+      const structuralFoliarEvidence =
+        quality.foliarRatio >= 0.06 && quality.lapVar >= 15.0 && quality.stdLum >= 8;
+
+      const plantEvidencePass = chlorophyllEvidence && structuralFoliarEvidence;
+      const speciesConsistencyPass =
+        isSupported &&
+        speciesAgreement &&
+        hasSufficientConfidence &&
+        hasSufficientJointMass &&
+        isRejectionLow;
+
+      const isSpeciesApproved = speciesConsistencyPass && plantEvidencePass;
+
+      // Diagnostic Logging exactly matching specification:
+      console.log(`[AI SCANNER] image received: ${originalname}`);
+      console.log(`[AI SCANNER] IMAGE QUALITY = ${quality.isValid ? 'PASS' : 'FAIL'}`);
+      console.log(`[AI SCANNER] TOP SPECIES = ${bestCrop}`);
+      console.log(`[AI SCANNER] SPECIES CONFIDENCE = ${(bestCropProb * 100).toFixed(1)}%`);
+      console.log(`[AI SCANNER] SPECIES MARGIN = ${(confidenceMargin * 100).toFixed(1)}%`);
+      console.log(`[AI SCANNER] JOINT TOP = ${globalTopClass}`);
+      console.log(`[AI SCANNER] PLANT EVIDENCE = ${plantEvidencePass ? 'HIGH' : 'LOW'}`);
+      console.log(`[AI SCANNER] SPECIES CONSISTENCY = ${speciesConsistencyPass ? 'PASS' : 'FAIL'}`);
+
+      if (!isSpeciesApproved) {
+        console.log(`[AI SCANNER] species prediction = UNKNOWN/NON_PLANT`);
+        console.log(`[AI SCANNER] FINAL = REJECT`);
+        console.log(`[AI SCANNER] disease inference = NOT RUN`);
+
+        let errorType = 'SPECIES_AMBIGUOUS';
+        let reasonStr = 'species_ambiguous';
+        let messageStr = 'Please upload a clear agricultural plant/leaf image.';
+
+        if (bestCrop === 'Background' || globalTopCrop === 'Background') {
+          errorType = 'NON_PLANT_REJECTED';
+          reasonStr = 'non_plant_rejection';
+          messageStr = 'Non-foliar or background image detected. Please upload a clear crop leaf photo.';
+        } else if (bestCrop === 'Unknown' || globalTopCrop === 'Unknown' || !isSupported) {
+          errorType = 'UNSUPPORTED_SPECIES';
+          reasonStr = 'unsupported_species';
+          messageStr = 'The species is outside the 18 supported agricultural crops.';
+        } else if (!speciesAgreement || !plantEvidencePass) {
+          errorType = 'SPECIES_AMBIGUOUS';
+          reasonStr = 'species_ambiguous';
+          messageStr = 'Please upload a clear agricultural plant/leaf image.';
+        } else if (!hasSufficientConfidence) {
+          errorType = 'LOW_CONFIDENCE';
+          reasonStr = 'low_confidence';
+          messageStr = `The AI could not confidently identify this ${bestCrop} leaf. Please capture a clearer close-up in good lighting.`;
+        }
+
+        return {
+          success: false,
+          isValid: false,
+          is_valid: false,
+          isSupportedSpecies: false,
+          species: null,
+          speciesConfidence: 0,
+          disease: null,
+          diseaseConfidence: 0,
+          error: errorType,
+          reason: reasonStr,
+          message: messageStr,
+          detectedCrop: bestCrop,
+          is_tomato: false,
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      // STAGE 4 — SPECIES-CONSTRAINED DISEASE INFERENCE (ONLY RUN WHEN APPROVED!)
+      // -----------------------------------------------------------------------
+      const classesList = this.metadata.classes;
+      const subIndices = bestCropIndices;
+
+      let selectedClass = `${bestCrop}___healthy`;
       let selectedClassProb = 0;
       let sortedJoint: Array<{
         className: string;
@@ -380,8 +626,8 @@ export class NodeOnnxPathologyEngine {
       }> = [];
 
       if (subIndices.length > 0) {
-        // Evaluate softmax ONLY across the subclasses of bestCrop
-        const subLogitsArray = new Float32Array(subIndices.map(idx => jointLogits[idx]));
+        // Evaluate softmax STRICTLY across the subclasses of detected bestCrop
+        const subLogitsArray = new Float32Array(subIndices.map((idx) => jointLogits[idx]));
         const subProbs = this.softmax(subLogitsArray);
 
         let bestSubLocalIdx = 0;
@@ -395,22 +641,22 @@ export class NodeOnnxPathologyEngine {
 
         const winningGlobalIdx = subIndices[bestSubLocalIdx];
         selectedClass = classesList[winningGlobalIdx];
-        selectedClassProb = maxSubP;
+        selectedClassProb = subProbs[bestSubLocalIdx];
 
-        // Top distribution constrained ONLY to allowed classes of bestCrop (forbidden classes are 0)
+        const plantInfo = PLANT_SPECIES_DATABASE[bestCrop];
+        const displayCrop = plantInfo ? `${bestCrop} (${plantInfo.telugu})` : bestCrop;
+
         sortedJoint = subIndices
           .map((globalIdx, localIdx) => {
             const cls = classesList[globalIdx];
             const pInfo = UNIVERSAL_PATHOLOGY_DATABASE[cls] || {
               plant: bestCrop,
-              plant_display: bestCrop,
+              plant_display: displayCrop,
               health_status: 'Healthy',
               diagnosis: null,
               severity: 'None',
               is_healthy: true,
             };
-            const plantInfo = PLANT_SPECIES_DATABASE[bestCrop];
-            const displayCrop = plantInfo ? `${bestCrop} (${plantInfo.telugu})` : bestCrop;
 
             return {
               className: cls,
@@ -424,31 +670,6 @@ export class NodeOnnxPathologyEngine {
           .sort((a, b) => b.probability - a.probability);
       }
 
-      if (bestCropProb < CONFIDENCE_THRESHOLD || isNonLeaf) {
-        return {
-          success: false,
-          error: 'LOW_CONFIDENCE',
-          message: 'The AI could not confidently identify this leaf. Please capture a clearer image with the leaf filling most of the frame.',
-          plant: { name: 'Unknown', confidence: Math.round(bestCropProb * 100) },
-          health: { status: 'Unknown', confidence: 0 },
-          diagnosis: null,
-          severity: 'Unknown',
-          recommendation: 'The image could not be reliably identified. Please capture a clear close-up image with the leaf blade filling most of the viewfinder.',
-          is_confident: false,
-          crop: 'Unknown Plant',
-          disease: 'Insufficient visual evidence or unsupported plant species.',
-          is_healthy: false,
-          confidence: Number(bestCropProb.toFixed(4)),
-          top5: sortedJoint,
-          symptoms: ['Visual leaf morphology does not match known high-confidence plant categories in the database.'],
-          recommended_actions: [
-            'Capture a sharp close-up photo of the leaf in natural daylight.',
-            'Consult your local Agricultural Extension Officer (AEO) for field confirmation.',
-          ],
-          disclaimer: DEFAULT_DISCLAIMER,
-        };
-      }
-
       // Resolve pathology details
       const pathology = UNIVERSAL_PATHOLOGY_DATABASE[selectedClass] || {
         plant: bestCrop,
@@ -457,13 +678,16 @@ export class NodeOnnxPathologyEngine {
         diagnosis: selectedClass.replace('___', ' '),
         severity: 'Moderate',
         is_healthy: false,
-        recommendation: 'Consult local agricultural officer.',
+        recommendation: 'Consult local agricultural extension officer.',
         symptoms: ['Visual foliar symptoms consistent with analyzed specimen.'],
       };
 
       const isHealthy = pathology.is_healthy || selectedClass.endsWith('___healthy');
       const healthStatus = isHealthy ? 'Healthy' : pathology.health_status;
-      const diagnosisName = pathology.diagnosis || (isHealthy ? 'Healthy Crop (ఆరోగ్యకరమైన పంట)' : 'Detected Pathology');
+      const fullDiagnosisName = pathology.diagnosis || (isHealthy ? 'Healthy Crop (ఆరోగ్యకరమైన పంట)' : 'Detected Pathology');
+      const shortDiseaseName = isHealthy
+        ? 'Healthy'
+        : (pathology.diagnosis?.split(' (')[0] || pathology.diagnosis || 'Detected Pathology');
 
       const plantInfo = PLANT_SPECIES_DATABASE[bestCrop];
       const plantDisplay = plantInfo ? `${bestCrop} (${plantInfo.telugu})` : bestCrop;
@@ -472,7 +696,7 @@ export class NodeOnnxPathologyEngine {
       const structuredGuidance: StructuredRecommendation = getCropAndConditionGuidance(
         selectedClass,
         bestCrop,
-        diagnosisName,
+        fullDiagnosisName,
         isHealthy
       );
 
@@ -483,8 +707,30 @@ export class NodeOnnxPathologyEngine {
           }
         : null;
 
+      console.log(`[AI SCANNER] image received: ${originalname}`);
+      console.log(`[AI SCANNER] species prediction = ${bestCrop}`);
+      console.log(`[AI SCANNER] species confidence = ${bestCropProb.toFixed(2)}`);
+      console.log(`[AI SCANNER] joint prediction = ${globalTopClass}`);
+      console.log(`[AI SCANNER] joint confidence = ${maxGlobalJointProb.toFixed(2)}`);
+      console.log(`[AI SCANNER] species agreement = TRUE`);
+      console.log(`[AI SCANNER] FINAL = ${bestCrop} / ${shortDiseaseName}`);
+
       return {
         success: true,
+        isValid: true,
+        is_valid: true,
+        isSupportedSpecies: true,
+        species: bestCrop,
+        speciesConfidence: Number(bestCropProb.toFixed(4)),
+        disease: shortDiseaseName,
+        diseaseConfidence: Number(selectedClassProb.toFixed(4)),
+        jointClass: selectedClass,
+        message: `${bestCrop} leaf analysis completed successfully.`,
+        detectedCrop: bestCrop,
+        crop: plantDisplay,
+        condition: fullDiagnosisName,
+        confidence: Number(bestCropProb.toFixed(4)),
+        is_healthy: isHealthy,
         plant: {
           name: bestCrop,
           displayName: plantDisplay,
@@ -498,10 +744,6 @@ export class NodeOnnxPathologyEngine {
         severity: isHealthy ? 'None' : pathology.severity,
         recommendation: structuredGuidance.explanation || pathology.recommendation,
         is_confident: true,
-        crop: plantDisplay,
-        disease: isHealthy ? 'Healthy Crop (ఆరోగ్యకరమైన పంట)' : (pathology.diagnosis || 'Detected Pathology'),
-        is_healthy: isHealthy,
-        confidence: Number(bestCropProb.toFixed(4)),
         top5: sortedJoint,
         symptoms: pathology.symptoms,
         recommended_actions: [
@@ -512,6 +754,7 @@ export class NodeOnnxPathologyEngine {
         safety_note: DEFAULT_SAFETY_NOTE,
         disclaimer: DEFAULT_DISCLAIMER,
         modelVersion: this.metadata?.version || 3,
+        is_tomato: bestCrop === 'Tomato',
       };
     } catch (err: any) {
       console.error('ONNX prediction error:', err);

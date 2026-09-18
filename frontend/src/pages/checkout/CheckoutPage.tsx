@@ -28,7 +28,40 @@ export const CheckoutPage: React.FC = () => {
     city: user?.address?.city || '',
     state: user?.address?.state || '',
     pincode: user?.address?.pincode || '',
+    latitude: (user?.address as any)?.latitude as number | undefined,
+    longitude: (user?.address as any)?.longitude as number | undefined,
   });
+
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [gpsDetected, setGpsDetected] = useState<boolean>(
+    Boolean((user?.address as any)?.latitude && (user?.address as any)?.longitude)
+  );
+
+  const handleDetectGPS = () => {
+    if (!navigator.geolocation) {
+      setErrorMsg('Geolocation is not supported by your device/browser.');
+      return;
+    }
+    setIsDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsDetectingLocation(false);
+        const lat = Number(pos.coords.latitude.toFixed(6));
+        const lon = Number(pos.coords.longitude.toFixed(6));
+        setAddress((prev) => ({
+          ...prev,
+          latitude: lat,
+          longitude: lon,
+        }));
+        setGpsDetected(true);
+      },
+      (err) => {
+        setIsDetectingLocation(false);
+        console.warn('GPS location request was skipped or timed out:', err.message);
+      },
+      { timeout: 8000 }
+    );
+  };
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('UPI_QR');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -160,10 +193,21 @@ export const CheckoutPage: React.FC = () => {
 
           {/* Delivery Address */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4 shadow-sm transition-colors">
-            <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Farm / Delivery Address</span>
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Farm / Delivery Address</span>
+              </h3>
+              <button
+                type="button"
+                onClick={handleDetectGPS}
+                disabled={isDetectingLocation}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-100 transition-colors"
+              >
+                <MapPin className={`w-3.5 h-3.5 ${isDetectingLocation ? 'animate-bounce' : ''}`} />
+                <span>{gpsDetected ? 'GPS Location Linked' : isDetectingLocation ? 'Locating...' : 'Use My GPS Location'}</span>
+              </button>
+            </div>
 
             <div className="space-y-4">
               <div>

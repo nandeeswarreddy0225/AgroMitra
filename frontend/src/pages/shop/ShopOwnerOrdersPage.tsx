@@ -27,6 +27,10 @@ import {
   updateOrderStatusApi,
   getShopDeliveryBoysApi,
   assignDeliveryBoyToOrderApi,
+  acceptShopOrderApi,
+  rejectShopOrderApi,
+  prepareShopOrderApi,
+  readyForPickupShopOrderApi,
 } from '../../services/api';
 import { ShopOwnerOrderView, OrderStatus, OrderPaymentStatus } from '../../types/order';
 import { DeliveryBoy } from '../../types/delivery';
@@ -87,6 +91,92 @@ export const ShopOwnerOrdersPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleAcceptNearbyOrder = async (orderId: string, orderNumber: string) => {
+    setUpdatingId(orderId);
+    setErrorMsg(null);
+    try {
+      const res = await acceptShopOrderApi(orderId);
+      if (res.success) {
+        setSuccessMsg(`Order #${orderNumber} successfully accepted! It is now ready for preparation.`);
+        await fetchData();
+      }
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        setErrorMsg(err.response.data.message);
+      } else {
+        setErrorMsg(`Failed to accept order #${orderNumber}.`);
+      }
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleRejectNearbyOrder = async (orderId: string, orderNumber: string, reason: string) => {
+    if (!reason.trim()) {
+      setErrorMsg('Please select or specify a reason for declining this order.');
+      return;
+    }
+    setUpdatingId(orderId);
+    setErrorMsg(null);
+    try {
+      const res = await rejectShopOrderApi(orderId, reason.trim());
+      if (res.success) {
+        setSuccessMsg(`Order #${orderNumber} declined. Automatically rerouted to next nearest store.`);
+        setRejectModalOrder(null);
+        setRejectionReason('');
+        await fetchData();
+      }
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        setErrorMsg(err.response.data.message);
+      } else {
+        setErrorMsg(`Failed to decline order #${orderNumber}.`);
+      }
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handlePrepareNearbyOrder = async (orderId: string, orderNumber: string) => {
+    setUpdatingId(orderId);
+    setErrorMsg(null);
+    try {
+      const res = await prepareShopOrderApi(orderId);
+      if (res.success) {
+        setSuccessMsg(`Order #${orderNumber} marked as PREPARING.`);
+        await fetchData();
+      }
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        setErrorMsg(err.response.data.message);
+      } else {
+        setErrorMsg(`Failed to advance order #${orderNumber} to PREPARING.`);
+      }
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleReadyForPickupOrder = async (orderId: string, orderNumber: string) => {
+    setUpdatingId(orderId);
+    setErrorMsg(null);
+    try {
+      const res = await readyForPickupShopOrderApi(orderId);
+      if (res.success) {
+        setSuccessMsg(`Order #${orderNumber} marked as READY FOR PICKUP.`);
+        await fetchData();
+      }
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        setErrorMsg(err.response.data.message);
+      } else {
+        setErrorMsg(`Failed to advance order #${orderNumber} to READY FOR PICKUP.`);
+      }
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const handleUpdateStatus = async (
     orderId: string,
@@ -200,8 +290,12 @@ export const ShopOwnerOrdersPage: React.FC = () => {
   // Filter orders based on active tab and search query
   const filteredOrders = orders.filter((order) => {
     // Tab filter
-    if (activeTab === 'PENDING' && order.status !== 'PENDING') return false;
-    if (activeTab === 'IN_PROGRESS' && !['ACCEPTED', 'PROCESSING', 'PACKED', 'DISPATCHED'].includes(order.status)) return false;
+    if (activeTab === 'PENDING' && !(['PENDING', 'WAITING_FOR_SHOP'].includes(order.status) && !order.acceptedShopOwner)) return false;
+    if (
+      activeTab === 'IN_PROGRESS' &&
+      !['SHOP_ACCEPTED', 'ACCEPTED', 'PREPARING', 'PROCESSING', 'READY_FOR_PICKUP', 'READY_FOR_DELIVERY', 'PACKED', 'OUT_FOR_DELIVERY', 'DISPATCHED'].includes(order.status)
+    )
+      return false;
     if (activeTab === 'DELIVERED' && !['DELIVERED', 'COMPLETED'].includes(order.status)) return false;
     if (activeTab === 'CANCELLED' && !['CANCELLED', 'REJECTED'].includes(order.status)) return false;
 
@@ -219,8 +313,10 @@ export const ShopOwnerOrdersPage: React.FC = () => {
 
   const counts = {
     ALL: orders.length,
-    PENDING: orders.filter((o) => o.status === 'PENDING').length,
-    IN_PROGRESS: orders.filter((o) => ['ACCEPTED', 'PROCESSING', 'PACKED', 'DISPATCHED'].includes(o.status)).length,
+    PENDING: orders.filter((o) => ['PENDING', 'WAITING_FOR_SHOP'].includes(o.status) && !o.acceptedShopOwner).length,
+    IN_PROGRESS: orders.filter((o) =>
+      ['SHOP_ACCEPTED', 'ACCEPTED', 'PREPARING', 'PROCESSING', 'READY_FOR_PICKUP', 'READY_FOR_DELIVERY', 'PACKED', 'OUT_FOR_DELIVERY', 'DISPATCHED'].includes(o.status)
+    ).length,
     DELIVERED: orders.filter((o) => ['DELIVERED', 'COMPLETED'].includes(o.status)).length,
     CANCELLED: orders.filter((o) => ['CANCELLED', 'REJECTED'].includes(o.status)).length,
   };
@@ -474,12 +570,30 @@ export const ShopOwnerOrdersPage: React.FC = () => {
                       </span>
                     </div>
 
+                    {/* Distance from Store Badge */}
+                    {order.distanceKm !== undefined && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase hidden sm:inline">Distance:</span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          <MapPin className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                          <span>{order.distanceKm} km away</span>
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Nearby Assignment Indicator */}
+                    {order.isAssignedToMe && !order.acceptedShopOwner && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700">
+                        Assigned To Your Store
+                      </span>
+                    )}
+
                     {/* Progressive Fulfillment Actions */}
                     <div className="flex items-center gap-2 ml-auto sm:ml-2">
-                      {order.status === 'PENDING' && (
+                      {['PENDING', 'WAITING_FOR_SHOP'].includes(order.status) && !order.acceptedShopOwner && (
                         <>
                           <button
-                            onClick={() => handleUpdateStatus(order.id, order.orderNumber, 'ACCEPTED')}
+                            onClick={() => handleAcceptNearbyOrder(order.id, order.orderNumber)}
                             disabled={isUpdating}
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors disabled:opacity-50"
                           >
@@ -492,13 +606,13 @@ export const ShopOwnerOrdersPage: React.FC = () => {
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-rose-300 dark:border-rose-700 bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition-colors disabled:opacity-50"
                           >
                             <Ban className="w-3.5 h-3.5" />
-                            <span>Reject</span>
+                            <span>Decline</span>
                           </button>
                         </>
                       )}
 
                       {/* Assign Delivery Partner Button */}
-                      {['ACCEPTED', 'PROCESSING', 'PACKED', 'DISPATCHED'].includes(order.status) && (
+                      {['SHOP_ACCEPTED', 'ACCEPTED', 'PREPARING', 'PROCESSING', 'READY_FOR_PICKUP', 'PACKED', 'DISPATCHED'].includes(order.status) && (
                         <button
                           onClick={() => setAssignModalOrder({ id: order.id, orderNumber: order.orderNumber })}
                           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm transition-colors"
@@ -508,25 +622,25 @@ export const ShopOwnerOrdersPage: React.FC = () => {
                         </button>
                       )}
 
-                      {order.status === 'ACCEPTED' && (
+                      {['SHOP_ACCEPTED', 'ACCEPTED'].includes(order.status) && (
                         <button
-                          onClick={() => handleUpdateStatus(order.id, order.orderNumber, 'PREPARING')}
+                          onClick={() => handlePrepareNearbyOrder(order.id, order.orderNumber)}
                           disabled={isUpdating}
                           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-colors disabled:opacity-50"
                         >
                           <Box className="w-3.5 h-3.5" />
-                          <span>Mark Preparing</span>
+                          <span>Start Preparing</span>
                         </button>
                       )}
 
                       {['PREPARING', 'PROCESSING'].includes(order.status) && (
                         <button
-                          onClick={() => handleUpdateStatus(order.id, order.orderNumber, 'READY_FOR_DELIVERY')}
+                          onClick={() => handleReadyForPickupOrder(order.id, order.orderNumber)}
                           disabled={isUpdating}
                           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-colors disabled:opacity-50"
                         >
                           <Box className="w-3.5 h-3.5" />
-                          <span>Ready for Delivery</span>
+                          <span>Ready for Pickup</span>
                         </button>
                       )}
 
@@ -849,19 +963,37 @@ export const ShopOwnerOrdersPage: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Please provide a reason for rejecting this order. The farmer will be notified and any reserved product inventory will be automatically restored to your stock.
+              Please specify the reason for declining this order. The system will automatically reroute the order to the next closest eligible retail store.
             </p>
+
+            {/* Quick Reason Chips */}
+            <div className="flex flex-wrap gap-2">
+              {['Out of stock', 'Unable to fulfill', 'Store closed', 'Other'].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setRejectionReason(preset === 'Other' ? '' : preset)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                    rejectionReason === preset
+                      ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-400 text-rose-700 dark:text-rose-300 font-bold'
+                      : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Reason for Rejection <span className="text-rose-500">*</span>
+                Reason Details <span className="text-rose-500">*</span>
               </label>
               <textarea
                 rows={3}
                 required
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="e.g. Out of stock, delivery location unreachable, etc."
+                placeholder="Select a reason above or provide specific explanation..."
                 className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 rounded-xl text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
               />
             </div>
@@ -878,17 +1010,16 @@ export const ShopOwnerOrdersPage: React.FC = () => {
               </button>
               <button
                 onClick={() =>
-                  handleUpdateStatus(
+                  handleRejectNearbyOrder(
                     rejectModalOrder.id,
                     rejectModalOrder.orderNumber,
-                    'REJECTED',
-                    rejectionReason || 'Supplier unable to fulfill'
+                    rejectionReason || 'Unable to fulfill'
                   )
                 }
                 disabled={!rejectionReason.trim()}
                 className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition-colors disabled:opacity-50"
               >
-                Confirm Rejection
+                Confirm Decline & Reroute
               </button>
             </div>
           </div>

@@ -85,8 +85,14 @@ mobile/package-lock.json
 
 # Scratch & Temporary Diagnostic Scripts
 backend/backup_old_model/
+backend/backup_pre_v3_promotion_20260914/
+backend/crop_disease_model_v2.onnx
 backend/src/scripts/check_current_users.ts
 backend/src/scripts/inspect_vercel_bundle.ts
 backend/src/tests/inspect_onnx_model.ts
 backend/src/tests/test_onnx_inference.ts
 backend/src/tests/test_raw_onnx_potato.ts
+ai-service/datasets/
+ai-service/*.pth
+ai-service/*.onnx
+ai-service/*.pt

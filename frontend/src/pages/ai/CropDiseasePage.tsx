@@ -9,14 +9,12 @@ import {
   RefreshCw,
   Loader2,
   ShieldAlert,
-  ArrowRight,
   Activity,
   Calendar,
   Trash2,
   Stethoscope,
   SwitchCamera,
   X,
-  Search,
   Leaf,
   CheckCircle,
   Smartphone,
@@ -25,9 +23,23 @@ import {
   HeartPulse,
   Bug,
   Lightbulb,
+  MapPin,
+  ShoppingCart,
+  Truck,
+  Check,
+  Store,
 } from 'lucide-react';
-import { analyzeCropImageApi, getCropAnalysisHistoryApi, deleteCropAnalysisApi } from '../../services/api';
-import { CropAnalysis, StructuredRecommendation } from '../../types/cropHealth';
+import {
+  analyzeCropImageApi,
+  getCropAnalysisHistoryApi,
+  deleteCropAnalysisApi,
+  createOrderApi,
+} from '../../services/api';
+import {
+  CropAnalysis,
+  StructuredRecommendation,
+  RecommendedProduct,
+} from '../../types/cropHealth';
 import { useTranslation } from '../../context/LanguageContext';
 import axios from 'axios';
 
@@ -38,7 +50,22 @@ export const CropDiseasePage: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentResult, setCurrentResult] = useState<CropAnalysis | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [unsupportedInfo, setUnsupportedInfo] = useState<{ message: string; detectedCrop?: string } | null>(null);
   const [showTop5, setShowTop5] = useState(false);
+
+  // Farmer Geolocation
+  const [userLocation, setUserLocation] = useState<{ latitude?: number; longitude?: number }>({});
+
+  // Direct Nearby Shop Ordering State (Part 7, 8, 9)
+  const [orderingProduct, setOrderingProduct] = useState<RecommendedProduct | null>(null);
+  const [orderQuantity, setOrderQuantity] = useState<number>(1);
+  const [orderPaymentMethod, setOrderPaymentMethod] = useState<'CASH_ON_DELIVERY' | 'UPI_QR' | 'RAZORPAY'>('CASH_ON_DELIVERY');
+  const [deliveryStreet, setDeliveryStreet] = useState<string>('');
+  const [deliveryCity, setDeliveryCity] = useState<string>('');
+  const [deliveryPincode, setDeliveryPincode] = useState<string>('');
+  const [isPlacingOrder, setIsPlacingOrder] = useState<boolean>(false);
+  const [orderSuccess, setOrderSuccess] = useState<{ orderNumber: string; orderId: string } | null>(null);
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   // Real-time camera & diagnostics state
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -104,6 +131,20 @@ export const CropDiseasePage: React.FC = () => {
 
   useEffect(() => {
     fetchHistory();
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLocation({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+        },
+        () => {
+          // Geolocation permission optional
+        },
+        { timeout: 8000, enableHighAccuracy: false }
+      );
+    }
   }, []);
 
   // Stop active media stream
@@ -287,56 +328,137 @@ export const CropDiseasePage: React.FC = () => {
     stopCameraStream();
   };
 
+  // Direct Order Modal Handlers (Part 7, 8, 9)
+  const handleOpenOrderModal = (prod: RecommendedProduct) => {
+    setOrderingProduct(prod);
+    setOrderQuantity(1);
+    setOrderPaymentMethod('CASH_ON_DELIVERY');
+    setDeliveryStreet(prod.shop.address || 'Agricultural Field / Farm Gate');
+    setDeliveryCity(prod.shop.city || 'Local District');
+    setDeliveryPincode(prod.shop.pincode || '518001');
+    setOrderSuccess(null);
+    setOrderError(null);
+  };
+
+  const handleCloseOrderModal = () => {
+    setOrderingProduct(null);
+    setOrderSuccess(null);
+    setOrderError(null);
+  };
+
+  const handleConfirmDirectOrder = async () => {
+    if (!orderingProduct) return;
+    setIsPlacingOrder(true);
+    setOrderError(null);
+    try {
+      const res = await createOrderApi({
+        productId: orderingProduct.productId,
+        quantity: orderQuantity,
+        shopOwnerId: orderingProduct.shop.shopOwnerId,
+        deliveryAddress: {
+          street: deliveryStreet.trim() || 'Agricultural Field / Farm Gate',
+          city: deliveryCity.trim() || orderingProduct.shop.city || 'Local District',
+          state: orderingProduct.shop.state || 'Andhra Pradesh',
+          pincode: deliveryPincode.trim() || orderingProduct.shop.pincode || '518001',
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+        },
+        paymentMethod: orderPaymentMethod,
+      });
+
+      if (res.success && res.order) {
+        setOrderSuccess({
+          orderNumber: res.order.orderNumber,
+          orderId: res.order.id || (res.order as any)._id || '',
+        });
+      } else {
+        setOrderError(res.message || 'Failed to place order. Please try again.');
+      }
+    } catch (err: any) {
+      setOrderError(
+        err.response?.data?.message || err.message || 'Failed to place direct shop order.'
+      );
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  };
+
   // Run AI analysis
   const handleAnalyze = async () => {
     if (!selectedFile) {
-      setErrorMessage('Please capture or upload a leaf photograph before running diagnosis.');
+      setErrorMessage('Please capture or upload a crop leaf photograph before running diagnosis.');
       return;
     }
 
     setIsAnalyzing(true);
     setErrorMessage(null);
+    setUnsupportedInfo(null);
+    setCurrentResult(null);
 
     try {
-      const res = await analyzeCropImageApi(selectedFile);
-      if (res.success && (res.analysis || res.crop)) {
+      const res = await analyzeCropImageApi(selectedFile, userLocation);
+      if (res.success && res.isValid === true && res.is_valid !== false && (res.crop || res.species)) {
         const baseAnalysis = res.analysis || ({} as any);
+        const speciesName = res.species || res.plant?.name || baseAnalysis.species || 'Crop';
         const fullResult: CropAnalysis = {
           ...baseAnalysis,
           id: baseAnalysis.id || String(Date.now()),
           farmer: baseAnalysis.farmer || '',
           imageName: baseAnalysis.imageName || selectedFile.name,
-          crop: res.crop || baseAnalysis.crop || 'Unknown Plant',
-          disease: res.condition || baseAnalysis.disease || 'Unknown Condition',
+          crop: res.crop || speciesName,
+          disease: res.condition || res.disease || baseAnalysis.disease || 'Healthy Crop',
+          species: speciesName,
+          isSupportedSpecies: true,
           confidence: res.confidence !== undefined ? res.confidence : (baseAnalysis.confidence ?? 0),
+          speciesConfidence: res.speciesConfidence ?? (res.confidence !== undefined ? res.confidence : (baseAnalysis.confidence ?? 0)),
+          diseaseConfidence: res.diseaseConfidence ?? (res.confidence !== undefined ? res.confidence : 0),
+          speciesSource: res.speciesSource || 'EXISTING_ONNX',
+          healthStatus: res.healthStatus || (res.is_healthy ? 'Healthy' : 'Disease Detected'),
+          diagnosisStatus: res.diagnosisStatus || (res.is_healthy ? 'HEALTHY' : 'DIAGNOSED'),
           isHealthy: res.is_healthy !== undefined ? res.is_healthy : (baseAnalysis.isHealthy ?? false),
           isConfident: res.confidence !== undefined ? res.confidence >= 0.35 : (baseAnalysis.isConfident ?? true),
+          isValid: true,
+          is_valid: true,
+          isPlant: true,
+          products: res.products || [],
+          nearbyShops: res.nearbyShops || [],
           plant: res.plant || baseAnalysis.plant,
           health: res.health || baseAnalysis.health,
           diagnosis: res.diagnosis !== undefined ? res.diagnosis : baseAnalysis.diagnosis,
-          severity: res.severity || baseAnalysis.severity || 'Unknown',
+          severity: res.severity || baseAnalysis.severity || 'None',
           recommendation: res.recommendation || baseAnalysis.recommendation,
+          recommendations: res.recommendations || baseAnalysis.recommendedActions || [],
           safety_note: res.safety_note || (typeof res.recommendation === 'object' ? (res.recommendation as any)?.safety_note : undefined),
           top5: res.top5 || baseAnalysis.top5,
           symptoms: baseAnalysis.symptoms || [],
-          recommendedActions: baseAnalysis.recommendedActions || [],
+          recommendedActions: baseAnalysis.recommendedActions || res.recommendations || [],
           disclaimer: res.safety_note || baseAnalysis.disclaimer || 'AgroMitra AI decision-support tool.',
           createdAt: baseAnalysis.createdAt || new Date().toISOString(),
           updatedAt: baseAnalysis.updatedAt || new Date().toISOString(),
         };
         setCurrentResult(fullResult);
+        setUnsupportedInfo(null);
         setShowTop5(true);
         fetchHistory();
       } else {
-        setErrorMessage(res.message || 'Analysis failed. Please try again.');
+        const msg = res.message || 'Unable to confidently identify a supported plant species. Please upload a clear crop leaf photo.';
+        setErrorMessage(msg);
+        setUnsupportedInfo({ message: msg, detectedCrop: res.detectedCrop });
+        setCurrentResult(null);
       }
     } catch (err: unknown) {
+      setCurrentResult(null);
       if (axios.isAxiosError(err) && err.response?.data?.message) {
-        setErrorMessage(err.response.data.message);
+        const msg = err.response.data.message;
+        setErrorMessage(msg);
+        setUnsupportedInfo({ message: msg, detectedCrop: err.response.data.detectedCrop });
       } else if (err instanceof Error) {
         setErrorMessage(err.message);
+        setUnsupportedInfo({ message: err.message });
       } else {
-        setErrorMessage('AI Service communication failed. Ensure the API service is reachable.');
+        const msg = 'Unable to confidently identify a supported plant species. Please upload a clear crop leaf photo.';
+        setErrorMessage(msg);
+        setUnsupportedInfo({ message: msg });
       }
     } finally {
       setIsAnalyzing(false);
@@ -347,6 +469,7 @@ export const CropDiseasePage: React.FC = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
     setCurrentResult(null);
+    setUnsupportedInfo(null);
     setErrorMessage(null);
     setFileDetails('No file selected');
     if (galleryInputRef.current) galleryInputRef.current.value = '';
@@ -365,20 +488,6 @@ export const CropDiseasePage: React.FC = () => {
     } catch (err) {
       console.error('Failed to delete history record:', err);
     }
-  };
-
-  const getTreatmentKeyword = (diseaseName: string) => {
-    const lower = diseaseName.toLowerCase();
-    if (lower.includes('blight') || lower.includes('mold') || lower.includes('rust') || lower.includes('scab')) {
-      return 'Fungicides';
-    }
-    if (lower.includes('virus') || lower.includes('whitefly') || lower.includes('pest') || lower.includes('insect')) {
-      return 'Insecticides';
-    }
-    if (lower.includes('bacterial')) {
-      return 'Bio Products';
-    }
-    return 'Crop Protection Products';
   };
 
   return (
@@ -716,34 +825,84 @@ export const CropDiseasePage: React.FC = () => {
 
         {/* Right Column: AI Diagnosis Results Display */}
         <div className="lg:col-span-6 space-y-6">
-          {currentResult ? (
+          {unsupportedInfo ? (
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border-2 border-rose-300 dark:border-rose-800 shadow-md space-y-6 transition-colors">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-black px-3 py-1 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700 flex items-center gap-1.5">
+                  <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                  <span>UNSUPPORTED IMAGE</span>
+                </span>
+                {unsupportedInfo.detectedCrop && (
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                    Detected: {unsupportedInfo.detectedCrop}
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-2.5">
+                <h3 className="text-xl font-heading font-black text-rose-700 dark:text-rose-400">
+                  {unsupportedInfo.message}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  AgroMitra AI Scanner performs botanical species verification across all 18 supported crop types. Non-plant photos, blurry or blank images, background objects, and unsupported plant species are safely rejected to prevent inaccurate diagnoses.
+                </p>
+              </div>
+
+              {previewUrl && (
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                  <div className="w-14 h-14 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-600 shrink-0">
+                    <img src={previewUrl} alt="Rejected Specimen" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 space-y-0.5">
+                    <div className="font-semibold text-slate-700 dark:text-slate-200">Uploaded Specimen Rejected</div>
+                    <div>Status: Unsupported or Non-Foliar Specimen</div>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleResetScanner}
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-heading font-extrabold text-sm transition-all shadow-md"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Scan Another Leaf / Upload Crop Leaf</span>
+                </button>
+              </div>
+            </div>
+          ) : currentResult ? (
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 transition-colors">
               {/* Diagnosis Header */}
               <div className="flex flex-col sm:flex-row sm:items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-5 gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Universal Leaf Scanner</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      {(currentResult.plant?.name || currentResult.species || 'Crop')} Leaf Scanner
+                    </span>
+                    <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>VALID {(currentResult.plant?.name || currentResult.species || 'CROP').toUpperCase()} LEAF</span>
+                    </span>
                     <span
                       className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
-                        !currentResult.isConfident || currentResult.plant?.name === 'Unknown'
-                          ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
-                          : (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
+                        (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
                           ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
                           : 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
                       }`}
                     >
-                      {!currentResult.isConfident || currentResult.plant?.name === 'Unknown'
-                        ? 'UNKNOWN PLANT / LOW CONFIDENCE'
-                        : (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
+                      {(currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
                         ? 'HEALTHY LEAF'
                         : `${currentResult.health?.status?.toUpperCase() || 'DISEASED'}`}
                     </span>
                   </div>
 
                   <div className="mt-1">
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">SPECIES:</div>
                     <h3 className="text-2xl font-heading font-black text-slate-900 dark:text-white">
-                      {currentResult.plant?.displayName || currentResult.plant?.name || currentResult.crop}
+                      {currentResult.crop}
                     </h3>
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-2">DISEASE:</div>
                     <div className="text-base font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
                       {currentResult.diagnosis?.name || currentResult.disease}
                     </div>
@@ -1060,27 +1219,92 @@ export const CropDiseasePage: React.FC = () => {
                 </div>
               )}
 
-              {/* Direct Marketplace Link */}
-              {!currentResult.isHealthy && currentResult.isConfident && (
-                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/80 space-y-3">
-                  <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-bold text-xs uppercase tracking-wider">
-                    <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                    <span>Suggested Treatment Category</span>
+              {/* Part 6 & 7: RECOMMENDED PRODUCTS & DIRECT NEARBY SHOP ORDER */}
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-teal-50/60 to-slate-50 dark:from-slate-800 dark:via-slate-800/90 dark:to-emerald-950/40 border-2 border-emerald-200/90 dark:border-emerald-800/80 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200 font-extrabold text-sm uppercase tracking-wider">
+                    <Store className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Recommended Products & Nearby Retail Stores</span>
                   </div>
-                  <p className="text-xs text-amber-800 dark:text-amber-300">
-                    Sourced from verified Agri Store Partners with batch quality certification.
-                  </p>
-
-                  <Link
-                    to={`/marketplace?category=${encodeURIComponent(getTreatmentKeyword(currentResult.disease))}`}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-heading font-bold transition-all shadow-sm"
-                  >
-                    <Search className="w-3.5 h-3.5" />
-                    <span>Search {getTreatmentKeyword(currentResult.disease)} in Marketplace</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300">
+                    Direct Farm Gate Dispatch
+                  </span>
                 </div>
-              )}
+
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Real stock verified directly from certified Agri Store Partners. Direct home or field delivery without requiring a physical shop visit.
+                </p>
+
+                {currentResult.products && currentResult.products.length > 0 ? (
+                  <div className="space-y-3">
+                    {currentResult.products.slice(0, 5).map((prod) => (
+                      <div
+                        key={prod.productId}
+                        className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all"
+                      >
+                        <div className="space-y-1.5 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-heading font-black text-sm text-slate-900 dark:text-white">
+                              {prod.name}
+                            </span>
+                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                              {prod.category}
+                            </span>
+                            {prod.brand && prod.brand !== 'Generic' && (
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                Brand: {prod.brand}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
+                              <Store className="w-3.5 h-3.5 text-emerald-600" />
+                              {prod.shop.shopName}
+                            </span>
+                            {prod.shop.distanceKm !== undefined && (
+                              <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-black bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md text-[11px] border border-emerald-200 dark:border-emerald-800">
+                                <MapPin className="w-3 h-3" />
+                                {prod.shop.distanceKm.toFixed(1)} km away
+                              </span>
+                            )}
+                            <span className="text-slate-600 dark:text-slate-400 text-[11px]">
+                              Stock: <strong className="text-slate-900 dark:text-white font-mono">{prod.stock} {prod.unit}</strong>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
+                          <div className="text-right">
+                            <div className="text-lg font-heading font-black text-slate-900 dark:text-white font-mono">
+                              ₹{prod.price}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-medium">per {prod.unit}</div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenOrderModal(prod)}
+                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-heading font-black shadow-sm transition-all"
+                          >
+                            <ShoppingCart className="w-3.5 h-3.5" />
+                            <span>ORDER NOW</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="font-bold text-slate-700 dark:text-slate-300">
+                      No matching product is currently available nearby.
+                    </div>
+                    <p className="text-[11px]">
+                      AgroMitra only reflects real, verified retail inventory. You may also consult your local AEO officer.
+                    </p>
+                  </div>
+                )}
+              </div>
 
               {/* Scan Another Leaf Action Button */}
               <div className="pt-2">
@@ -1183,6 +1407,201 @@ export const CropDiseasePage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* DIRECT NEARBY SHOP ORDER MODAL (Part 8 & 9) */}
+      {orderingProduct && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-6 relative max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={handleCloseOrderModal}
+              className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {orderSuccess ? (
+              <div className="text-center space-y-4 py-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-10 h-10" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-2xl font-heading font-black text-slate-900 dark:text-white">
+                    Order Placed Successfully!
+                  </h3>
+                  <p className="text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    Order #{orderSuccess.orderNumber}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                    Your order has been routed to <strong>{orderingProduct.shop.shopName}</strong>. The retailer will pack and dispatch directly to your farm gate. No shop visit required!
+                  </p>
+                </div>
+
+                <div className="pt-3 flex flex-col sm:flex-row gap-3">
+                  <Link
+                    to="/orders"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-heading font-bold shadow-md transition-all"
+                  >
+                    <Truck className="w-4 h-4" />
+                    <span>Track Order in Farmer Orders</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleCloseOrderModal}
+                    className="px-5 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider">
+                    Direct Nearby Store Dispatch
+                  </span>
+                  <h3 className="text-xl font-heading font-black text-slate-900 dark:text-white">
+                    Order from {orderingProduct.shop.shopName}
+                  </h3>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>
+                      {orderingProduct.shop.distanceKm !== undefined
+                        ? `${orderingProduct.shop.distanceKm.toFixed(1)} km away`
+                        : orderingProduct.shop.city || 'Verified Retail Partner'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Product Summary */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                  <div>
+                    <div className="font-heading font-bold text-sm text-slate-900 dark:text-white">
+                      {orderingProduct.name}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      ₹{orderingProduct.price} per {orderingProduct.unit} • In Stock: {orderingProduct.stock}
+                    </div>
+                  </div>
+
+                  {/* Quantity selector */}
+                  <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => setOrderQuantity((q) => Math.max(1, q - 1))}
+                      className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-black text-sm"
+                    >
+                      -
+                    </button>
+                    <span className="font-mono font-black text-sm text-slate-900 dark:text-white px-2">
+                      {orderQuantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setOrderQuantity((q) => Math.min(orderingProduct.stock, q + 1))}
+                      className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-black text-sm"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Delivery Address Input */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                    Delivery Address (Farm Gate / Residence)
+                  </label>
+                  <input
+                    type="text"
+                    value={deliveryStreet}
+                    onChange={(e) => setDeliveryStreet(e.target.value)}
+                    placeholder="Street / Farm Gate / Landmark"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={deliveryCity}
+                      onChange={(e) => setDeliveryCity(e.target.value)}
+                      placeholder="Village / City"
+                      className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                    />
+                    <input
+                      type="text"
+                      value={deliveryPincode}
+                      onChange={(e) => setDeliveryPincode(e.target.value)}
+                      placeholder="PIN Code"
+                      className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Payment Method Selector */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                    Payment Option
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'CASH_ON_DELIVERY', label: 'Cash on Delivery (COD)' },
+                      { id: 'UPI_QR', label: 'Direct UPI QR' },
+                      { id: 'RAZORPAY', label: 'Razorpay Online' },
+                    ].map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setOrderPaymentMethod(m.id as any)}
+                        className={`p-2.5 rounded-xl border text-[11px] font-bold text-center transition-all ${
+                          orderPaymentMethod === m.id
+                            ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-500 text-emerald-800 dark:text-emerald-200'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {orderError && (
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs">
+                    {orderError}
+                  </div>
+                )}
+
+                {/* Pricing & Confirmation */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] text-slate-400 uppercase font-semibold">Total Amount</div>
+                    <div className="text-xl font-heading font-black text-slate-900 dark:text-white font-mono">
+                      ₹{orderingProduct.price * orderQuantity}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleConfirmDirectOrder}
+                    disabled={isPlacingOrder}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-heading font-extrabold shadow-md transition-all disabled:opacity-50"
+                  >
+                    {isPlacingOrder ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Placing Direct Order...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Confirm Order (No Shop Visit Required)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

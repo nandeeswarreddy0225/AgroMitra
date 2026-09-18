@@ -508,11 +508,20 @@ export const updateProfile = async (
       user.phone = phone.trim();
     }
     if (address !== undefined && typeof address === 'object') {
+      const lat = address.latitude !== undefined && address.latitude !== null && !isNaN(Number(address.latitude))
+        ? Number(address.latitude)
+        : user.address?.latitude;
+      const lon = address.longitude !== undefined && address.longitude !== null && !isNaN(Number(address.longitude))
+        ? Number(address.longitude)
+        : user.address?.longitude;
+
       user.address = {
         street: address.street !== undefined ? String(address.street).trim() : (user.address?.street || ''),
         city: address.city !== undefined ? String(address.city).trim() : (user.address?.city || ''),
         state: address.state !== undefined ? String(address.state).trim() : (user.address?.state || ''),
         pincode: address.pincode !== undefined ? String(address.pincode).trim() : (user.address?.pincode || ''),
+        latitude: lat,
+        longitude: lon,
       };
       user.markModified('address');
     }

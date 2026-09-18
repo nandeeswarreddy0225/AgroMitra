@@ -5,6 +5,16 @@ import FormData from 'form-data';
 import { CropAnalysis } from '../models/CropAnalysis.model';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { onnxPathologyEngine } from '../services/onnxInference.service';
+import {
+  existingModelProvider,
+  generalPlantIdentificationProvider,
+  diseaseDiagnosisProvider,
+  agriculturalRecommendationProvider,
+  StandardAgriculturalResponse,
+  DiagnosisStatus,
+  SpeciesSource,
+  HealthStatus,
+} from '../services/aiProviders';
 
 const AI_SERVICE_URL = process.env.AI_API_URL || process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
@@ -60,6 +70,11 @@ export const PLANT_SPECIES_DATABASE: Record<string, PlantSpeciesInfo> = {
   Coffee: { scientific: 'Coffea arabica', telugu: 'కాఫీ', family: 'Rubiaceae' },
   Neem: { scientific: 'Azadirachta indica', telugu: 'వేప', family: 'Meliaceae' },
   Bean: { scientific: 'Phaseolus vulgaris', telugu: 'చిక్కుడు', family: 'Fabaceae' },
+  Blueberry: { scientific: 'Vaccinium corymbosum', telugu: 'బ్లూబెర్రీ', family: 'Ericaceae' },
+  Cherry: { scientific: 'Prunus avium', telugu: 'చెర్రీ', family: 'Rosaceae' },
+  Peach: { scientific: 'Prunus persica', telugu: 'పీచ్', family: 'Rosaceae' },
+  Raspberry: { scientific: 'Rubus idaeus', telugu: 'రాస్ప్బెర్రీ', family: 'Rosaceae' },
+  Strawberry: { scientific: 'Fragaria × ananassa', telugu: 'స్ట్రాబెర్రీ', family: 'Rosaceae' },
 };
 
 export interface UniversalPathologyRecord {
@@ -378,6 +393,226 @@ export const UNIVERSAL_PATHOLOGY_DATABASE: Record<string, UniversalPathologyReco
     recommendation: 'Prune cankered twigs before monsoon. Spray Copper Oxychloride (3g/L) + Streptocycline (100mg/L).',
   },
 
+  // --- APPLE BLACK ROT ---
+  'Apple___Black_rot': {
+    plant: 'Apple',
+    plant_display: 'Apple (ఆపిల్)',
+    health_status: 'Diseased',
+    diagnosis: 'Black Rot / Frog-Eye Leaf Spot (నల్ల కుళ్ళు తెగులు - Botryosphaeria obtusa)',
+    severity: 'Moderate',
+    is_healthy: false,
+    symptoms: ['Small purple specks expanding into circular frog-eye lesions with dark borders.'],
+    recommendation: 'Prune out dead wood and cankers. Apply Captan or Thiophanate-methyl fungicides.',
+  },
+
+  // --- CITRUS GREENING ---
+  'Citrus___Citrus_greening': {
+    plant: 'Citrus',
+    plant_display: 'Citrus (నిమ్మ / బత్తాయి)',
+    health_status: 'Diseased',
+    diagnosis: 'Huanglongbing / Citrus Greening (హ్వాంగ్లాంగ్‌బింగ్ - Candidatus Liberibacter)',
+    severity: 'Severe',
+    is_healthy: false,
+    symptoms: ['Asymmetric blotchy mottling on leaves, yellow shoot dieback, and small lopsided bitter fruits.'],
+    recommendation: 'Control Asian citrus psyllid vectors with Imidacloprid. Remove severely infected trees and source disease-free nursery budwood.',
+  },
+
+  // --- CORN NORTHERN LEAF BLIGHT ---
+  'Corn___Northern_Leaf_Blight': {
+    plant: 'Corn',
+    plant_display: 'Corn / Maize (మొక్కజొన్న)',
+    health_status: 'Diseased',
+    diagnosis: 'Northern Corn Leaf Blight (ఆకు ఎండు తెగులు - Exserohilum turcicum)',
+    severity: 'Moderate',
+    is_healthy: false,
+    symptoms: ['Long elliptical grayish-green or tan cigar-shaped lesions on leaf blades.'],
+    recommendation: 'Rotate crops and destroy infected stover. Apply Mancozeb (2.5g/L) upon early lesion appearance.',
+  },
+
+  // --- GRAPE ESCA ---
+  'Grape___Esca': {
+    plant: 'Grape',
+    plant_display: 'Grape (ద్రాక్ష)',
+    health_status: 'Diseased',
+    diagnosis: 'Esca / Black Measles (ఎస్కా తెగులు - Phaeomoniella chlamydospora)',
+    severity: 'Severe',
+    is_healthy: false,
+    symptoms: ["'Tiger-stripe' chlorotic and necrotic patterns between leaf veins."],
+    recommendation: 'Prune during dry weather and seal large pruning wounds with fungicide paste.',
+  },
+
+  // --- RICE BACTERIAL BLIGHT ---
+  'Rice___Bacterial_Blight': {
+    plant: 'Rice',
+    plant_display: 'Rice / Paddy (వరి)',
+    health_status: 'Diseased',
+    diagnosis: 'Bacterial Leaf Blight (బాక్టీరియా ఎండు తెగులు - Xanthomonas oryzae)',
+    severity: 'Severe',
+    is_healthy: false,
+    symptoms: ['Wavy water-soaked yellow-orange lesions progressing from leaf tips along margins.'],
+    recommendation: 'Drain excess stagnant water. Apply Copper Oxychloride (2.5g/L) + Streptocycline (100mg/L) and avoid excess nitrogen.',
+  },
+
+  // --- ADDITIONAL TOMATO DISEASES ---
+  'Tomato___Septoria_leaf_spot': {
+    plant: 'Tomato',
+    plant_display: 'Tomato (టమాటా)',
+    health_status: 'Diseased',
+    diagnosis: 'Septoria Leaf Spot (సెప్టోరియా ఆకు మచ్చ - Septoria lycopersici)',
+    severity: 'Moderate',
+    is_healthy: false,
+    symptoms: ['Numerous small circular spots with gray centers and dark brown borders on lower foliage.'],
+    recommendation: 'Remove lower infected foliage. Apply Chlorothalonil or Mancozeb sprays and mulch soil around plant bases.',
+  },
+  'Tomato___Bacterial_spot': {
+    plant: 'Tomato',
+    plant_display: 'Tomato (టమాటా)',
+    health_status: 'Diseased',
+    diagnosis: 'Bacterial Spot (బాక్టీరియా మచ్చ - Xanthomonas campestris pv. vesicatoria)',
+    severity: 'Moderate',
+    is_healthy: false,
+    symptoms: ['Small angular water-soaked dark brown spots that turn greasy and scabby with yellow chlorotic halos.'],
+    recommendation: 'Apply Copper Hydroxide (2.5g/L) + Streptocycline (100mg/L). Avoid overhead irrigation.',
+  },
+  'Tomato___Spider_mites': {
+    plant: 'Tomato',
+    plant_display: 'Tomato (టమాటా)',
+    health_status: 'Pest Damage',
+    diagnosis: 'Two-Spotted Spider Mites (ఎర్ర నల్లి నష్టం - Tetranychus urticae)',
+    severity: 'Moderate',
+    is_healthy: false,
+    symptoms: ['Fine pale yellow stippling and speckled chlorosis on upper leaf surface with delicate webbing underneath.'],
+    recommendation: 'Spray Spiromesifen (1ml/L) or Wettable Sulfur (3g/L) on lower leaf undersides; wash foliage with strong water sprays.',
+  },
+  'Tomato___Target_Spot': {
+    plant: 'Tomato',
+    plant_display: 'Tomato (టమాటా)',
+    health_status: 'Diseased',
+    diagnosis: 'Target Spot (టార్గెట్ స్పాట్ తెగులు - Corynespora cassiicola)',
+    severity: 'Moderate',
+    is_healthy: false,
+    symptoms: ['Pinpoint brown lesions that enlarge into target-like circular necrotic zones with concentric rings.'],
+    recommendation: 'Ensure proper plant spacing for air circulation. Spray Azoxystrobin or Difenoconazole.',
+  },
+  'Tomato___Mosaic_virus': {
+    plant: 'Tomato',
+    plant_display: 'Tomato (టమాటా)',
+    health_status: 'Diseased',
+    diagnosis: 'Tomato Mosaic Virus (మొజాయిక్ వైరస్ - ToMV)',
+    severity: 'Severe',
+    is_healthy: false,
+    symptoms: ['Mottled light and dark green mosaic patterns, blistering, leaf distortion, and fern-like foliage.'],
+    recommendation: 'Rogue and burn infected plants. Disinfect pruning tools with 10% trisodium phosphate; wash hands before handling.',
+  },
+
+  // --- PEACH ---
+  'Peach___healthy': {
+    plant: 'Peach',
+    plant_display: 'Peach (పీచ్)',
+    health_status: 'Healthy',
+    diagnosis: null,
+    severity: 'None',
+    is_healthy: true,
+    symptoms: ['Clean lanceolate leaves with smooth margins and healthy green color.'],
+    recommendation: 'Maintain regular orchard pruning and balanced winter fertilizing.',
+  },
+  'Peach___Bacterial_spot': {
+    plant: 'Peach',
+    plant_display: 'Peach (పీచ్)',
+    health_status: 'Diseased',
+    diagnosis: 'Bacterial Spot (బాక్టీరియల్ స్పాట్ - Xanthomonas arboricola)',
+    severity: 'Moderate',
+    is_healthy: false,
+    symptoms: ["Small angular water-soaked purple-brown lesions that drop out leaving 'shot-hole' appearance."],
+    recommendation: 'Spray Copper compounds during dormant and bloom stages.',
+  },
+
+  // --- STRAWBERRY ---
+  'Strawberry___healthy': {
+    plant: 'Strawberry',
+    plant_display: 'Strawberry (స్ట్రాబెర్రీ)',
+    health_status: 'Healthy',
+    diagnosis: null,
+    severity: 'None',
+    is_healthy: true,
+    symptoms: ['Trifoliate bright green leaves with serrated margins and healthy crowns.'],
+    recommendation: 'Ensure raised bed drainage, organic straw mulching, and balanced drip irrigation.',
+  },
+  'Strawberry___Leaf_scorch': {
+    plant: 'Strawberry',
+    plant_display: 'Strawberry (స్ట్రాబెర్రీ)',
+    health_status: 'Diseased',
+    diagnosis: 'Leaf Scorch (ఆకు ముడుత తెగులు - Diplocarpon earlianum)',
+    severity: 'Moderate',
+    is_healthy: false,
+    symptoms: ['Small dark purple irregular blotches that coalesce into widespread brown scorching.'],
+    recommendation: 'Remove old infected leaves after harvest; spray Captan or Copper fungicide.',
+  },
+
+  // --- CHERRY, BLUEBERRY, RASPBERRY, SOYBEAN ---
+  'Cherry___healthy': {
+    plant: 'Cherry',
+    plant_display: 'Cherry (చెర్రీ)',
+    health_status: 'Healthy',
+    diagnosis: null,
+    severity: 'None',
+    is_healthy: true,
+    symptoms: ['Deep green glossy ovate leaves without shot-holes or powdery mildew.'],
+    recommendation: 'Maintain proper tree canopy pruning and orchard floor hygiene.',
+  },
+  'Cherry___Powdery_mildew': {
+    plant: 'Cherry',
+    plant_display: 'Cherry (చెర్రీ)',
+    health_status: 'Diseased',
+    diagnosis: 'Powdery Mildew (బూడిద తెగులు - Podosphaera clandestina)',
+    severity: 'Moderate',
+    is_healthy: false,
+    symptoms: ['White powdery superficial fungal patches causing leaf curling and distorted shoot growth.'],
+    recommendation: 'Apply Sulfur or Myclobutanil sprays starting from shuck fall stage.',
+  },
+  'Blueberry___healthy': {
+    plant: 'Blueberry',
+    plant_display: 'Blueberry (బ్లూబెర్రీ)',
+    health_status: 'Healthy',
+    diagnosis: null,
+    severity: 'None',
+    is_healthy: true,
+    symptoms: ['Glossy elliptical dark green foliage without chlorosis or leaf spots.'],
+    recommendation: 'Maintain acidic soil pH (4.5–5.2) with organic pine bark mulch.',
+  },
+  'Raspberry___healthy': {
+    plant: 'Raspberry',
+    plant_display: 'Raspberry (రాస్ప్బెర్రీ)',
+    health_status: 'Healthy',
+    diagnosis: null,
+    severity: 'None',
+    is_healthy: true,
+    symptoms: ['Compound pinnate green leaves with silvery undersides and healthy cane vigor.'],
+    recommendation: 'Prune out spent floricanes after harvest and maintain trellis support.',
+  },
+  'Soybean___healthy': {
+    plant: 'Soybean',
+    plant_display: 'Soybean (సోయాబీన్)',
+    health_status: 'Healthy',
+    diagnosis: null,
+    severity: 'None',
+    is_healthy: true,
+    symptoms: ['Trifoliate lush green leaves without rust pustules or bacterial pustules.'],
+    recommendation: 'Maintain proper rhizobium inoculation and balanced phosphorus fertilization.',
+  },
+
+  // --- BACKGROUND NON-LEAF ---
+  'Background___non_leaf': {
+    plant: 'Non-Leaf Object',
+    plant_display: 'Non-Leaf Object (ఆకు కాదు)',
+    health_status: 'Unknown',
+    diagnosis: null,
+    severity: 'Unknown',
+    is_healthy: false,
+    symptoms: ['Image does not depict agricultural foliage or plant tissue.'],
+    recommendation: 'Please upload a clear close-up photo of a real crop or plant leaf in natural daylight.',
+  },
+
   // --- UNKNOWN / OUT OF DISTRIBUTION ---
   'Unknown___unsupported': {
     plant: 'Unknown',
@@ -410,28 +645,38 @@ import { StructuredRecommendation } from '../services/diseaseGuidance.service';
 
 export interface UniversalScannerResult {
   success: boolean;
+  isValid?: boolean;
+  is_valid?: boolean;
+  isSupportedSpecies?: boolean;
+  species?: string | null;
+  speciesConfidence?: number;
+  disease?: string | null;
+  diseaseConfidence?: number;
+  jointClass?: string;
+  is_tomato?: boolean;
+  detectedCrop?: string;
   modelVersion?: number;
-  plant: {
+  plant?: {
     name: string;
     displayName?: string;
     confidence: number;
   };
-  health: {
+  health?: {
     status: string;
     confidence: number;
   };
-  diagnosis: {
+  diagnosis?: {
     name: string;
     confidence?: number;
   } | null;
-  severity: string;
-  recommendation: any;
+  severity?: string;
+  recommendation?: any;
   structuredRecommendation?: StructuredRecommendation;
   safety_note?: string;
   // Legacy / backward compatibility
   is_confident?: boolean;
   crop?: string;
-  disease?: string;
+  condition?: string;
   is_healthy?: boolean;
   confidence?: number;
   top5?: Array<{
@@ -483,6 +728,19 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
     if (!req.file) {
       res.status(400).json({
         success: false,
+        isValid: false,
+        isPlant: false,
+        species: null,
+        speciesConfidence: null,
+        speciesSource: null,
+        disease: null,
+        diseaseConfidence: null,
+        healthStatus: null,
+        diagnosisStatus: 'INVALID_IMAGE',
+        recommendations: [],
+        products: [],
+        nearbyShops: [],
+        error: 'NO_FILE_UPLOADED',
         message: 'Please upload an image file of the plant leaf to analyze.',
       });
       return;
@@ -490,16 +748,41 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
 
     const { originalname, mimetype, buffer } = req.file;
 
+    // Resolve Farmer coordinates from request body or user profile
+    const customLat =
+      req.body?.latitude !== undefined && req.body?.latitude !== null && !isNaN(Number(req.body.latitude))
+        ? Number(req.body.latitude)
+        : undefined;
+    const customLon =
+      req.body?.longitude !== undefined && req.body?.longitude !== null && !isNaN(Number(req.body.longitude))
+        ? Number(req.body.longitude)
+        : undefined;
+
+    const farmerCoords = {
+      latitude:
+        customLat ??
+        (user?.address?.latitude !== undefined && !isNaN(Number(user.address.latitude))
+          ? Number(user.address.latitude)
+          : undefined),
+      longitude:
+        customLon ??
+        (user?.address?.longitude !== undefined && !isNaN(Number(user.address.longitude))
+          ? Number(user.address.longitude)
+          : undefined),
+    };
+
+    let providerResult: any = null;
     let predictionData: UniversalScannerResult | null = null;
 
-    // 1. In-process deep learning inference using embedded ONNX model
+    // 1. In-process deep learning inference using ExistingModelProvider (ONNX MobileNetV3)
     try {
-      predictionData = await onnxPathologyEngine.predict(buffer, originalname, mimetype);
+      providerResult = await existingModelProvider.process(buffer, originalname, mimetype);
+      predictionData = providerResult.rawResult;
     } catch (onnxErr: any) {
       console.warn('⚠️ [ONNX Engine Notice]: Embedded inference notice:', onnxErr.message);
     }
 
-    // 2. If in-process ONNX did not produce a result, connect to Python AI microservice
+    // Fallback to external AI microservice if in-process inference threw an unexpected error
     if (!predictionData && AI_SERVICE_URL) {
       try {
         const formData = new FormData();
@@ -522,30 +805,159 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       }
     }
 
-    if (!predictionData) {
+    if (!providerResult && !predictionData) {
       res.status(503).json({
         success: false,
+        isValid: false,
+        isPlant: false,
+        species: null,
+        speciesConfidence: null,
+        speciesSource: null,
+        disease: null,
+        diseaseConfidence: null,
+        healthStatus: null,
+        diagnosisStatus: 'INVALID_IMAGE',
+        recommendations: [],
+        products: [],
+        nearbyShops: [],
         error: 'SERVICE_UNAVAILABLE',
         message: 'AI leaf analysis is temporarily unavailable. Please try again.',
       });
       return;
     }
 
-    // If Stage 0 Image Quality check failed or low confidence, return user-facing 400 rejection
-    if (!predictionData.success) {
+    // 2. Image Quality Gate Check
+    if (providerResult?.diagnosisResult?.diagnosisStatus === 'INVALID_IMAGE') {
       res.status(400).json({
         success: false,
-        error: predictionData.error || 'ANALYSIS_FAILED',
-        reason: predictionData.reason || 'invalid_image',
-        message: predictionData.message || 'Please upload or scan a clear crop leaf image.',
-        plant: predictionData.plant,
-        health: predictionData.health,
-        diagnosis: null,
-        severity: 'Unknown',
-        recommendation: predictionData.recommendation,
+        isValid: false,
+        isPlant: false,
+        species: null,
+        speciesConfidence: null,
+        speciesSource: null,
+        disease: null,
+        diseaseConfidence: null,
+        healthStatus: null,
+        diagnosisStatus: 'INVALID_IMAGE',
+        recommendations: [],
+        products: [],
+        nearbyShops: [],
+        error: providerResult.plantResult.error || 'INVALID_IMAGE_QUALITY',
+        message: 'Please upload or scan a clear crop leaf image with adequate illumination.',
+        is_valid: false,
+        isSupportedSpecies: false,
+        is_tomato: false,
       });
       return;
     }
+
+    // 3. Non-Plant Image Gate Check
+    if (providerResult?.diagnosisResult?.diagnosisStatus === 'NON_PLANT') {
+      res.status(400).json({
+        success: false,
+        isValid: false,
+        isPlant: false,
+        species: null,
+        speciesConfidence: null,
+        speciesSource: null,
+        disease: null,
+        diseaseConfidence: null,
+        healthStatus: null,
+        diagnosisStatus: 'NON_PLANT',
+        recommendations: [],
+        products: [],
+        nearbyShops: [],
+        error: 'NON_PLANT',
+        message: 'Non-foliar or non-plant image detected. Disease inference was not run.',
+        is_valid: false,
+        isSupportedSpecies: false,
+        is_tomato: false,
+      });
+      return;
+    }
+
+    // 4. Species Gate Check — Check if in existing model or route to general provider
+    let speciesName: string | null = null;
+    let speciesConfidence: number | null = null;
+    let speciesSource: SpeciesSource = null;
+    let diseaseName: string | null = null;
+    let diseaseConfidence: number | null = null;
+    let healthStatus: HealthStatus = null;
+    let diagnosisStatus: DiagnosisStatus = 'UNKNOWN_SPECIES';
+    let isHealthy = false;
+
+    if (
+      providerResult &&
+      providerResult.plantResult.isSupportedSpecies &&
+      providerResult.plantResult.species
+    ) {
+      // Existing ONNX model taxonomy
+      speciesName = providerResult.plantResult.species;
+      speciesConfidence = providerResult.plantResult.confidence;
+      speciesSource = 'EXISTING_ONNX';
+      diseaseName = providerResult.diagnosisResult.disease;
+      diseaseConfidence = providerResult.diagnosisResult.confidence;
+      healthStatus = providerResult.diagnosisResult.healthStatus;
+      diagnosisStatus = providerResult.diagnosisResult.diagnosisStatus;
+      isHealthy = providerResult.diagnosisResult.isHealthy;
+    } else {
+      // Outside existing 18-crop model: route to GeneralPlantIdentificationProvider
+      const generalResult = await generalPlantIdentificationProvider.identifyPlant(
+        buffer,
+        originalname,
+        mimetype
+      );
+
+      if (!generalResult.isPlant || !generalResult.species) {
+        const errorReason = generalResult.error || 'GENERAL_PLANT_MODEL_NOT_CONFIGURED';
+        res.status(400).json({
+          success: false,
+          isValid: false,
+          isPlant: generalResult.isPlant,
+          species: null,
+          speciesConfidence: null,
+          speciesSource: 'GENERAL_PLANT_MODEL',
+          disease: null,
+          diseaseConfidence: null,
+          healthStatus: null,
+          diagnosisStatus: 'UNKNOWN_SPECIES',
+          recommendations: [],
+          products: [],
+          nearbyShops: [],
+          error: errorReason,
+          reason: 'unsupported_species',
+          message:
+            errorReason === 'GENERAL_PLANT_MODEL_NOT_CONFIGURED'
+              ? 'Botanical species is outside the 18 trained crop classes, and open-world plant vision model is unconfigured.'
+              : 'Unable to confidently identify a supported plant species.',
+          detectedCrop: predictionData?.detectedCrop || undefined,
+          is_valid: false,
+          isSupportedSpecies: false,
+          is_tomato: false,
+        });
+        return;
+      }
+
+      // General model identified species outside 18 crops
+      speciesName = generalResult.species;
+      speciesConfidence = generalResult.confidence;
+      speciesSource = 'GENERAL_PLANT_MODEL';
+
+      const outsideDiagnosis = diseaseDiagnosisProvider.diagnoseOutsideSpecies(speciesName);
+      diseaseName = outsideDiagnosis.disease;
+      diseaseConfidence = outsideDiagnosis.confidence;
+      healthStatus = outsideDiagnosis.healthStatus;
+      diagnosisStatus = outsideDiagnosis.diagnosisStatus;
+      isHealthy = outsideDiagnosis.isHealthy;
+    }
+
+    // 5. Query dynamic real product recommendations and nearby shop inventory
+    const { products, nearbyShops } = await agriculturalRecommendationProvider.getRecommendationsAndShops(
+      speciesName,
+      diseaseName,
+      isHealthy,
+      farmerCoords
+    );
 
     // Base64 thumbnail generation for history display
     let imageDataUri: string | undefined;
@@ -553,67 +965,102 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       imageDataUri = `data:${mimetype};base64,${buffer.toString('base64')}`;
     }
 
-    let analysisRecord: any;
+    const plantInfo = speciesName ? PLANT_SPECIES_DATABASE[speciesName] : null;
+    const cropDisplay =
+      predictionData?.crop ||
+      (plantInfo && speciesName ? `${speciesName} (${plantInfo.telugu})` : speciesName || 'Crop');
 
-    const cropName = predictionData.crop || (predictionData.plant ? predictionData.plant.displayName || predictionData.plant.name : 'Unknown Plant');
-    const diseaseName = predictionData.disease || (predictionData.diagnosis ? predictionData.diagnosis.name : (predictionData.health?.status === 'Healthy' ? 'Healthy Crop' : 'Unknown Condition'));
+    const recText =
+      typeof predictionData?.recommendation === 'string'
+        ? predictionData.recommendation
+        : predictionData?.recommendation?.explanation ||
+          'Continue regular crop care and periodic scouting.';
 
-    const recText = typeof predictionData.recommendation === 'string'
-      ? predictionData.recommendation
-      : (predictionData.recommendation?.explanation || 'Continue regular crop care and periodic scouting.');
-
-    const recActions = predictionData.recommended_actions || (
-      predictionData.recommendation?.disease_management
+    const recActions: string[] =
+      predictionData?.recommended_actions ||
+      (predictionData?.recommendation?.disease_management
         ? [recText, ...predictionData.recommendation.disease_management.slice(0, 2)]
-        : [recText]
-    );
+        : [recText]);
 
-    if (user) {
+    let analysisRecord: any;
+    if (req.user && req.user._id) {
       analysisRecord = await CropAnalysis.create({
-        farmer: user._id,
+        farmer: req.user._id,
         imageName: originalname,
         imageData: imageDataUri,
-        crop: cropName,
-        disease: diseaseName,
-        isHealthy: predictionData.is_healthy ?? (predictionData.health?.status === 'Healthy'),
-        confidence: predictionData.confidence ?? (predictionData.plant?.confidence ? predictionData.plant.confidence / 100 : 0),
-        isConfident: predictionData.is_confident ?? (predictionData.plant?.name !== 'Unknown'),
-        symptoms: predictionData.symptoms || [],
+        crop: cropDisplay,
+        disease: diseaseName || (isHealthy ? 'Healthy Leaf' : 'Pathology Detected'),
+        isHealthy,
+        confidence: speciesConfidence ?? 0,
+        isConfident: (speciesConfidence ?? 0) >= 0.35,
+        symptoms: predictionData?.symptoms || [],
         recommendedActions: recActions,
-        disclaimer: predictionData.disclaimer || DEFAULT_DISCLAIMER,
+        disclaimer: predictionData?.disclaimer || DEFAULT_DISCLAIMER,
       });
+      analysisRecord = analysisRecord.toObject ? analysisRecord.toObject() : analysisRecord;
+      analysisRecord.isValid = true;
+      analysisRecord.is_valid = true;
+      analysisRecord.isSupportedSpecies = true;
+      analysisRecord.species = speciesName;
+      analysisRecord.is_tomato = speciesName === 'Tomato';
     } else {
       analysisRecord = {
         imageName: originalname,
         imageData: imageDataUri,
-        crop: cropName,
-        disease: diseaseName,
-        isHealthy: predictionData.is_healthy ?? (predictionData.health?.status === 'Healthy'),
-        confidence: predictionData.confidence ?? (predictionData.plant?.confidence ? predictionData.plant.confidence / 100 : 0),
-        isConfident: predictionData.is_confident ?? (predictionData.plant?.name !== 'Unknown'),
-        symptoms: predictionData.symptoms || [],
+        crop: cropDisplay,
+        disease: diseaseName || (isHealthy ? 'Healthy Leaf' : 'Pathology Detected'),
+        isValid: true,
+        is_valid: true,
+        isSupportedSpecies: true,
+        species: speciesName,
+        is_tomato: speciesName === 'Tomato',
+        isHealthy,
+        confidence: speciesConfidence ?? 0,
+        isConfident: (speciesConfidence ?? 0) >= 0.35,
+        symptoms: predictionData?.symptoms || [],
         recommendedActions: recActions,
-        disclaimer: predictionData.disclaimer || DEFAULT_DISCLAIMER,
+        disclaimer: predictionData?.disclaimer || DEFAULT_DISCLAIMER,
         createdAt: new Date().toISOString(),
       };
     }
 
-    res.status(200).json({
+    const responsePayload: StandardAgriculturalResponse = {
       success: true,
-      message: 'Universal leaf analysis completed successfully.',
-      crop: cropName,
-      condition: diseaseName,
-      confidence: predictionData.confidence,
-      is_healthy: predictionData.is_healthy,
-      plant: predictionData.plant,
-      health: predictionData.health,
-      diagnosis: predictionData.diagnosis,
-      severity: predictionData.severity,
-      recommendation: predictionData.structuredRecommendation || predictionData.recommendation,
-      safety_note: predictionData.safety_note || DEFAULT_DISCLAIMER,
-      top5: predictionData.top5,
+      isValid: true,
+      isPlant: true,
+      species: speciesName,
+      speciesConfidence: speciesConfidence !== null ? Number(speciesConfidence.toFixed(4)) : null,
+      speciesSource,
+      disease: diseaseName,
+      diseaseConfidence: diseaseConfidence !== null ? Number(diseaseConfidence.toFixed(4)) : null,
+      healthStatus,
+      diagnosisStatus,
+      recommendations: recActions,
+      products,
+      nearbyShops,
+      error: null,
+      // Backward compatibility fields
+      crop: cropDisplay,
+      condition: diseaseName || undefined,
+      is_healthy: isHealthy,
+      confidence: speciesConfidence ?? 0,
+      plant: predictionData?.plant || (speciesName ? { name: speciesName, confidence: Math.round((speciesConfidence ?? 0) * 100) } : undefined),
+      health: predictionData?.health || { status: isHealthy ? 'Healthy' : 'Diseased', confidence: Math.round((diseaseConfidence ?? speciesConfidence ?? 0) * 100) },
+      diagnosis: predictionData?.diagnosis || (diseaseName && !isHealthy ? { name: diseaseName, confidence: Math.round((diseaseConfidence ?? 0) * 100) } : null),
+      severity: predictionData?.severity || 'None',
+      recommendation: predictionData?.structuredRecommendation || predictionData?.recommendation,
+      safety_note: predictionData?.safety_note || DEFAULT_DISCLAIMER,
+      top5: predictionData?.top5,
+      data: analysisRecord,
       analysis: analysisRecord,
-    });
+      is_tomato: speciesName === 'Tomato',
+      is_valid: true,
+      isSupportedSpecies: true,
+      message: `${speciesName} leaf analysis completed successfully.`,
+    };
+
+    res.status(200).json(responsePayload);
+
   } catch (error) {
     next(error);
   }

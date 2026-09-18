@@ -2,9 +2,12 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export type OrderStatus =
   | 'PENDING'
+  | 'WAITING_FOR_SHOP'
+  | 'SHOP_ACCEPTED'
   | 'ACCEPTED'
   | 'PREPARING'
   | 'PROCESSING'
+  | 'READY_FOR_PICKUP'
   | 'READY_FOR_DELIVERY'
   | 'PACKED'
   | 'OUT_FOR_DELIVERY'
@@ -32,9 +35,12 @@ export type DeliveryStatus =
 
 export const ORDER_STATUSES: OrderStatus[] = [
   'PENDING',
+  'WAITING_FOR_SHOP',
+  'SHOP_ACCEPTED',
   'ACCEPTED',
   'PREPARING',
   'PROCESSING',
+  'READY_FOR_PICKUP',
   'READY_FOR_DELIVERY',
   'PACKED',
   'OUT_FOR_DELIVERY',
@@ -87,6 +93,8 @@ export interface IOrderAddress {
   city: string;
   state: string;
   pincode: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface IStatusTimeline {
@@ -98,6 +106,20 @@ export interface IStatusTimeline {
 export type PaymentMethod = 'UPI_QR' | 'RAZORPAY' | 'CASH_ON_DELIVERY';
 
 export const PAYMENT_METHODS: PaymentMethod[] = ['UPI_QR', 'RAZORPAY', 'CASH_ON_DELIVERY'];
+
+export interface IEligibleShop {
+  shopOwner: Types.ObjectId;
+  distanceKm: number;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  rejectedAt?: Date;
+  rejectionReason?: string;
+}
+
+export interface IRejectionRecord {
+  shopOwner: Types.ObjectId;
+  rejectedAt: Date;
+  rejectionReason: string;
+}
 
 export interface IOrder extends Document {
   _id: Types.ObjectId;
@@ -112,6 +134,12 @@ export interface IOrder extends Document {
   payment?: Types.ObjectId;
   rejectionReason?: string;
   statusTimeline: IStatusTimeline[];
+  // Nearby Shop Routing Workflow
+  assignedShopOwner?: Types.ObjectId;
+  acceptedShopOwner?: Types.ObjectId;
+  acceptedAt?: Date;
+  eligibleShops?: IEligibleShop[];
+  rejectionHistory?: IRejectionRecord[];
   // Delivery Partner Assignment & Workflow
   deliveryBoy?: Types.ObjectId;
   deliveryBoyName?: string;
@@ -176,6 +204,8 @@ const OrderAddressSchema = new Schema<IOrderAddress>(
     city: { type: String, required: true, trim: true },
     state: { type: String, required: true, trim: true },
     pincode: { type: String, required: true, trim: true },
+    latitude: { type: Number, default: undefined },
+    longitude: { type: Number, default: undefined },
   },
   { _id: false }
 );
@@ -195,6 +225,26 @@ const StatusTimelineSchema = new Schema<IStatusTimeline>(
       type: String,
       trim: true,
     },
+  },
+  { _id: false }
+);
+
+const EligibleShopSchema = new Schema<IEligibleShop>(
+  {
+    shopOwner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    distanceKm: { type: Number, required: true },
+    status: { type: String, enum: ['PENDING', 'ACCEPTED', 'REJECTED'], default: 'PENDING' },
+    rejectedAt: { type: Date, default: undefined },
+    rejectionReason: { type: String, trim: true, default: undefined },
+  },
+  { _id: false }
+);
+
+const RejectionRecordSchema = new Schema<IRejectionRecord>(
+  {
+    shopOwner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    rejectedAt: { type: Date, default: Date.now },
+    rejectionReason: { type: String, required: true, trim: true },
   },
   { _id: false }
 );
@@ -269,6 +319,30 @@ const OrderSchema = new Schema<IOrder>(
           message: 'Order placed by farmer',
         },
       ],
+    },
+    assignedShopOwner: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+      default: undefined,
+    },
+    acceptedShopOwner: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+      default: undefined,
+    },
+    acceptedAt: {
+      type: Date,
+      default: undefined,
+    },
+    eligibleShops: {
+      type: [EligibleShopSchema],
+      default: [],
+    },
+    rejectionHistory: {
+      type: [RejectionRecordSchema],
+      default: [],
     },
     deliveryBoy: {
       type: Schema.Types.ObjectId,
