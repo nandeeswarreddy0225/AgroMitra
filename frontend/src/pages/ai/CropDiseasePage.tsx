@@ -888,11 +888,15 @@ export const CropDiseasePage: React.FC = () => {
                       className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
                         (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
                           ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                          : currentResult.diagnosisStatus === 'DISEASE_UNCERTAIN'
+                          ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
                           : 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
                       }`}
                     >
                       {(currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
                         ? 'HEALTHY LEAF'
+                        : currentResult.diagnosisStatus === 'DISEASE_UNCERTAIN'
+                        ? 'PATHOLOGY UNCERTAIN'
                         : `${currentResult.health?.status?.toUpperCase() || 'DISEASED'}`}
                     </span>
                   </div>
@@ -903,8 +907,14 @@ export const CropDiseasePage: React.FC = () => {
                       {currentResult.crop}
                     </h3>
                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-2">DISEASE:</div>
-                    <div className="text-base font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
-                      {currentResult.diagnosis?.name || currentResult.disease}
+                    <div className={`text-base font-bold mt-0.5 ${
+                      (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : currentResult.diagnosisStatus === 'DISEASE_UNCERTAIN'
+                        ? 'text-amber-700 dark:text-amber-400'
+                        : 'text-rose-700 dark:text-rose-400'
+                    }`}>
+                      {currentResult.diagnosis?.name || currentResult.disease || (currentResult.diagnosisStatus === 'DISEASE_UNCERTAIN' ? 'Pathology Uncertain (Unconfirmed Foliar Symptoms)' : 'Healthy Crop')}
                     </div>
                   </div>
                 </div>

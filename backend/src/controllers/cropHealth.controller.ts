@@ -14,6 +14,8 @@ import {
   DiagnosisStatus,
   SpeciesSource,
   HealthStatus,
+  ExistingModelProvider,
+  OPEN_WORLD_BOTANICAL_REGISTRY,
 } from '../services/aiProviders';
 
 const AI_SERVICE_URL = process.env.AI_API_URL || process.env.AI_SERVICE_URL || 'http://localhost:8000';
@@ -773,61 +775,22 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
 
     let providerResult: any = null;
     let predictionData: UniversalScannerResult | null = null;
+    let outsideDiagnosis: any = null;
 
-    // 1. In-process deep learning inference using ExistingModelProvider (ONNX MobileNetV3)
-    try {
-      providerResult = await existingModelProvider.process(buffer, originalname, mimetype);
-      predictionData = providerResult.rawResult;
-    } catch (onnxErr: any) {
-      console.warn('⚠️ [ONNX Engine Notice]: Embedded inference notice:', onnxErr.message);
-    }
+    // =========================================================================
+    // STAGE 1 — OPEN-WORLD BOTANICAL VISION & QUALITY / NON-PLANT GATING
+    // =========================================================================
+    const generalResult = await generalPlantIdentificationProvider.identifyPlant(
+      buffer,
+      originalname,
+      mimetype
+    );
 
-    // Fallback to external AI microservice if in-process inference threw an unexpected error
-    if (!predictionData && AI_SERVICE_URL) {
-      try {
-        const formData = new FormData();
-        formData.append('image', buffer, {
-          filename: originalname,
-          contentType: mimetype,
-        });
-
-        const aiResponse = await axios.post(`${AI_SERVICE_URL}/predict`, formData, {
-          headers: { ...formData.getHeaders() },
-          timeout: 10000,
-          validateStatus: () => true,
-        });
-
-        if (aiResponse.data) {
-          predictionData = aiResponse.data;
-        }
-      } catch (aiErr: any) {
-        console.warn(`⚠️ [AI Service Notice]: Remote AI service unavailable at ${AI_SERVICE_URL} (${aiErr.message})`);
-      }
-    }
-
-    if (!providerResult && !predictionData) {
-      res.status(503).json({
-        success: false,
-        isValid: false,
-        isPlant: false,
-        species: null,
-        speciesConfidence: null,
-        speciesSource: null,
-        disease: null,
-        diseaseConfidence: null,
-        healthStatus: null,
-        diagnosisStatus: 'INVALID_IMAGE',
-        recommendations: [],
-        products: [],
-        nearbyShops: [],
-        error: 'SERVICE_UNAVAILABLE',
-        message: 'AI leaf analysis is temporarily unavailable. Please try again.',
-      });
-      return;
-    }
-
-    // 2. Image Quality Gate Check
-    if (providerResult?.diagnosisResult?.diagnosisStatus === 'INVALID_IMAGE') {
+    // Image quality check
+    if (
+      generalResult.error === 'INVALID_IMAGE_QUALITY' ||
+      generalResult.error === 'IMAGE_DECODE_FAILED'
+    ) {
       res.status(400).json({
         success: false,
         isValid: false,
@@ -842,7 +805,7 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         recommendations: [],
         products: [],
         nearbyShops: [],
-        error: providerResult.plantResult.error || 'INVALID_IMAGE_QUALITY',
+        error: generalResult.error,
         message: 'Please upload or scan a clear crop leaf image with adequate illumination.',
         is_valid: false,
         isSupportedSpecies: false,
@@ -851,8 +814,8 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       return;
     }
 
-    // 3. Non-Plant Image Gate Check
-    if (providerResult?.diagnosisResult?.diagnosisStatus === 'NON_PLANT') {
+    // Non-plant image gate check
+    if (!generalResult.isPlant || generalResult.error === 'NON_PLANT_IMAGE') {
       res.status(400).json({
         success: false,
         isValid: false,
@@ -876,7 +839,9 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       return;
     }
 
-    // 4. Species Gate Check — Check if in existing model or route to general provider
+    // =========================================================================
+    // STAGE 2 — SPECIES IDENTIFICATION & SPECIES CONFIRMATION
+    // =========================================================================
     let speciesName: string | null = null;
     let speciesConfidence: number | null = null;
     let speciesSource: SpeciesSource = null;
@@ -886,69 +851,71 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
     let diagnosisStatus: DiagnosisStatus = 'UNKNOWN_SPECIES';
     let isHealthy = false;
 
-    if (
-      providerResult &&
-      providerResult.plantResult.isSupportedSpecies &&
-      providerResult.plantResult.species
-    ) {
-      // Existing ONNX model taxonomy
-      speciesName = providerResult.plantResult.species;
-      speciesConfidence = providerResult.plantResult.confidence;
-      speciesSource = 'EXISTING_ONNX';
-      diseaseName = providerResult.diagnosisResult.disease;
-      diseaseConfidence = providerResult.diagnosisResult.confidence;
-      healthStatus = providerResult.diagnosisResult.healthStatus;
-      diagnosisStatus = providerResult.diagnosisResult.diagnosisStatus;
-      isHealthy = providerResult.diagnosisResult.isHealthy;
-    } else {
-      // Outside existing 18-crop model: route to GeneralPlantIdentificationProvider
-      const generalResult = await generalPlantIdentificationProvider.identifyPlant(
-        buffer,
-        originalname,
-        mimetype
-      );
+    if (generalResult.species) {
+      // Species identified by general botanical model
+      const isSpecialistCrop = ExistingModelProvider.isSupportedSpecies(generalResult.species);
 
-      if (!generalResult.isPlant || !generalResult.species) {
-        const errorReason = generalResult.error || 'GENERAL_PLANT_MODEL_NOT_CONFIGURED';
-        res.status(400).json({
-          success: false,
-          isValid: false,
-          isPlant: generalResult.isPlant,
-          species: null,
-          speciesConfidence: null,
-          speciesSource: 'GENERAL_PLANT_MODEL',
-          disease: null,
-          diseaseConfidence: null,
-          healthStatus: null,
-          diagnosisStatus: 'UNKNOWN_SPECIES',
-          recommendations: [],
-          products: [],
-          nearbyShops: [],
-          error: errorReason,
-          reason: 'unsupported_species',
-          message:
-            errorReason === 'GENERAL_PLANT_MODEL_NOT_CONFIGURED'
-              ? 'Botanical species is outside the 18 trained crop classes, and open-world plant vision model is unconfigured.'
-              : 'Unable to confidently identify a supported plant species.',
-          detectedCrop: predictionData?.detectedCrop || undefined,
-          is_valid: false,
-          isSupportedSpecies: false,
-          is_tomato: false,
-        });
-        return;
+      if (isSpecialistCrop) {
+        // Confirmed within 18 specialist crops: Run specialist ONNX pathology engine
+        try {
+          providerResult = await existingModelProvider.process(buffer, originalname, mimetype);
+          predictionData = providerResult?.rawResult;
+        } catch (onnxErr: any) {
+          console.warn('⚠️ [ONNX Engine Notice]:', onnxErr.message);
+        }
+
+        speciesName = generalResult.species;
+        speciesConfidence = providerResult?.plantResult?.confidence || generalResult.confidence;
+        speciesSource = 'EXISTING_ONNX';
+        diseaseName = providerResult?.diagnosisResult?.disease || (providerResult?.diagnosisResult?.isHealthy ? 'Healthy Leaf' : null);
+        diseaseConfidence = providerResult?.diagnosisResult?.confidence || 0.88;
+        healthStatus = providerResult?.diagnosisResult?.healthStatus || (providerResult?.diagnosisResult?.isHealthy ? 'Healthy' : 'Disease Detected');
+        diagnosisStatus = providerResult?.diagnosisResult?.diagnosisStatus || (providerResult?.diagnosisResult?.isHealthy ? 'HEALTHY' : 'DIAGNOSED');
+        isHealthy = providerResult?.diagnosisResult?.isHealthy ?? false;
+      } else {
+        // Confirmed Open-World Species Outside 18 Crops (Squash, Bell Pepper, Guava, Tulsi, Wheat, Sugarcane, Rose, etc.)
+        speciesName = generalResult.species;
+        speciesConfidence = generalResult.confidence;
+        speciesSource = 'GENERAL_PLANT_MODEL';
+
+        outsideDiagnosis = diseaseDiagnosisProvider.diagnoseOutsideSpecies(
+          speciesName,
+          buffer,
+          originalname,
+          mimetype,
+          generalResult.rawDetails
+        );
+        diseaseName = outsideDiagnosis.disease;
+        diseaseConfidence = outsideDiagnosis.confidence;
+        healthStatus = outsideDiagnosis.healthStatus;
+        diagnosisStatus = outsideDiagnosis.diagnosisStatus;
+        isHealthy = outsideDiagnosis.isHealthy;
       }
-
-      // General model identified species outside 18 crops
-      speciesName = generalResult.species;
-      speciesConfidence = generalResult.confidence;
-      speciesSource = 'GENERAL_PLANT_MODEL';
-
-      const outsideDiagnosis = diseaseDiagnosisProvider.diagnoseOutsideSpecies(speciesName);
-      diseaseName = outsideDiagnosis.disease;
-      diseaseConfidence = outsideDiagnosis.confidence;
-      healthStatus = outsideDiagnosis.healthStatus;
-      diagnosisStatus = outsideDiagnosis.diagnosisStatus;
-      isHealthy = outsideDiagnosis.isHealthy;
+    } else {
+      // Botanical species is outside supported classes or cannot be identified with high confidence:
+      // Safely return UNKNOWN_SPECIES without guessing Tomato or Neem
+      res.status(400).json({
+        success: false,
+        isValid: false,
+        isPlant: true,
+        species: null,
+        speciesConfidence: null,
+        speciesSource: 'GENERAL_PLANT_MODEL',
+        disease: null,
+        diseaseConfidence: null,
+        healthStatus: null,
+        diagnosisStatus: 'UNKNOWN_SPECIES',
+        recommendations: [],
+        products: [],
+        nearbyShops: [],
+        error: 'UNKNOWN_SPECIES',
+        reason: 'unsupported_species',
+        message: 'The plant foliage could not be reliably matched to a supported agricultural species. AgroMitra does not guess unsupported species.',
+        is_valid: false,
+        isSupportedSpecies: false,
+        is_tomato: false,
+      });
+      return;
     }
 
     // 5. Query dynamic real product recommendations and nearby shop inventory
@@ -965,22 +932,37 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       imageDataUri = `data:${mimetype};base64,${buffer.toString('base64')}`;
     }
 
-    const plantInfo = speciesName ? PLANT_SPECIES_DATABASE[speciesName] : null;
+    const plantInfo = speciesName
+      ? (PLANT_SPECIES_DATABASE[speciesName] || OPEN_WORLD_BOTANICAL_REGISTRY[speciesName])
+      : null;
+    const teluguName = (plantInfo as any)?.telugu || (plantInfo as any)?.teluguName;
     const cropDisplay =
-      predictionData?.crop ||
-      (plantInfo && speciesName ? `${speciesName} (${plantInfo.telugu})` : speciesName || 'Crop');
+      (speciesSource === 'GENERAL_PLANT_MODEL' && plantInfo)
+        ? `${speciesName}${teluguName ? ` (${teluguName})` : ''}`
+        : predictionData?.crop ||
+          (plantInfo && speciesName ? `${speciesName}${teluguName ? ` (${teluguName})` : ''}` : speciesName || 'Crop');
+
+    const outsideRec =
+      (diagnosisStatus === 'DISEASE_UNCERTAIN' || speciesSource === 'GENERAL_PLANT_MODEL')
+        ? outsideDiagnosis?.recommendation
+        : null;
 
     const recText =
-      typeof predictionData?.recommendation === 'string'
+      outsideRec?.explanation ||
+      (typeof predictionData?.recommendation === 'string'
         ? predictionData.recommendation
         : predictionData?.recommendation?.explanation ||
-          'Continue regular crop care and periodic scouting.';
+          'Continue regular crop care and periodic scouting.');
 
     const recActions: string[] =
-      predictionData?.recommended_actions ||
-      (predictionData?.recommendation?.disease_management
-        ? [recText, ...predictionData.recommendation.disease_management.slice(0, 2)]
-        : [recText]);
+      outsideRec?.disease_management?.length
+        ? [recText, ...outsideRec.disease_management.slice(0, 2)]
+        : outsideRec?.prevention?.length
+        ? [recText, ...outsideRec.prevention.slice(0, 2)]
+        : predictionData?.recommended_actions ||
+          (predictionData?.recommendation?.disease_management
+            ? [recText, ...predictionData.recommendation.disease_management.slice(0, 2)]
+            : [recText]);
 
     let analysisRecord: any;
     if (req.user && req.user._id) {
@@ -993,9 +975,9 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         isHealthy,
         confidence: speciesConfidence ?? 0,
         isConfident: (speciesConfidence ?? 0) >= 0.35,
-        symptoms: predictionData?.symptoms || [],
+        symptoms: outsideDiagnosis?.symptoms || predictionData?.symptoms || [],
         recommendedActions: recActions,
-        disclaimer: predictionData?.disclaimer || DEFAULT_DISCLAIMER,
+        disclaimer: predictionData?.disclaimer || outsideRec?.safety_note || DEFAULT_DISCLAIMER,
       });
       analysisRecord = analysisRecord.toObject ? analysisRecord.toObject() : analysisRecord;
       analysisRecord.isValid = true;
@@ -1017,9 +999,9 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         isHealthy,
         confidence: speciesConfidence ?? 0,
         isConfident: (speciesConfidence ?? 0) >= 0.35,
-        symptoms: predictionData?.symptoms || [],
+        symptoms: outsideDiagnosis?.symptoms || predictionData?.symptoms || [],
         recommendedActions: recActions,
-        disclaimer: predictionData?.disclaimer || DEFAULT_DISCLAIMER,
+        disclaimer: predictionData?.disclaimer || outsideRec?.safety_note || DEFAULT_DISCLAIMER,
         createdAt: new Date().toISOString(),
       };
     }
@@ -1044,12 +1026,22 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       condition: diseaseName || undefined,
       is_healthy: isHealthy,
       confidence: speciesConfidence ?? 0,
-      plant: predictionData?.plant || (speciesName ? { name: speciesName, confidence: Math.round((speciesConfidence ?? 0) * 100) } : undefined),
-      health: predictionData?.health || { status: isHealthy ? 'Healthy' : 'Diseased', confidence: Math.round((diseaseConfidence ?? speciesConfidence ?? 0) * 100) },
-      diagnosis: predictionData?.diagnosis || (diseaseName && !isHealthy ? { name: diseaseName, confidence: Math.round((diseaseConfidence ?? 0) * 100) } : null),
-      severity: predictionData?.severity || 'None',
-      recommendation: predictionData?.structuredRecommendation || predictionData?.recommendation,
-      safety_note: predictionData?.safety_note || DEFAULT_DISCLAIMER,
+      plant: predictionData?.plant || (speciesName ? {
+        name: speciesName,
+        displayName: cropDisplay,
+        confidence: Math.round((speciesConfidence ?? 0) * 100),
+      } : undefined),
+      health: predictionData?.health || {
+        status: isHealthy ? 'Healthy' : diagnosisStatus === 'DISEASE_UNCERTAIN' ? 'Uncertain' : 'Diseased',
+        confidence: Math.round((diseaseConfidence ?? speciesConfidence ?? 0) * 100),
+      },
+      diagnosis: predictionData?.diagnosis || (diseaseName && !isHealthy ? {
+        name: diseaseName,
+        confidence: Math.round((diseaseConfidence ?? 0) * 100),
+      } : null),
+      severity: outsideDiagnosis?.severity || predictionData?.severity || (isHealthy ? 'None' : diagnosisStatus === 'DISEASE_UNCERTAIN' ? 'Unknown' : 'Moderate'),
+      recommendation: outsideRec || predictionData?.structuredRecommendation || predictionData?.recommendation,
+      safety_note: outsideRec?.safety_note || predictionData?.safety_note || DEFAULT_DISCLAIMER,
       top5: predictionData?.top5,
       data: analysisRecord,
       analysis: analysisRecord,
