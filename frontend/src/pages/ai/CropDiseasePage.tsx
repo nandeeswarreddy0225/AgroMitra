@@ -411,12 +411,13 @@ export const CropDiseasePage: React.FC = () => {
           isSupportedSpecies: true,
           confidence: res.confidence !== undefined ? res.confidence : (baseAnalysis.confidence ?? 0),
           speciesConfidence: res.speciesConfidence ?? (res.confidence !== undefined ? res.confidence : (baseAnalysis.confidence ?? 0)),
-          diseaseConfidence: res.diseaseConfidence ?? (res.confidence !== undefined ? res.confidence : 0),
+          diseaseConfidence: res.diseaseConfidence ?? 0,
           speciesSource: res.speciesSource || 'EXISTING_ONNX',
+          organ: res.organ || 'leaf',
           healthStatus: res.healthStatus || (res.is_healthy ? 'Healthy' : 'Disease Detected'),
           diagnosisStatus: res.diagnosisStatus || (res.is_healthy ? 'HEALTHY' : 'DIAGNOSED'),
           isHealthy: res.is_healthy !== undefined ? res.is_healthy : (baseAnalysis.isHealthy ?? false),
-          isConfident: res.confidence !== undefined ? res.confidence >= 0.35 : (baseAnalysis.isConfident ?? true),
+          isConfident: (res.speciesConfidence ?? res.confidence ?? 0) >= 0.40,
           isValid: true,
           is_valid: true,
           isPlant: true,
@@ -876,45 +877,82 @@ export const CropDiseasePage: React.FC = () => {
               {/* Diagnosis Header */}
               <div className="flex flex-col sm:flex-row sm:items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-5 gap-4">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      {(currentResult.plant?.name || currentResult.species || 'Crop')} Leaf Scanner
+                      {(currentResult.plant?.name || currentResult.species || 'Plant')} Scanner
                     </span>
-                    <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>VALID {(currentResult.plant?.name || currentResult.species || 'CROP').toUpperCase()} LEAF</span>
-                    </span>
-                    <span
-                      className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
-                        (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
-                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
-                          : currentResult.diagnosisStatus === 'DISEASE_UNCERTAIN'
-                          ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
-                          : 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
-                      }`}
-                    >
-                      {(currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
-                        ? 'HEALTHY LEAF'
-                        : currentResult.diagnosisStatus === 'DISEASE_UNCERTAIN'
-                        ? 'PATHOLOGY UNCERTAIN'
-                        : `${currentResult.health?.status?.toUpperCase() || 'DISEASED'}`}
-                    </span>
+                    {/* Organ Badge */}
+                    {(() => {
+                      const organ = (currentResult.organ || 'leaf').toLowerCase();
+                      const isLeaf = organ === 'leaf';
+                      const organLabel = isLeaf ? `VALID ${(currentResult.plant?.name || currentResult.species || 'CROP').toUpperCase()} LEAF` : `${(currentResult.plant?.name || currentResult.species || 'PLANT').toUpperCase()} ${organ.toUpperCase()} DETECTED`;
+                      const organIcon = organ === 'fruit' ? '🍊' : organ === 'flower' ? '🌸' : organ === 'bark' ? '🪵' : organ === 'habit' ? '🌱' : '🌿';
+                      return (
+                        <span className={`text-xs font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 border ${
+                          isLeaf
+                            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
+                            : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                        }`}>
+                          <span>{organIcon}</span>
+                          <span>{organLabel}</span>
+                        </span>
+                      );
+                    })()}
+                    {/* Pathology Status Badge */}
+                    {(() => {
+                      const organ = (currentResult.organ || 'leaf').toLowerCase();
+                      const isLeaf = organ === 'leaf';
+                      if (!isLeaf || currentResult.diagnosisStatus === 'ORGAN_MISMATCH') {
+                        return (
+                          <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700">
+                            FOLIAR MODEL NOT RUN ({organ.toUpperCase()})
+                          </span>
+                        );
+                      }
+                      if (currentResult.health?.status === 'Healthy' || currentResult.isHealthy) {
+                        return (
+                          <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                            HEALTHY LEAF
+                          </span>
+                        );
+                      }
+                      if (currentResult.diagnosisStatus === 'DISEASE_UNCERTAIN') {
+                        return (
+                          <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                            PATHOLOGY UNCERTAIN
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700">
+                          {currentResult.health?.status?.toUpperCase() || 'DISEASE DETECTED'}
+                        </span>
+                      );
+                    })()}
                   </div>
 
-                  <div className="mt-1">
+                  <div className="mt-2">
                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">SPECIES:</div>
                     <h3 className="text-2xl font-heading font-black text-slate-900 dark:text-white">
                       {currentResult.crop}
                     </h3>
                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-2">DISEASE:</div>
                     <div className={`text-base font-bold mt-0.5 ${
-                      (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
+                      ((currentResult.organ && currentResult.organ !== 'leaf') || currentResult.diagnosisStatus === 'ORGAN_MISMATCH')
+                        ? 'text-sky-700 dark:text-sky-400'
+                        : (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
                         ? 'text-emerald-700 dark:text-emerald-400'
                         : currentResult.diagnosisStatus === 'DISEASE_UNCERTAIN'
                         ? 'text-amber-700 dark:text-amber-400'
                         : 'text-rose-700 dark:text-rose-400'
                     }`}>
-                      {currentResult.diagnosis?.name || currentResult.disease || (currentResult.diagnosisStatus === 'DISEASE_UNCERTAIN' ? 'Pathology Uncertain (Unconfirmed Foliar Symptoms)' : 'Healthy Crop')}
+                      {((currentResult.organ && currentResult.organ !== 'leaf') || currentResult.diagnosisStatus === 'ORGAN_MISMATCH')
+                        ? `None — Foliar Disease Model Requires Leaf Photo (Image is ${currentResult.organ || 'fruit'})`
+                        : (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
+                        ? 'Healthy Crop (ఆరోగ్యకరమైన పంట)'
+                        : currentResult.diagnosisStatus === 'DISEASE_UNCERTAIN'
+                        ? 'Pathology Uncertain (Unconfirmed Foliar Symptoms)'
+                        : (currentResult.diagnosis?.name || currentResult.disease || 'Detected Foliar Disease')}
                     </div>
                   </div>
                 </div>
@@ -922,20 +960,38 @@ export const CropDiseasePage: React.FC = () => {
                 <div className="flex items-center gap-3 self-start sm:self-auto">
                   {previewUrl && (
                     <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 shadow-xs">
-                      <img src={previewUrl} alt="Analyzed Leaf" className="w-full h-full object-cover" />
+                      <img src={previewUrl} alt="Analyzed Specimen" className="w-full h-full object-cover" />
                     </div>
                   )}
                   <div className="text-right bg-slate-50 dark:bg-slate-800 px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-700">
-                    <div className="text-[10px] font-semibold text-slate-400 uppercase">AI Confidence</div>
+                    <div className="text-[10px] font-semibold text-slate-400 uppercase">
+                      Species Confidence ({currentResult.speciesSource === 'EXISTING_ONNX' ? 'Specialist AI' : 'Botanical AI'})
+                    </div>
                     <div className="text-lg font-heading font-black text-slate-900 dark:text-white">
-                      {currentResult.plant?.confidence ? `${currentResult.plant.confidence}%` : `${(currentResult.confidence * 100).toFixed(1)}%`}
+                      {currentResult.speciesConfidence !== undefined
+                        ? `${(currentResult.speciesConfidence * 100).toFixed(1)}%`
+                        : currentResult.plant?.confidence
+                        ? `${currentResult.plant.confidence}%`
+                        : `${(currentResult.confidence * 100).toFixed(1)}%`}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Low-Confidence Warning Card */}
-              {(!currentResult.isConfident || (currentResult.plant?.confidence !== undefined && currentResult.plant.confidence < 60) || currentResult.plant?.name === 'Unknown' || currentResult.crop === 'Unknown Plant') && (
+              {/* Organ Information Banner (when specimen is not a leaf) */}
+              {((currentResult.organ && currentResult.organ !== 'leaf') || currentResult.diagnosisStatus === 'ORGAN_MISMATCH') && (
+                <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/60 border border-sky-300 dark:border-sky-700/80 text-sky-900 dark:text-sky-200 text-xs space-y-1.5">
+                  <div className="flex items-center gap-2 font-bold text-sky-800 dark:text-sky-300">
+                    <span>🍊 Plant Identified From {(currentResult.organ || 'Fruit').toUpperCase()} Specimen</span>
+                  </div>
+                  <p className="leading-relaxed text-slate-700 dark:text-slate-300 text-[11px] sm:text-xs">
+                    The species was successfully recognized as <strong>{currentResult.crop}</strong> based on {currentResult.organ || 'fruit'} morphology. Certified disease pathology is trained exclusively on crop foliage/leaves and does not run on fruit, flower, or bark photos. To diagnose leaf blights, rust, or spots, please photograph a crop leaf blade.
+                  </p>
+                </div>
+              )}
+
+              {/* Genuine Low-Confidence Warning Card */}
+              {((currentResult.organ || 'leaf') === 'leaf' && (currentResult.speciesConfidence !== undefined ? currentResult.speciesConfidence < 0.40 : !currentResult.isConfident)) && (
                 <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700/80 text-amber-900 dark:text-amber-200 text-xs space-y-2">
                   <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
@@ -966,32 +1022,43 @@ export const CropDiseasePage: React.FC = () => {
                 </div>
 
                 {/* 2. Health Status */}
-                <div className={`p-3.5 rounded-2xl border space-y-1 ${
-                  (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
-                    ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-800/60'
-                    : 'bg-rose-50/60 dark:bg-rose-950/40 border-rose-100 dark:border-rose-800/60'
-                }`}>
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span className="flex items-center gap-1.5 text-rose-800 dark:text-rose-300">
-                      <HeartPulse className="w-3.5 h-3.5 text-rose-500" />
-                      <span>❤️ Health Status</span>
-                    </span>
-                    <span className="font-mono px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] border border-slate-200 dark:border-slate-700">
-                      {currentResult.health?.confidence ? `${currentResult.health.confidence}%` : `${(currentResult.confidence * 100).toFixed(0)}%`}
-                    </span>
-                  </div>
-                  <div className={`font-heading font-black text-base ${
-                    (currentResult.health?.status === 'Healthy' || currentResult.isHealthy)
-                      ? 'text-emerald-700 dark:text-emerald-400'
-                      : 'text-rose-700 dark:text-rose-400'
-                  }`}>
-                    {currentResult.health?.status || (currentResult.isHealthy ? 'Healthy' : 'Diseased')}
-                  </div>
-                </div>
+                {(() => {
+                  const organ = (currentResult.organ || 'leaf').toLowerCase();
+                  const isLeaf = organ === 'leaf';
+                  const isHealthy = currentResult.health?.status === 'Healthy' || currentResult.isHealthy;
+                  const isUncertain = currentResult.diagnosisStatus === 'DISEASE_UNCERTAIN' || currentResult.diagnosisStatus === 'ORGAN_MISMATCH' || !isLeaf;
+
+                  return (
+                    <div className={`p-3.5 rounded-2xl border space-y-1 ${
+                      isHealthy
+                        ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-800/60'
+                        : isUncertain
+                        ? 'bg-sky-50/60 dark:bg-sky-950/40 border-sky-100 dark:border-sky-800/60'
+                        : 'bg-rose-50/60 dark:bg-rose-950/40 border-rose-100 dark:border-rose-800/60'
+                    }`}>
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className={`flex items-center gap-1.5 ${
+                          isHealthy ? 'text-emerald-800 dark:text-emerald-300' : isUncertain ? 'text-sky-800 dark:text-sky-300' : 'text-rose-800 dark:text-rose-300'
+                        }`}>
+                          <HeartPulse className="w-3.5 h-3.5" />
+                          <span>❤️ Health Status</span>
+                        </span>
+                        <span className="font-mono px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] border border-slate-200 dark:border-slate-700">
+                          {!isLeaf ? 'N/A' : (currentResult.health?.confidence ? `${currentResult.health.confidence}%` : isHealthy ? '100%' : 'N/A')}
+                        </span>
+                      </div>
+                      <div className={`font-heading font-black text-base ${
+                        isHealthy ? 'text-emerald-700 dark:text-emerald-400' : isUncertain ? 'text-sky-700 dark:text-sky-400' : 'text-rose-700 dark:text-rose-400'
+                      }`}>
+                        {!isLeaf ? `Uncertain (${organ.toUpperCase()} photo)` : isHealthy ? 'Healthy Leaf' : currentResult.diagnosisStatus === 'DISEASE_UNCERTAIN' ? 'Pathology Uncertain' : (currentResult.health?.status || 'Diseased')}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
-              {/* 3. Diagnosis & Severity Card */}
-              {(currentResult.diagnosis?.name || (!currentResult.isHealthy && currentResult.disease && currentResult.disease !== 'Healthy Crop (ఆరోగ్యకరమైన పంట)')) && (
+              {/* 3. Diagnosis & Severity Card (Only for verified foliar leaf specimens with diagnosed disease) */}
+              {(((currentResult.organ || 'leaf').toLowerCase() === 'leaf') && currentResult.diagnosisStatus !== 'ORGAN_MISMATCH' && currentResult.diagnosisStatus !== 'DISEASE_UNCERTAIN' && !currentResult.isHealthy && (currentResult.diagnosis?.name || currentResult.disease)) && (
                 <div className="bg-amber-50/60 dark:bg-amber-950/40 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-800/60 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">

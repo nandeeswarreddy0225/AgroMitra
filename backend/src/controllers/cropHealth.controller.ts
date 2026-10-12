@@ -16,6 +16,7 @@ import {
   HealthStatus,
   ExistingModelProvider,
   OPEN_WORLD_BOTANICAL_REGISTRY,
+  OrganAssessmentService,
 } from '../services/aiProviders';
 
 const AI_SERVICE_URL = process.env.AI_API_URL || process.env.AI_SERVICE_URL || 'http://localhost:8000';
@@ -778,19 +779,19 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
     let outsideDiagnosis: any = null;
 
     // =========================================================================
-    // STAGE 1 — OPEN-WORLD BOTANICAL VISION & QUALITY / NON-PLANT GATING
+    // STAGE 1 — FAST IN-PROCESS SPECIALIST INFERENCE & GATING (~40ms)
     // =========================================================================
-    const generalResult = await generalPlantIdentificationProvider.identifyPlant(
-      buffer,
-      originalname,
-      mimetype
-    );
+    try {
+      providerResult = await existingModelProvider.process(buffer, originalname, mimetype);
+      predictionData = providerResult?.rawResult;
+    } catch (onnxErr: any) {
+      console.warn('⚠️ [ONNX Engine Notice]:', onnxErr.message);
+    }
 
-    // Image quality check
-    if (
-      generalResult.error === 'INVALID_IMAGE_QUALITY' ||
-      generalResult.error === 'IMAGE_DECODE_FAILED'
-    ) {
+    // 1. Degraded Image Quality Check (e.g. extreme blur, blank, decode failure)
+    const rawError = (predictionData as any)?.error;
+    const rawReason = (predictionData as any)?.reason;
+    if (rawError === 'INVALID_IMAGE_QUALITY' || rawReason === 'invalid_image' || rawError === 'IMAGE_DECODE_FAILED') {
       res.status(400).json({
         success: false,
         isValid: false,
@@ -805,7 +806,7 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         recommendations: [],
         products: [],
         nearbyShops: [],
-        error: generalResult.error,
+        error: 'INVALID_IMAGE_QUALITY',
         message: 'Please upload or scan a clear crop leaf image with adequate illumination.',
         is_valid: false,
         isSupportedSpecies: false,
@@ -814,8 +815,20 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       return;
     }
 
-    // Non-plant image gate check
-    if (!generalResult.isPlant || generalResult.error === 'NON_PLANT_IMAGE') {
+    // 2. Non-Plant Gating (e.g. computer laptop, table, background non-leaf)
+    const specialistClass = providerResult?.rawResult?.jointClass || '';
+    const specialistSpecies = providerResult?.plantResult?.species;
+    const specialistConf = providerResult?.plantResult?.confidence || 0;
+    const isSpecialistNonPlant =
+      providerResult?.diagnosisResult?.diagnosisStatus === 'NON_PLANT' ||
+      rawError === 'NON_PLANT_REJECTED' ||
+      rawReason === 'non_plant_rejection' ||
+      predictionData?.detectedCrop === 'Background' ||
+      specialistSpecies === 'Background' ||
+      specialistClass.startsWith('Background___') ||
+      predictionData?.species === 'Background';
+
+    if (isSpecialistNonPlant) {
       res.status(400).json({
         success: false,
         isValid: false,
@@ -831,7 +844,7 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         products: [],
         nearbyShops: [],
         error: 'NON_PLANT',
-        message: 'Non-foliar or non-plant image detected. Disease inference was not run.',
+        message: 'Non-plant image detected. Disease inference was not run.',
         is_valid: false,
         isSupportedSpecies: false,
         is_tomato: false,
@@ -839,8 +852,22 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       return;
     }
 
+    const isSpecialistCropName = specialistSpecies
+      ? ExistingModelProvider.isSupportedSpecies(specialistSpecies)
+      : false;
+
+    const isSpecialistClassValid =
+      specialistSpecies &&
+      specialistSpecies !== 'Background' &&
+      specialistSpecies !== 'Unknown' &&
+      !specialistClass.startsWith('Background___') &&
+      !specialistClass.startsWith('Unknown___') &&
+      specialistConf >= 0.70;
+
+    const isSpecialistConfident = Boolean(isSpecialistClassValid && isSpecialistCropName);
+
     // =========================================================================
-    // STAGE 2 — SPECIES IDENTIFICATION & SPECIES CONFIRMATION
+    // STAGE 2 — BOTANICAL ARBITRATION & OPEN-WORLD CONSULTATION
     // =========================================================================
     let speciesName: string | null = null;
     let speciesConfidence: number | null = null;
@@ -850,32 +877,138 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
     let healthStatus: HealthStatus = null;
     let diagnosisStatus: DiagnosisStatus = 'UNKNOWN_SPECIES';
     let isHealthy = false;
+    let detectedOrgan: string = 'leaf';
 
-    if (generalResult.species) {
-      // Species identified by general botanical model
-      const isSpecialistCrop = ExistingModelProvider.isSupportedSpecies(generalResult.species);
+    if (isSpecialistConfident) {
+      // FAST PATH: Specialist model has high-confidence foliar diagnosis
+      // (Tomato, Potato, Rice, Grape, Mango, Corn, etc.)
+      speciesName = specialistSpecies!;
+      speciesConfidence = specialistConf;
+      speciesSource = 'EXISTING_ONNX';
+      detectedOrgan = 'leaf';
+      diseaseName =
+        providerResult?.diagnosisResult?.disease ||
+        (providerResult?.diagnosisResult?.isHealthy ? 'Healthy Leaf' : null);
+      diseaseConfidence = providerResult?.diagnosisResult?.confidence || 0.88;
+      healthStatus =
+        providerResult?.diagnosisResult?.healthStatus ||
+        (providerResult?.diagnosisResult?.isHealthy ? 'Healthy' : 'Disease Detected');
+      diagnosisStatus =
+        providerResult?.diagnosisResult?.diagnosisStatus ||
+        (providerResult?.diagnosisResult?.isHealthy ? 'HEALTHY' : 'DIAGNOSED');
+      isHealthy = providerResult?.diagnosisResult?.isHealthy ?? false;
+    } else {
+      // OPEN-WORLD PATH: Specialist model is unconfident or specimen is outside 18 classes
+      // Consult general botanical vision plugin (PlantNet / Gemini / Botanical CV)
+      const generalResult = await generalPlantIdentificationProvider.identifyPlant(
+        buffer,
+        originalname,
+        mimetype
+      );
 
-      if (isSpecialistCrop) {
-        // Confirmed within 18 specialist crops: Run specialist ONNX pathology engine
-        try {
-          providerResult = await existingModelProvider.process(buffer, originalname, mimetype);
-          predictionData = providerResult?.rawResult;
-        } catch (onnxErr: any) {
-          console.warn('⚠️ [ONNX Engine Notice]:', onnxErr.message);
+      // Check quality rejection from botanical provider
+      if (
+        generalResult.error === 'INVALID_IMAGE_QUALITY' ||
+        generalResult.error === 'IMAGE_DECODE_FAILED'
+      ) {
+        res.status(400).json({
+          success: false,
+          isValid: false,
+          isPlant: false,
+          species: null,
+          speciesConfidence: null,
+          speciesSource: null,
+          disease: null,
+          diseaseConfidence: null,
+          healthStatus: null,
+          diagnosisStatus: 'INVALID_IMAGE',
+          recommendations: [],
+          products: [],
+          nearbyShops: [],
+          error: generalResult.error,
+          message: 'Please upload or scan a clear crop leaf image with adequate illumination.',
+          is_valid: false,
+          isSupportedSpecies: false,
+          is_tomato: false,
+        });
+        return;
+      }
+
+      // Check non-plant rejection from botanical provider
+      if (generalResult.error === 'NON_PLANT_IMAGE' && !generalResult.isPlant) {
+        res.status(400).json({
+          success: false,
+          isValid: false,
+          isPlant: false,
+          species: null,
+          speciesConfidence: null,
+          speciesSource: null,
+          disease: null,
+          diseaseConfidence: null,
+          healthStatus: null,
+          diagnosisStatus: 'NON_PLANT',
+          recommendations: [],
+          products: [],
+          nearbyShops: [],
+          error: 'NON_PLANT',
+          message: 'Non-plant image detected. Disease inference was not run.',
+          is_valid: false,
+          isSupportedSpecies: false,
+          is_tomato: false,
+        });
+        return;
+      }
+
+      // Evaluate plant organ (leaf, fruit, flower, bark, habit)
+      const organEval = OrganAssessmentService.assessOrgan(buffer, mimetype, generalResult.rawDetails);
+      detectedOrgan = generalResult.organ || organEval.organ;
+
+      const pnetSpecies = generalResult.species;
+      const pnetConf = generalResult.confidence ?? 0;
+      const isPnetConfident = Boolean(pnetSpecies) && (generalResult.isSupportedSpecies || pnetConf >= 0.35);
+
+      if (detectedOrgan !== 'leaf') {
+        // NON-LEAF ORGAN (Fruit, Flower, Bark): Block foliar disease inference
+        if (isPnetConfident && pnetSpecies) {
+          speciesName = pnetSpecies;
+          speciesConfidence = pnetConf;
+          speciesSource = 'GENERAL_PLANT_MODEL';
+        } else {
+          res.status(400).json({
+            success: false,
+            isValid: false,
+            isPlant: true,
+            species: null,
+            speciesConfidence: null,
+            speciesSource: 'GENERAL_PLANT_MODEL',
+            organ: detectedOrgan,
+            disease: null,
+            diseaseConfidence: null,
+            healthStatus: null,
+            diagnosisStatus: 'SPECIES_UNCERTAIN',
+            candidates: [],
+            recommendations: [],
+            products: [],
+            nearbyShops: [],
+            error: 'SPECIES_UNCERTAIN',
+            message: `The plant species could not be identified with certainty from this ${detectedOrgan} photo.`,
+            is_valid: false,
+            isSupportedSpecies: false,
+            is_tomato: false,
+          });
+          return;
         }
 
-        speciesName = generalResult.species;
-        speciesConfidence = providerResult?.plantResult?.confidence || generalResult.confidence;
-        speciesSource = 'EXISTING_ONNX';
-        diseaseName = providerResult?.diagnosisResult?.disease || (providerResult?.diagnosisResult?.isHealthy ? 'Healthy Leaf' : null);
-        diseaseConfidence = providerResult?.diagnosisResult?.confidence || 0.88;
-        healthStatus = providerResult?.diagnosisResult?.healthStatus || (providerResult?.diagnosisResult?.isHealthy ? 'Healthy' : 'Disease Detected');
-        diagnosisStatus = providerResult?.diagnosisResult?.diagnosisStatus || (providerResult?.diagnosisResult?.isHealthy ? 'HEALTHY' : 'DIAGNOSED');
-        isHealthy = providerResult?.diagnosisResult?.isHealthy ?? false;
-      } else {
-        // Confirmed Open-World Species Outside 18 Crops (Squash, Bell Pepper, Guava, Tulsi, Wheat, Sugarcane, Rose, etc.)
-        speciesName = generalResult.species;
-        speciesConfidence = generalResult.confidence;
+        outsideDiagnosis = diseaseDiagnosisProvider.createOrganMismatchResponse(speciesName, detectedOrgan);
+        diseaseName = null;
+        diseaseConfidence = null;
+        healthStatus = 'Uncertain';
+        diagnosisStatus = 'ORGAN_MISMATCH';
+        isHealthy = false;
+      } else if (isPnetConfident && pnetSpecies) {
+        // Confident open-world plant leaf
+        speciesName = pnetSpecies;
+        speciesConfidence = pnetConf;
         speciesSource = 'GENERAL_PLANT_MODEL';
 
         outsideDiagnosis = diseaseDiagnosisProvider.diagnoseOutsideSpecies(
@@ -890,32 +1023,36 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         healthStatus = outsideDiagnosis.healthStatus;
         diagnosisStatus = outsideDiagnosis.diagnosisStatus;
         isHealthy = outsideDiagnosis.isHealthy;
+      } else {
+        // Unconfident / uncertain species
+        res.status(400).json({
+          success: false,
+          isValid: false,
+          isPlant: true,
+          species: null,
+          speciesConfidence: null,
+          speciesSource: 'GENERAL_PLANT_MODEL',
+          organ: 'leaf',
+          disease: null,
+          diseaseConfidence: null,
+          healthStatus: null,
+          diagnosisStatus: 'SPECIES_UNCERTAIN',
+          candidates: generalResult.rawDetails?.results?.slice(0, 3)?.map((r: any) => ({
+            species: r.species?.scientificNameWithoutAuthor || r.species?.scientificName,
+            common: r.species?.commonNames?.[0] || null,
+            score: Number(r.score) || 0,
+          })) || [],
+          recommendations: [],
+          products: [],
+          nearbyShops: [],
+          error: 'SPECIES_UNCERTAIN',
+          message: 'Unable to identify a recognized plant species with high confidence. Please upload a clear photo of the leaf in good lighting.',
+          is_valid: false,
+          isSupportedSpecies: false,
+          is_tomato: false,
+        });
+        return;
       }
-    } else {
-      // Botanical species is outside supported classes or cannot be identified with high confidence:
-      // Safely return UNKNOWN_SPECIES without guessing Tomato or Neem
-      res.status(400).json({
-        success: false,
-        isValid: false,
-        isPlant: true,
-        species: null,
-        speciesConfidence: null,
-        speciesSource: 'GENERAL_PLANT_MODEL',
-        disease: null,
-        diseaseConfidence: null,
-        healthStatus: null,
-        diagnosisStatus: 'UNKNOWN_SPECIES',
-        recommendations: [],
-        products: [],
-        nearbyShops: [],
-        error: 'UNKNOWN_SPECIES',
-        reason: 'unsupported_species',
-        message: 'The plant foliage could not be reliably matched to a supported agricultural species. AgroMitra does not guess unsupported species.',
-        is_valid: false,
-        isSupportedSpecies: false,
-        is_tomato: false,
-      });
-      return;
     }
 
     // 5. Query dynamic real product recommendations and nearby shop inventory
@@ -964,6 +1101,14 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
             ? [recText, ...predictionData.recommendation.disease_management.slice(0, 2)]
             : [recText]);
 
+    const resolvedDiseaseText =
+      diseaseName ||
+      (isHealthy
+        ? 'Healthy Leaf'
+        : diagnosisStatus === 'ORGAN_MISMATCH' || diagnosisStatus === 'DISEASE_UNCERTAIN'
+        ? null
+        : 'Pathology Detected');
+
     let analysisRecord: any;
     if (req.user && req.user._id) {
       analysisRecord = await CropAnalysis.create({
@@ -971,7 +1116,7 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         imageName: originalname,
         imageData: imageDataUri,
         crop: cropDisplay,
-        disease: diseaseName || (isHealthy ? 'Healthy Leaf' : 'Pathology Detected'),
+        disease: resolvedDiseaseText || 'None',
         isHealthy,
         confidence: speciesConfidence ?? 0,
         isConfident: (speciesConfidence ?? 0) >= 0.35,
@@ -984,13 +1129,20 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       analysisRecord.is_valid = true;
       analysisRecord.isSupportedSpecies = true;
       analysisRecord.species = speciesName;
+      analysisRecord.organ = detectedOrgan;
+      analysisRecord.diagnosisStatus = diagnosisStatus;
+      analysisRecord.healthStatus = healthStatus;
+      analysisRecord.disease = resolvedDiseaseText;
       analysisRecord.is_tomato = speciesName === 'Tomato';
     } else {
       analysisRecord = {
         imageName: originalname,
         imageData: imageDataUri,
         crop: cropDisplay,
-        disease: diseaseName || (isHealthy ? 'Healthy Leaf' : 'Pathology Detected'),
+        disease: resolvedDiseaseText,
+        organ: detectedOrgan,
+        diagnosisStatus,
+        healthStatus,
         isValid: true,
         is_valid: true,
         isSupportedSpecies: true,
@@ -1013,6 +1165,7 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       species: speciesName,
       speciesConfidence: speciesConfidence !== null ? Number(speciesConfidence.toFixed(4)) : null,
       speciesSource,
+      organ: detectedOrgan,
       disease: diseaseName,
       diseaseConfidence: diseaseConfidence !== null ? Number(diseaseConfidence.toFixed(4)) : null,
       healthStatus,
@@ -1032,14 +1185,14 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         confidence: Math.round((speciesConfidence ?? 0) * 100),
       } : undefined),
       health: predictionData?.health || {
-        status: isHealthy ? 'Healthy' : diagnosisStatus === 'DISEASE_UNCERTAIN' ? 'Uncertain' : 'Diseased',
+        status: isHealthy ? 'Healthy' : (diagnosisStatus === 'DISEASE_UNCERTAIN' || diagnosisStatus === 'ORGAN_MISMATCH') ? 'Uncertain' : 'Diseased',
         confidence: Math.round((diseaseConfidence ?? speciesConfidence ?? 0) * 100),
       },
       diagnosis: predictionData?.diagnosis || (diseaseName && !isHealthy ? {
         name: diseaseName,
         confidence: Math.round((diseaseConfidence ?? 0) * 100),
       } : null),
-      severity: outsideDiagnosis?.severity || predictionData?.severity || (isHealthy ? 'None' : diagnosisStatus === 'DISEASE_UNCERTAIN' ? 'Unknown' : 'Moderate'),
+      severity: outsideDiagnosis?.severity || predictionData?.severity || (isHealthy ? 'None' : (diagnosisStatus === 'DISEASE_UNCERTAIN' || diagnosisStatus === 'ORGAN_MISMATCH') ? 'Unknown' : 'Moderate'),
       recommendation: outsideRec || predictionData?.structuredRecommendation || predictionData?.recommendation,
       safety_note: outsideRec?.safety_note || predictionData?.safety_note || DEFAULT_DISCLAIMER,
       top5: predictionData?.top5,
@@ -1048,7 +1201,10 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       is_tomato: speciesName === 'Tomato',
       is_valid: true,
       isSupportedSpecies: true,
-      message: `${speciesName} leaf analysis completed successfully.`,
+      message:
+        detectedOrgan !== 'leaf'
+          ? `${speciesName} (${detectedOrgan}) analyzed successfully. Certified disease pathology requires a foliar leaf image.`
+          : `${speciesName} leaf analysis completed successfully.`,
     };
 
     res.status(200).json(responsePayload);

@@ -78,6 +78,7 @@ export interface CropAnalysis {
   diseaseConfidence?: number;
   healthStatus?: string | null;
   diagnosisStatus?: string;
+  organ?: string | null;
   jointClass?: string;
   is_tomato?: boolean;
   detectedCrop?: string;
@@ -119,6 +120,7 @@ export interface AnalyzeCropResponse {
   diseaseConfidence?: number;
   healthStatus?: string | null;
   diagnosisStatus?: string;
+  organ?: string | null;
   recommendations?: string[];
   products?: RecommendedProduct[];
   nearbyShops?: NearbyShopSummary[];

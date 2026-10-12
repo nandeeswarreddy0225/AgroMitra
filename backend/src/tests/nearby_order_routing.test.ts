@@ -1,3 +1,8 @@
+import dns from 'dns';
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {}
+
 import http from 'http';
 import jwt from 'jsonwebtoken';
 import app from '../app';
@@ -112,6 +117,11 @@ export const runNearbyOrderRoutingTests = async () => {
     // SETUP: Test Users & Store Profiles
     // -------------------------------------------------------------
     console.log('--- 1. SETTING UP TEST USERS & LOCATIONS ---');
+
+    // Clean up any residual test records from prior interrupted runs
+    await User.deleteMany({ email: { $regex: /@agromitra\.test$/ } });
+    await Product.deleteMany({ name: { $in: ['Organic Neem Bio-Fertilizer', 'Heavy Duty Cultivator Tiller'] } });
+    await Order.deleteMany({ 'shippingAddress.street': 'Kallur Village' });
 
     // Farmer in Kurnool center (lat: 15.8281, lon: 78.0373)
     const farmer = await User.create({

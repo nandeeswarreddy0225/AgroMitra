@@ -3,3 +3,4 @@ export * from './ExistingModelProvider';
 export * from './GeneralPlantIdentificationProvider';
 export * from './DiseaseDiagnosisProvider';
 export * from './AgriculturalRecommendationProvider';
+export * from './organAssessment.service';

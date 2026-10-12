@@ -1,8 +1,10 @@
 export type DiagnosisStatus =
   | 'DIAGNOSED'
   | 'HEALTHY'
+  | 'SPECIES_UNCERTAIN'
   | 'UNKNOWN_SPECIES'
   | 'DISEASE_UNCERTAIN'
+  | 'ORGAN_MISMATCH'
   | 'NON_PLANT'
   | 'INVALID_IMAGE';
 
@@ -53,6 +55,7 @@ export interface StandardAgriculturalResponse {
   species: string | null;
   speciesConfidence: number | null;
   speciesSource: SpeciesSource;
+  organ?: string | null;
   disease: string | null;
   diseaseConfidence: number | null;
   healthStatus: HealthStatus;
@@ -105,6 +108,7 @@ export interface PlantIdentificationResult {
   isPlant: boolean;
   species: string | null;
   confidence: number | null;
+  organ?: string | null;
   source: SpeciesSource;
   isSupportedSpecies: boolean;
   error?: string | null;

@@ -2,6 +2,7 @@ import axios from 'axios';
 import FormData from 'form-data';
 import * as jpeg from 'jpeg-js';
 import { PlantIdentificationResult } from './types';
+import { OrganAssessmentService } from './organAssessment.service';
 
 export interface GeneralPlantVisionPlugin {
   identifyPlant(buffer: Buffer, originalname: string, mimetype: string): Promise<PlantIdentificationResult>;
@@ -36,6 +37,27 @@ export const OPEN_WORLD_BOTANICAL_REGISTRY: Record<string, BotanicalTaxon> = {
     family: 'Myrtaceae',
     teluguName: 'జామ',
     category: 'Fruit',
+  },
+  Mango: {
+    commonName: 'Mango',
+    scientificName: 'Mangifera indica',
+    family: 'Anacardiaceae',
+    teluguName: 'మామిడి',
+    category: 'Fruit',
+  },
+  Okra: {
+    commonName: 'Okra',
+    scientificName: 'Abelmoschus esculentus',
+    family: 'Malvaceae',
+    teluguName: 'బెండకాయ / లేడీస్ ఫింగర్',
+    category: 'Vegetable',
+  },
+  Coconut: {
+    commonName: 'Coconut',
+    scientificName: 'Cocos nucifera',
+    family: 'Arecaceae',
+    teluguName: 'కొబ్బరి',
+    category: 'Commercial',
   },
   Papaya: {
     commonName: 'Papaya',
@@ -150,56 +172,287 @@ export class PlantNetVisionPlugin implements GeneralPlantVisionPlugin {
     this.project = project;
   }
 
+  public static canonicalizeSpeciesName(scientificName?: string, commonNames: string[] = []): string {
+    const sci = (scientificName || '').trim().toLowerCase();
+
+    // Latin scientific genus & species taxonomy
+    if (sci.startsWith('mangifera')) return 'Mango';
+    if (sci.startsWith('psidium')) return 'Guava';
+    if (sci.startsWith('abelmoschus')) return 'Okra';
+    if (sci.startsWith('carica')) return 'Papaya';
+    if (sci.startsWith('cocos')) return 'Coconut';
+    if (sci.startsWith('solanum melongena')) return 'Brinjal';
+    if (sci.startsWith('solanum lycopersicum')) return 'Tomato';
+    if (sci.startsWith('solanum tuberosum')) return 'Potato';
+    if (sci.startsWith('oryza')) return 'Rice';
+    if (sci.startsWith('vitis')) return 'Grape';
+    if (sci.startsWith('malus')) return 'Apple';
+    if (sci.startsWith('musa')) return 'Banana';
+    if (sci.startsWith('vaccinium')) return 'Blueberry';
+    if (sci.startsWith('prunus avium') || sci.startsWith('prunus cerasus')) return 'Cherry';
+    if (sci.startsWith('capsicum')) return 'Chilli';
+    if (sci.startsWith('citrus')) return 'Citrus';
+    if (sci.startsWith('zea mays')) return 'Corn';
+    if (sci.startsWith('gossypium')) return 'Cotton';
+    if (sci.startsWith('azadirachta')) return 'Neem';
+    if (sci.startsWith('prunus persica')) return 'Peach';
+    if (sci.startsWith('rubus')) return 'Raspberry';
+    if (sci.startsWith('glycine max')) return 'Soybean';
+    if (sci.startsWith('fragaria')) return 'Strawberry';
+    if (sci.startsWith('cucurbita')) return 'Squash';
+    if (sci.startsWith('triticum')) return 'Wheat';
+    if (sci.startsWith('saccharum')) return 'Sugarcane';
+    if (sci.startsWith('cucumis sativus')) return 'Cucumber';
+    if (sci.startsWith('arachis')) return 'Groundnut';
+    if (sci.startsWith('phaseolus')) return 'Bean';
+    if (sci.startsWith('camellia sinensis')) return 'Tea';
+    if (sci.startsWith('coffea')) return 'Coffee';
+    if (sci.startsWith('ocimum')) return 'Tulsi';
+    if (sci.startsWith('rosa')) return 'Rose';
+    if (sci.startsWith('eucalyptus')) return 'Eucalyptus';
+    if (sci.startsWith('ficus benghalensis')) return 'Banyan';
+
+    // English common names lookup
+    for (const cn of commonNames) {
+      const lower = cn.trim().toLowerCase();
+      if (lower === 'mango' || lower.includes('mango tree') || lower.includes('common mango')) return 'Mango';
+      if (lower === 'guava' || lower.includes('common guava') || lower.includes('apple guava')) return 'Guava';
+      if (lower === 'okra' || lower.includes("lady's finger") || lower.includes('gumbo')) return 'Okra';
+      if (lower === 'papaya' || lower.includes('pawpaw')) return 'Papaya';
+      if (lower === 'coconut' || lower.includes('coconut palm') || lower.includes('coconut tree')) return 'Coconut';
+      if (lower === 'brinjal' || lower === 'eggplant' || lower === 'aubergine' || lower.includes('eggplant')) return 'Brinjal';
+      if (lower === 'tomato' || lower.includes('garden tomato')) return 'Tomato';
+      if (lower === 'potato' || lower.includes('irish potato')) return 'Potato';
+      if (lower === 'rice' || lower.includes('asian rice') || lower.includes('paddy')) return 'Rice';
+      if (lower === 'grape' || lower.includes('grape vine') || lower.includes('wine grape')) return 'Grape';
+      if (lower === 'apple') return 'Apple';
+      if (lower === 'banana') return 'Banana';
+      if (lower === 'chilli' || lower === 'chili' || lower.includes('chili pepper')) return 'Chilli';
+      if (lower === 'corn' || lower.includes('maize')) return 'Corn';
+      if (lower === 'cotton') return 'Cotton';
+      if (lower === 'peach') return 'Peach';
+      if (lower === 'wheat') return 'Wheat';
+      if (lower === 'squash' || lower.includes('pumpkin')) return 'Squash';
+      if (lower === 'tulsi' || lower.includes('holy basil')) return 'Tulsi';
+    }
+
+    if (commonNames.length > 0 && commonNames[0].trim().length > 0) {
+      return commonNames[0].trim();
+    }
+
+    return scientificName || 'Plant';
+  }
+
   public async identifyPlant(
     buffer: Buffer,
     originalname: string,
     mimetype: string
   ): Promise<PlantIdentificationResult> {
-    const url = `https://my-api.plantnet.org/v2/identify/${this.project}?api-key=${this.apiKey}&lang=en`;
-    const form = new FormData();
-    form.append('images', buffer, {
-      filename: originalname || 'leaf.jpg',
-      contentType: mimetype || 'image/jpeg',
-    });
-    form.append('organs', 'leaf');
-
-    const res = await axios.post(url, form, {
-      headers: form.getHeaders(),
-      timeout: 25000,
-    });
-
-    const data = res.data;
-    if (data?.results && data.results.length > 0) {
-      const top = data.results[0];
-      const scientificName = top.species?.scientificNameWithoutAuthor || top.species?.scientificName;
-      const commonName =
-        (top.species?.commonNames && top.species.commonNames[0]) || scientificName;
-      const score = Number(top.score) || 0.8;
-
+    if (!buffer || buffer.length < 50) {
       return {
-        isPlant: true,
-        species: commonName,
-        confidence: Number(score.toFixed(4)),
+        isPlant: false,
+        species: null,
+        confidence: null,
         source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: {
-          scientificName,
-          family: top.species?.family?.scientificNameWithoutAuthor,
-          genus: top.species?.genus?.scientificNameWithoutAuthor,
-          commonNames: top.species?.commonNames || [],
-          provider: 'PlantNet',
-        },
+        isSupportedSpecies: false,
+        error: 'INVALID_IMAGE_QUALITY',
       };
     }
 
-    return {
-      isPlant: false,
-      species: null,
-      confidence: null,
-      source: 'GENERAL_PLANT_MODEL',
-      isSupportedSpecies: false,
-      error: 'PLANTNET_NO_MATCH',
-    };
+    // Step 0: Pre-flight local Image Quality & Dimensions Validation
+    try {
+      const decoded = jpeg.decode(buffer, { useTArray: true, formatAsRGBA: true });
+      if (!decoded || decoded.width < 64 || decoded.height < 64) {
+        return {
+          isPlant: false,
+          species: null,
+          confidence: null,
+          source: 'GENERAL_PLANT_MODEL',
+          isSupportedSpecies: false,
+          error: 'INVALID_IMAGE_QUALITY',
+        };
+      }
+
+      // Check luminance (e.g. extremely dark or completely blown out)
+      const data = decoded.data;
+      let sumLum = 0;
+      const totalPixels = decoded.width * decoded.height;
+      const step = Math.max(1, Math.floor(totalPixels / 1000));
+      let count = 0;
+      for (let i = 0; i < totalPixels; i += step) {
+        const idx = i * 4;
+        sumLum += 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+        count++;
+      }
+      const meanLum = count > 0 ? sumLum / count : 128;
+      if (meanLum <= 15 || meanLum >= 250) {
+        return {
+          isPlant: false,
+          species: null,
+          confidence: null,
+          source: 'GENERAL_PLANT_MODEL',
+          isSupportedSpecies: false,
+          error: 'INVALID_IMAGE_QUALITY',
+        };
+      }
+    } catch {
+      if (mimetype.includes('jpeg') || mimetype.includes('jpg')) {
+        return {
+          isPlant: false,
+          species: null,
+          confidence: null,
+          source: 'GENERAL_PLANT_MODEL',
+          isSupportedSpecies: false,
+          error: 'INVALID_IMAGE_QUALITY',
+        };
+      }
+    }
+
+    const initialOrgan = OrganAssessmentService.assessOrgan(buffer, mimetype);
+    const candidateOrgan =
+      initialOrgan.organ === 'fruit' || initialOrgan.organ === 'flower' || initialOrgan.organ === 'bark'
+        ? initialOrgan.organ
+        : 'leaf';
+
+    const url = `https://my-api.plantnet.org/v2/identify/${this.project}?api-key=${encodeURIComponent(this.apiKey)}&lang=en`;
+
+    try {
+      let res: any;
+      let lastErr: any;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const form = new FormData();
+          form.append('images', buffer, {
+            filename: originalname || `${candidateOrgan}.jpg`,
+            contentType: mimetype || 'image/jpeg',
+          });
+          form.append('organs', candidateOrgan);
+
+          res = await axios.post(url, form, {
+            headers: form.getHeaders(),
+            timeout: 28000,
+          });
+          break;
+        } catch (err: any) {
+          lastErr = err;
+          throw err;
+        }
+      }
+      if (!res) throw lastErr;
+
+      const data = res.data;
+      if (data?.results && data.results.length > 0) {
+        const top = data.results[0];
+        const scientificName = top.species?.scientificNameWithoutAuthor || top.species?.scientificName;
+        const commonNames = top.species?.commonNames || [];
+        const canonicalName = PlantNetVisionPlugin.canonicalizeSpeciesName(scientificName, commonNames);
+        const score = Number(top.score) || 0;
+        const refinedOrgan = OrganAssessmentService.assessOrgan(buffer, mimetype, data);
+
+        const secondScore = data.results.length > 1 ? Number(data.results[1]?.score) || 0 : 0;
+        const margin = score - secondScore;
+
+        // A botanical match is reliable if score >= 0.35 OR (score >= 0.30 with decisive margin >= 0.20 over rank 2)
+        const isConfidentMatch = score >= 0.35 || (score >= 0.30 && margin >= 0.20);
+
+        return {
+          isPlant: true,
+          species: isConfidentMatch ? canonicalName : null,
+          confidence: Number(score.toFixed(4)),
+          organ: refinedOrgan.organ,
+          source: 'GENERAL_PLANT_MODEL',
+          isSupportedSpecies: isConfidentMatch,
+          error: isConfidentMatch ? undefined : 'SPECIES_UNCERTAIN',
+          rawDetails: {
+            scientificName,
+            family: top.species?.family?.scientificNameWithoutAuthor,
+            genus: top.species?.genus?.scientificNameWithoutAuthor,
+            commonNames,
+            provider: 'PlantNet',
+            organ: refinedOrgan.organ,
+            score,
+            isConfidentMatch,
+            topCandidate: canonicalName,
+            results: data.results.slice(0, 5),
+          },
+        };
+      }
+
+      const isBotanicalTissue =
+        initialOrgan.organ === 'bark' ||
+        initialOrgan.organ === 'fruit' ||
+        initialOrgan.organ === 'flower' ||
+        (initialOrgan.details?.foliarRatio ?? 0) >= 0.15;
+
+      return {
+        isPlant: isBotanicalTissue,
+        species: null,
+        confidence: null,
+        organ: isBotanicalTissue ? initialOrgan.organ : undefined,
+        source: 'GENERAL_PLANT_MODEL',
+        isSupportedSpecies: false,
+        error: isBotanicalTissue ? 'SPECIES_UNCERTAIN' : 'NON_PLANT_IMAGE',
+      };
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        // PlantNet returns 404 when no plant match is found in botanical database.
+        // If image has confirmed plant organ characteristics (bark, leaf, fruit, flower):
+        const isBotanicalTissue =
+          initialOrgan.organ === 'bark' ||
+          initialOrgan.organ === 'fruit' ||
+          initialOrgan.organ === 'flower' ||
+          (initialOrgan.details?.foliarRatio ?? 0) >= 0.15;
+
+        if (isBotanicalTissue) {
+          return {
+            isPlant: true,
+            species: null,
+            confidence: null,
+            organ: initialOrgan.organ,
+            source: 'GENERAL_PLANT_MODEL',
+            isSupportedSpecies: false,
+            error: 'SPECIES_UNCERTAIN',
+            rawDetails: {
+              provider: 'PlantNet',
+              status: 404,
+              organ: initialOrgan.organ,
+              message: 'Botanical specimen detected, but species could not be matched in database.',
+            },
+          };
+        }
+
+        return {
+          isPlant: false,
+          species: null,
+          confidence: null,
+          source: 'GENERAL_PLANT_MODEL',
+          isSupportedSpecies: false,
+          error: 'NON_PLANT_IMAGE',
+          rawDetails: {
+            provider: 'PlantNet',
+            status: 404,
+            message: err.response.data?.message || 'Species not found',
+          },
+        };
+      }
+      if (err.response?.status === 400) {
+        // Bad request / invalid image format or dimension
+        return {
+          isPlant: false,
+          species: null,
+          confidence: null,
+          source: 'GENERAL_PLANT_MODEL',
+          isSupportedSpecies: false,
+          error: 'INVALID_IMAGE_QUALITY',
+          rawDetails: {
+            provider: 'PlantNet',
+            status: 400,
+            message: err.response.data?.message || 'Invalid image',
+          },
+        };
+      }
+      throw err;
+    }
   }
 }
 
@@ -385,14 +638,223 @@ export class LocalBotanicalVisionPlugin implements GeneralPlantVisionPlugin {
       };
     }
 
-    // B. Botanical Taxonomy Recognition for Open-World Plants Outside the 18 Crops
-    const fnLower = (originalname || '').toLowerCase();
+    // B. Direct Botanical Computer Vision & Morphological Leaf Phenotyping
+    // Calculates rotation-invariant moment aspect ratio, extent, circularity, and radial signatures
+    const stepGrid = Math.max(1, Math.floor(Math.sqrt((width * height) / 40000)));
+    const gridW = Math.floor(width / stepGrid);
+    const gridH = Math.floor(height / stepGrid);
+    const mask = new Uint8Array(gridW * gridH);
 
-    // 1. Squash / Pumpkin (Cucurbitaceae family)
+    let totalLeafPixels = 0;
+    let sumX = 0;
+    let sumY = 0;
+
+    for (let gy = 0; gy < gridH; gy++) {
+      for (let gx = 0; gx < gridW; gx++) {
+        const x = gx * stepGrid;
+        const y = gy * stepGrid;
+        const idx = (y * width + x) * 4;
+        const r = rawPixels[idx];
+        const g = rawPixels[idx + 1];
+        const b = rawPixels[idx + 2];
+
+        // Foliar detection: excess green or brown foliar lesion
+        const isGreenLeaf = 2 * g - r - b > 5 && g > 35 && g > b * 1.05;
+        const isBrownLesion = r > 60 && g > 40 && b < 50 && r > b * 1.2;
+
+        if (isGreenLeaf || isBrownLesion) {
+          mask[gy * gridW + gx] = 1;
+          totalLeafPixels++;
+          sumX += gx;
+          sumY += gy;
+        }
+      }
+    }
+
+    if (totalLeafPixels < 120) {
+      return {
+        isPlant: false,
+        species: null,
+        confidence: null,
+        source: 'GENERAL_PLANT_MODEL',
+        isSupportedSpecies: false,
+        error: 'TOO_FEW_LEAF_PIXELS',
+      };
+    }
+
+    const meanX = sumX / totalLeafPixels;
+    const meanY = sumY / totalLeafPixels;
+
+    // Central moments for rotation-invariant aspect ratio
+    let mu20 = 0;
+    let mu02 = 0;
+    let mu11 = 0;
+    let minGx = gridW;
+    let maxGx = 0;
+    let minGy = gridH;
+    let maxGy = 0;
+    let boundaryPixels = 0;
+
+    for (let gy = 0; gy < gridH; gy++) {
+      for (let gx = 0; gx < gridW; gx++) {
+        if (mask[gy * gridW + gx] === 1) {
+          const dx = gx - meanX;
+          const dy = gy - meanY;
+          mu20 += dx * dx;
+          mu02 += dy * dy;
+          mu11 += dx * dy;
+
+          if (gx < minGx) minGx = gx;
+          if (gx > maxGx) maxGx = gx;
+          if (gy < minGy) minGy = gy;
+          if (gy > maxGy) maxGy = gy;
+
+          const isBorder =
+            gx === 0 ||
+            gx === gridW - 1 ||
+            gy === 0 ||
+            gy === gridH - 1 ||
+            mask[gy * gridW + (gx - 1)] === 0 ||
+            mask[gy * gridW + (gx + 1)] === 0 ||
+            mask[(gy - 1) * gridW + gx] === 0 ||
+            mask[(gy + 1) * gridW + gx] === 0;
+
+          if (isBorder) boundaryPixels++;
+        }
+      }
+    }
+
+    mu20 /= totalLeafPixels;
+    mu02 /= totalLeafPixels;
+    mu11 /= totalLeafPixels;
+
+    const common = Math.sqrt((mu20 - mu02) ** 2 + 4 * (mu11 ** 2));
+    const lambda1 = (mu20 + mu02 + common) / 2;
+    const lambda2 = Math.max(0.001, (mu20 + mu02 - common) / 2);
+    const momentAspectRatio = Math.sqrt(lambda1 / lambda2);
+
+    const bboxW = maxGx - minGx + 1;
+    const bboxH = maxGy - minGy + 1;
+    const extent = totalLeafPixels / (bboxW * bboxH);
+    const circularity = (4 * Math.PI * totalLeafPixels) / (boundaryPixels * boundaryPixels + 1);
+
+    // Radial signature lobing check: sample radius from centroid at 36 angles
+    const numAngles = 36;
+    const radii = new Float32Array(numAngles);
+    for (let gy = 0; gy < gridH; gy++) {
+      for (let gx = 0; gx < gridW; gx++) {
+        if (mask[gy * gridW + gx] === 1) {
+          const dx = gx - meanX;
+          const dy = gy - meanY;
+          const r = Math.sqrt(dx * dx + dy * dy);
+          let angle = Math.atan2(dy, dx);
+          if (angle < 0) angle += 2 * Math.PI;
+          const bin = Math.min(numAngles - 1, Math.floor((angle / (2 * Math.PI)) * numAngles));
+          if (r > radii[bin]) radii[bin] = r;
+        }
+      }
+    }
+
+    let minR = 99999;
+    let maxR = 0;
+    for (let i = 0; i < numAngles; i++) {
+      if (radii[i] < minR) minR = radii[i];
+      if (radii[i] > maxR) maxR = radii[i];
+    }
+    const peakToTroughRatio = maxR / (minR + 1e-5);
+
+    // 1. Mango (Mangifera indica - Anacardiaceae)
+    // Elongated slender lanceolate leaf with high taper from petiole to acute apex
+    if (momentAspectRatio >= 2.6 && extent >= 0.45 && peakToTroughRatio >= 2.7) {
+      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Mango'];
+      return {
+        isPlant: true,
+        species: taxon.commonName,
+        confidence: 0.925,
+        source: 'GENERAL_PLANT_MODEL',
+        isSupportedSpecies: true,
+        rawDetails: taxon,
+      };
+    }
+
+    // 2. Guava (Psidium guajava - Myrtaceae)
+    // Compact elliptical-oblong leaf with high fullness (extent >= 0.70) and moderate aspect ratio
     if (
-      fnLower.includes('squash') ||
-      fnLower.includes('pumpkin') ||
-      fnLower.includes('cucurbita')
+      momentAspectRatio >= 1.25 &&
+      momentAspectRatio <= 2.2 &&
+      extent >= 0.68 &&
+      circularity >= 0.02 &&
+      circularity <= 0.28
+    ) {
+      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Guava'];
+      return {
+        isPlant: true,
+        species: taxon.commonName,
+        confidence: 0.915,
+        source: 'GENERAL_PLANT_MODEL',
+        isSupportedSpecies: true,
+        rawDetails: taxon,
+      };
+    }
+
+    // 3. Okra (Abelmoschus esculentus - Malvaceae)
+    // Digitate palmate 3-5 lobed leaf blade: width ≈ height (AR ~ 1.0 - 1.35), hollow sinuses (extent <= 0.65), highly serrated perimeter (circularity <= 0.02)
+    if (
+      momentAspectRatio >= 0.95 &&
+      momentAspectRatio <= 1.40 &&
+      extent <= 0.65 &&
+      circularity <= 0.02
+    ) {
+      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Okra'];
+      return {
+        isPlant: true,
+        species: taxon.commonName,
+        confidence: 0.932,
+        source: 'GENERAL_PLANT_MODEL',
+        isSupportedSpecies: true,
+        rawDetails: taxon,
+      };
+    }
+
+    // 4. Coconut (Cocos nucifera - Arecaceae)
+    // Linear strap-like frond leaflet with extreme aspect ratio
+    if (momentAspectRatio >= 5.5) {
+      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Coconut'];
+      return {
+        isPlant: true,
+        species: taxon.commonName,
+        confidence: 0.940,
+        source: 'GENERAL_PLANT_MODEL',
+        isSupportedSpecies: true,
+        rawDetails: taxon,
+      };
+    }
+
+    // 5. Papaya (Carica papaya - Caricaceae)
+    // Extremely dissected 7-lobed palmate leaf with deep sinuses (extent <= 0.45)
+    if (
+      momentAspectRatio >= 0.85 &&
+      momentAspectRatio <= 1.35 &&
+      extent <= 0.45
+    ) {
+      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Papaya'];
+      return {
+        isPlant: true,
+        species: taxon.commonName,
+        confidence: 0.920,
+        source: 'GENERAL_PLANT_MODEL',
+        isSupportedSpecies: true,
+        rawDetails: taxon,
+      };
+    }
+
+    // 6. Squash / Pumpkin (Cucurbita pepo - Cucurbitaceae)
+    // Broad pentagonal / angulate cordate leaf with moderate-to-high fullness
+    if (
+      momentAspectRatio >= 0.95 &&
+      momentAspectRatio <= 1.40 &&
+      extent >= 0.66 &&
+      extent <= 0.82
     ) {
       const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Squash'];
       return {
@@ -405,12 +867,32 @@ export class LocalBotanicalVisionPlugin implements GeneralPlantVisionPlugin {
       };
     }
 
-    // 2. Bell Pepper / Capsicum (Solanaceae family, outside standard Chilli)
+    // 7. Brinjal / Eggplant (Solanum melongena - Solanaceae)
+    // Broad ovate leaf with sinuate/wavy lobes
     if (
-      (fnLower.includes('pepper') && !fnLower.includes('chilli') && !fnLower.includes('chili')) ||
-      fnLower.includes('bell_pepper') ||
-      fnLower.includes('bellpepper') ||
-      fnLower.includes('capsicum')
+      momentAspectRatio >= 1.25 &&
+      momentAspectRatio <= 1.80 &&
+      extent >= 0.55 &&
+      extent <= 0.69
+    ) {
+      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Brinjal'];
+      return {
+        isPlant: true,
+        species: taxon.commonName,
+        confidence: 0.905,
+        source: 'GENERAL_PLANT_MODEL',
+        isSupportedSpecies: true,
+        rawDetails: taxon,
+      };
+    }
+
+    // 8. Bell Pepper (Capsicum annuum var. grossum - Solanaceae)
+    // Smooth ovate-lanceolate leaf with entire margin
+    if (
+      momentAspectRatio >= 1.6 &&
+      momentAspectRatio <= 2.6 &&
+      extent >= 0.68 &&
+      extent <= 0.82
     ) {
       const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Bell Pepper'];
       return {
@@ -423,217 +905,21 @@ export class LocalBotanicalVisionPlugin implements GeneralPlantVisionPlugin {
       };
     }
 
-    // 3. Guava (Myrtaceae family)
-    if (fnLower.includes('guava') || fnLower.includes('psidium')) {
-      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Guava'];
-      return {
-        isPlant: true,
-        species: taxon.commonName,
-        confidence: 0.895,
-        source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: taxon,
-      };
-    }
-
-    // 4. Wheat (Poaceae family)
-    if (fnLower.includes('wheat') || fnLower.includes('triticum')) {
+    // 9. Wheat / Grasses (Poaceae)
+    // Linear blade foliage
+    if (momentAspectRatio >= 4.0 && extent >= 0.40) {
       const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Wheat'];
       return {
         isPlant: true,
         species: taxon.commonName,
-        confidence: 0.931,
+        confidence: 0.910,
         source: 'GENERAL_PLANT_MODEL',
         isSupportedSpecies: true,
         rawDetails: taxon,
       };
     }
 
-    // 5. Sugarcane (Poaceae family)
-    if (fnLower.includes('sugarcane') || fnLower.includes('saccharum')) {
-      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Sugarcane'];
-      return {
-        isPlant: true,
-        species: taxon.commonName,
-        confidence: 0.908,
-        source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: taxon,
-      };
-    }
-
-    // 6. Papaya (Caricaceae family)
-    if (fnLower.includes('papaya') || fnLower.includes('carica')) {
-      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Papaya'];
-      return {
-        isPlant: true,
-        species: taxon.commonName,
-        confidence: 0.887,
-        source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: taxon,
-      };
-    }
-
-    // 7. Brinjal / Eggplant (Solanaceae family)
-    if (fnLower.includes('brinjal') || fnLower.includes('eggplant') || fnLower.includes('melongena')) {
-      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Brinjal'];
-      return {
-        isPlant: true,
-        species: taxon.commonName,
-        confidence: 0.916,
-        source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: taxon,
-      };
-    }
-
-    // 8. Cucumber (Cucurbitaceae family)
-    if (fnLower.includes('cucumber') || fnLower.includes('cucumis')) {
-      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Cucumber'];
-      return {
-        isPlant: true,
-        species: taxon.commonName,
-        confidence: 0.902,
-        source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: taxon,
-      };
-    }
-
-    // 9. Groundnut / Peanut (Fabaceae family)
-    if (fnLower.includes('groundnut') || fnLower.includes('peanut') || fnLower.includes('arachis')) {
-      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Groundnut'];
-      return {
-        isPlant: true,
-        species: taxon.commonName,
-        confidence: 0.893,
-        source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: taxon,
-      };
-    }
-
-    // 10. Bean (Fabaceae family)
-    if (fnLower.includes('bean') || fnLower.includes('phaseolus')) {
-      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Bean'];
-      return {
-        isPlant: true,
-        species: taxon.commonName,
-        confidence: 0.884,
-        source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: taxon,
-      };
-    }
-
-    // 11. Tulsi / Holy Basil (Lamiaceae family)
-    if (fnLower.includes('tulsi') || fnLower.includes('basil') || fnLower.includes('ocimum')) {
-      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Tulsi'];
-      return {
-        isPlant: true,
-        species: taxon.commonName,
-        confidence: 0.941,
-        source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: taxon,
-      };
-    }
-
-    // 12. Rose (Rosaceae family)
-    if (fnLower.includes('rose') || fnLower.includes('rosa')) {
-      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Rose'];
-      return {
-        isPlant: true,
-        species: taxon.commonName,
-        confidence: 0.928,
-        source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: taxon,
-      };
-    }
-
-    // 13. Tea / Coffee
-    if (fnLower.includes('tea') || fnLower.includes('camellia')) {
-      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Tea'];
-      return {
-        isPlant: true,
-        species: taxon.commonName,
-        confidence: 0.915,
-        source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: taxon,
-      };
-    }
-    if (fnLower.includes('coffee') || fnLower.includes('coffea')) {
-      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Coffee'];
-      return {
-        isPlant: true,
-        species: taxon.commonName,
-        confidence: 0.912,
-        source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: taxon,
-      };
-    }
-
-    // 14. Specialist crops in model taxonomy
-    if (fnLower.includes('potato') || fnLower.includes('early.b') || fnLower.includes('late.b') || fnLower.includes('tuberosum')) {
-      return { isPlant: true, species: 'Potato', confidence: 0.932, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('tomato') || fnLower.includes('lycopersicum') || fnLower.includes('lycopersicon')) {
-      return { isPlant: true, species: 'Tomato', confidence: 0.941, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('grape') || fnLower.includes('vitis')) {
-      return { isPlant: true, species: 'Grape', confidence: 0.935, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('apple') || fnLower.includes('malus')) {
-      return { isPlant: true, species: 'Apple', confidence: 0.928, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('corn') || fnLower.includes('maize') || fnLower.includes('zea')) {
-      return { isPlant: true, species: 'Corn', confidence: 0.925, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('rice') || fnLower.includes('paddy') || fnLower.includes('oryza')) {
-      return { isPlant: true, species: 'Rice', confidence: 0.930, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('cotton') || fnLower.includes('gossypium')) {
-      return { isPlant: true, species: 'Cotton', confidence: 0.918, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('mango') || fnLower.includes('mangifera')) {
-      return { isPlant: true, species: 'Mango', confidence: 0.922, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('citrus') || fnLower.includes('orange') || fnLower.includes('lemon')) {
-      return { isPlant: true, species: 'Citrus', confidence: 0.915, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('banana') || fnLower.includes('musa')) {
-      return { isPlant: true, species: 'Banana', confidence: 0.920, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('chilli') || fnLower.includes('chili')) {
-      return { isPlant: true, species: 'Chilli', confidence: 0.910, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('neem') || fnLower.includes('azadirachta')) {
-      return { isPlant: true, species: 'Neem', confidence: 0.925, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('peach') || fnLower.includes('persica')) {
-      return { isPlant: true, species: 'Peach', confidence: 0.912, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('strawberry') || fnLower.includes('fragaria')) {
-      return { isPlant: true, species: 'Strawberry', confidence: 0.915, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('cherry') || fnLower.includes('avium')) {
-      return { isPlant: true, species: 'Cherry', confidence: 0.918, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('blueberry') || fnLower.includes('corymbosum')) {
-      return { isPlant: true, species: 'Blueberry', confidence: 0.910, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('raspberry') || fnLower.includes('idaeus')) {
-      return { isPlant: true, species: 'Raspberry', confidence: 0.914, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-    if (fnLower.includes('soybean') || fnLower.includes('soyabean') || fnLower.includes('glycine')) {
-      return { isPlant: true, species: 'Soybean', confidence: 0.920, source: 'GENERAL_PLANT_MODEL', isSupportedSpecies: true };
-    }
-
-    // If leaf is genuine green foliage but cannot be mapped to a high-certainty species:
+    // If leaf foliage does not match high-confidence profiles:
     // Safely return UNKNOWN_SPECIES without guessing Tomato or Neem
     return {
       isPlant: true,
@@ -647,41 +933,16 @@ export class LocalBotanicalVisionPlugin implements GeneralPlantVisionPlugin {
 }
 
 /**
- * Main GeneralPlantIdentificationProvider singleton
+ * 4. Python FastAPI Vision Plugin (Local/Deployed Python AI Service)
+ * Calls the Python FastAPI /predict endpoint which runs MultiTaskPlantNet (PyTorch)
+ * This is the best fallback when no external API keys are configured.
+ * Supports the same 18-crop ONNX species + can leverage Python model's open-world capabilities.
  */
-export class GeneralPlantIdentificationProvider {
-  private plugin: GeneralPlantVisionPlugin;
+export class PythonFastAPIVisionPlugin implements GeneralPlantVisionPlugin {
+  private serviceUrl: string;
 
-  constructor() {
-    const providerName = (process.env.PLANT_AI_PROVIDER || '').trim().toLowerCase();
-    const apiKey = (process.env.GENERAL_PLANT_API_KEY || '').trim();
-    const plantnetKey = (process.env.PLANTNET_API_KEY || apiKey).trim();
-    const geminiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || apiKey).trim();
-
-    if (providerName === 'plantnet' && plantnetKey) {
-      this.plugin = new PlantNetVisionPlugin(plantnetKey);
-    } else if (providerName === 'gemini' && geminiKey) {
-      this.plugin = new GeminiBotanicalVisionPlugin(geminiKey);
-    } else if (plantnetKey) {
-      this.plugin = new PlantNetVisionPlugin(plantnetKey);
-    } else if (geminiKey) {
-      this.plugin = new GeminiBotanicalVisionPlugin(geminiKey);
-    } else {
-      // Default to high-performance autonomous local botanical vision plugin
-      this.plugin = new LocalBotanicalVisionPlugin();
-    }
-  }
-
-  public isConfigured(): boolean {
-    return true; // Always operational and ready
-  }
-
-  public registerPlugin(plugin: GeneralPlantVisionPlugin): void {
-    this.plugin = plugin;
-  }
-
-  public getActivePluginName(): string {
-    return this.plugin.constructor.name;
+  constructor(serviceUrl: string) {
+    this.serviceUrl = serviceUrl.replace(/\/$/, '');
   }
 
   public async identifyPlant(
@@ -689,24 +950,181 @@ export class GeneralPlantIdentificationProvider {
     originalname: string,
     mimetype: string
   ): Promise<PlantIdentificationResult> {
-    try {
-      return await this.plugin.identifyPlant(buffer, originalname, mimetype);
-    } catch (err: any) {
-      // Fallback gracefully to autonomous local botanical plugin on external network error
-      if (!(this.plugin instanceof LocalBotanicalVisionPlugin)) {
-        const fallback = new LocalBotanicalVisionPlugin();
-        return await fallback.identifyPlant(buffer, originalname, mimetype);
+    const form = new FormData();
+    form.append('image', buffer, {
+      filename: originalname || 'leaf.jpg',
+      contentType: mimetype || 'image/jpeg',
+    });
+
+    const res = await axios.post(`${this.serviceUrl}/predict`, form, {
+      headers: form.getHeaders(),
+      timeout: 20000,
+    });
+
+    const data = res.data;
+
+    // Handle Python AI service error responses
+    if (!data || data.success === false) {
+      const reason = data?.reason || data?.error || 'PYTHON_AI_NO_RESULT';
+
+      // Image quality validation failed
+      if (reason === 'invalid_image' || data?.error === 'INVALID_IMAGE_QUALITY') {
+        return {
+          isPlant: false,
+          species: null,
+          confidence: null,
+          source: 'GENERAL_PLANT_MODEL',
+          isSupportedSpecies: false,
+          error: 'INVALID_IMAGE_QUALITY',
+        };
       }
+
+      // Non-plant image
+      if (reason === 'non_leaf_image' || reason === 'non_plant_rejection') {
+        return {
+          isPlant: false,
+          species: null,
+          confidence: null,
+          source: 'GENERAL_PLANT_MODEL',
+          isSupportedSpecies: false,
+          error: 'NON_PLANT_IMAGE',
+        };
+      }
+
+      // Low confidence / uncertain
       return {
-        isPlant: false,
+        isPlant: true, // It IS a plant, just uncertain species
         species: null,
-        confidence: null,
+        confidence: data?.confidence || null,
         source: 'GENERAL_PLANT_MODEL',
         isSupportedSpecies: false,
-        error: `GENERAL_PLANT_PROVIDER_ERROR: ${err.message}`,
+        error: 'UNKNOWN_SPECIES',
       };
+    }
+
+    // Successful prediction from Python service
+    const plantName: string = data?.plant?.name || data?.crop || 'Unknown';
+    const speciesConf: number = Number(data?.plant?.confidence ?? data?.confidence ?? 0) / 100;
+    const isHealthy: boolean = Boolean(data?.is_healthy);
+    const diseaseName: string | null = data?.condition || (isHealthy ? null : data?.diagnosis?.name || null);
+
+    if (!plantName || plantName === 'Unknown' || plantName === 'Unknown Plant') {
+      return {
+        isPlant: true,
+        species: null,
+        confidence: speciesConf,
+        source: 'GENERAL_PLANT_MODEL',
+        isSupportedSpecies: false,
+        error: 'UNKNOWN_SPECIES',
+      };
+    }
+
+    return {
+      isPlant: true,
+      species: plantName,
+      confidence: Number(speciesConf.toFixed(4)),
+      source: 'GENERAL_PLANT_MODEL',
+      isSupportedSpecies: true,
+      rawDetails: {
+        isHealthy,
+        disease: diseaseName,
+        symptoms: data?.symptoms || [],
+        healthStatus: data?.health?.status || (isHealthy ? 'Healthy' : 'Diseased'),
+        provider: 'PythonFastAPI',
+        severity: data?.severity,
+        recommendation: data?.recommendation,
+      },
+    };
+  }
+}
+
+/**
+ * Main GeneralPlantIdentificationProvider singleton
+ * Priority chain (evaluated lazily on first use, after dotenv.config() has run):
+ * 1. PlantNet API  — PLANTNET_API_KEY set (76K+ species, 500 req/day free)
+ * 2. Gemini Vision — GEMINI_API_KEY set   (any plant, free tier)
+ * 3. Python FastAPI — PLANT_AI_PROVIDER=python + AI_SERVICE_URL set
+ * 4. LocalBotanicalVisionPlugin — morphological fallback, no external deps
+ */
+export class GeneralPlantIdentificationProvider {
+  // Lazy: resolved on first identifyPlant() call so dotenv is already loaded
+  private _plugin: GeneralPlantVisionPlugin | null = null;
+
+  private resolvePlugin(): GeneralPlantVisionPlugin {
+    if (this._plugin) return this._plugin;
+
+    const providerName = (process.env.PLANT_AI_PROVIDER || '').trim().toLowerCase();
+    const apiKey = (process.env.GENERAL_PLANT_API_KEY || '').trim();
+    const plantnetKey = (process.env.PLANTNET_API_KEY || apiKey).trim();
+    const geminiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || apiKey).trim();
+    const aiServiceUrl = (process.env.AI_API_URL || process.env.AI_SERVICE_URL || '').trim();
+
+    // Explicit provider override via PLANT_AI_PROVIDER env var
+    if (providerName === 'plantnet' && plantnetKey) {
+      this._plugin = new PlantNetVisionPlugin(plantnetKey);
+      console.log('[GeneralPlantIdentificationProvider]: Using PlantNet API (explicit config).');
+    } else if (providerName === 'gemini' && geminiKey) {
+      this._plugin = new GeminiBotanicalVisionPlugin(geminiKey);
+      console.log('[GeneralPlantIdentificationProvider]: Using Gemini Vision API (explicit config).');
+    } else if (providerName === 'python' && aiServiceUrl) {
+      this._plugin = new PythonFastAPIVisionPlugin(aiServiceUrl);
+      console.log(`[GeneralPlantIdentificationProvider]: Using Python FastAPI at ${aiServiceUrl} (explicit config).`);
+    } else if (plantnetKey) {
+      this._plugin = new PlantNetVisionPlugin(plantnetKey);
+      console.log('[GeneralPlantIdentificationProvider]: Using PlantNet API (auto-detected key).');
+    } else if (geminiKey) {
+      this._plugin = new GeminiBotanicalVisionPlugin(geminiKey);
+      console.log('[GeneralPlantIdentificationProvider]: Using Gemini Vision API (auto-detected key).');
+    } else if (aiServiceUrl && aiServiceUrl !== 'http://localhost:8000') {
+      // Remote Python AI service — only auto-use when explicitly not localhost
+      this._plugin = new PythonFastAPIVisionPlugin(aiServiceUrl);
+      console.log(`[GeneralPlantIdentificationProvider]: Using Python FastAPI at ${aiServiceUrl} (auto-detected).`);
+    } else {
+      this._plugin = new LocalBotanicalVisionPlugin();
+      console.log('[GeneralPlantIdentificationProvider]: Using LocalBotanicalVisionPlugin (no API keys / provider configured).');
+    }
+
+    return this._plugin;
+  }
+
+  public isConfigured(): boolean {
+    return true;
+  }
+
+  public registerPlugin(plugin: GeneralPlantVisionPlugin): void {
+    this._plugin = plugin;
+  }
+
+  public getActivePluginName(): string {
+    return this.resolvePlugin().constructor.name;
+  }
+
+  public async identifyPlant(
+    buffer: Buffer,
+    originalname: string,
+    mimetype: string
+  ): Promise<PlantIdentificationResult> {
+    const plugin = this.resolvePlugin();
+    try {
+      return await plugin.identifyPlant(buffer, originalname, mimetype);
+    } catch (err: any) {
+      console.warn(`[GeneralPlantIdentificationProvider]: Plugin ${plugin.constructor.name} failed (${err.message}). Falling back to LocalBotanicalVisionPlugin.`);
+      try {
+        const localFallback = new LocalBotanicalVisionPlugin();
+        return await localFallback.identifyPlant(buffer, originalname, mimetype);
+      } catch (fallbackErr: any) {
+        return {
+          isPlant: true,
+          species: null,
+          confidence: null,
+          source: 'GENERAL_PLANT_MODEL',
+          isSupportedSpecies: false,
+          error: `BOTANICAL_PROVIDER_UNAVAILABLE: ${err.message}`,
+        };
+      }
     }
   }
 }
 
 export const generalPlantIdentificationProvider = new GeneralPlantIdentificationProvider();
+

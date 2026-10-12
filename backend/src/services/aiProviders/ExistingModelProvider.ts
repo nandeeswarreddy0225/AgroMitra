@@ -8,6 +8,7 @@ import {
 } from './types';
 
 export class ExistingModelProvider {
+  // Species actually present in the ONNX v3 model (49 classes, verified from model_metadata.json)
   public static readonly SUPPORTED_SPECIES: string[] = [
     'Apple',
     'Banana',
@@ -18,8 +19,8 @@ export class ExistingModelProvider {
     'Corn',
     'Cotton',
     'Grape',
-    'Mango',
-    'Neem',
+    'Mango',   // Present in ONNX v3: Mango___Anthracnose, Mango___healthy
+    'Neem',    // Present in ONNX v3: Neem___healthy, Neem___leaf_spot_blight
     'Peach',
     'Potato',
     'Raspberry',

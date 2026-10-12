@@ -97,6 +97,93 @@ export const OPEN_WORLD_PATHOLOGY_DATABASE: Record<string, Record<string, OpenWo
       ],
     },
   },
+  Mango: {
+    anthracnose: {
+      disease: 'Anthracnose (మామిడి మచ్చ తెగులు - Colletotrichum gloeosporioides)',
+      telugu: 'మామిడి ఆంత్రక్నోస్ తెగులు',
+      scientificPathogen: 'Colletotrichum gloeosporioides',
+      severity: 'Moderate',
+      symptoms: [
+        'Circular to irregular dark brown to black necrotic spots with chlorotic yellow halos on leaf blades.',
+        'Blossom blight, leaf crinkling, and shoot dieback in humid tropical orchards.',
+      ],
+      explanation:
+        'Mango anthracnose is caused by Colletotrichum gloeosporioides, spreading during rainy periods and warm temperatures.',
+      disease_management: [
+        'Prune and destroy infected panicles and dead twigs.',
+        'Apply Copper Oxychloride 50 WP (3g/L) or Carbendazim 50 WP (1g/L) during flush and flowering.',
+      ],
+      fertilizer: [
+        'Maintain balanced potassium and micronutrient foliar spray (Zinc + Boron).',
+      ],
+      prevention: [
+        'Avoid overhead sprinkler irrigation and maintain open canopy for sun aeration.',
+      ],
+    },
+  },
+  Okra: {
+    yellow_vein_mosaic: {
+      disease: 'Yellow Vein Mosaic (బెండ పసుపు ఈనెల తెగులు - BYVMV)',
+      telugu: 'బెండ పసుపు ఈనెల వైరస్ తెగులు',
+      scientificPathogen: 'Bhendi Yellow Vein Mosaic Virus',
+      severity: 'Severe',
+      symptoms: [
+        'Distinctive clear yellowing of veins alternating with green leaf blade interveinal tissue.',
+        'Stunted growth, leaf puckering, and small fibrous bleached fruits.',
+      ],
+      explanation:
+        'Bhendi yellow vein mosaic is transmitted by whiteflies (Bemisia tabaci). Early infection can cause total crop loss.',
+      disease_management: [
+        'Rogue out and destroy viral infected plants immediately.',
+        'Control whitefly vectors using Neem Oil (5ml/L) or Acetamiprid 20 SP (0.2g/L).',
+      ],
+      fertilizer: [
+        'Apply recommended nitrogen in splits and balanced potash to reduce sap-sucking susceptibility.',
+      ],
+      prevention: [
+        'Sow BYVMV-resistant cultivars (e.g. Parbhani Kranti, Arka Anamika).',
+        'Install yellow sticky traps (15-20 per acre) to monitor and catch whitefly vectors.',
+      ],
+    },
+  },
+  Papaya: {
+    ringspot: {
+      disease: 'Papaya Ring Spot Virus (బొప్పాయి రింగ్‌స్పాట్ వైరస్ - PRSV)',
+      telugu: 'బొప్పాయి రింగ్‌స్పాట్ వైరస్',
+      scientificPathogen: 'Papaya Ringspot Potyvirus',
+      severity: 'Severe',
+      symptoms: [
+        'Severe yellow mosaic mottle and shoe-stringing on leaves with water-soaked oily streaks on petioles.',
+      ],
+      explanation:
+        'Aphid-transmitted potyvirus causing severe leaf distortion and stunted fruit development.',
+      disease_management: [
+        'Rogue out infected papaya trees to stop orchard transmission.',
+        'Spray insecticidal soap or Dimethoate (1.5ml/L) to manage aphid vectors.',
+      ],
+      fertilizer: ['Balanced micronutrient spray to maintain tree vigor.'],
+      prevention: ['Plant barrier crops (corn or sorghum) around the papaya orchard.'],
+    },
+  },
+  Coconut: {
+    bud_rot: {
+      disease: 'Bud Rot (కొబ్బరి మొవ్వు కుళ్ళు తెగులు - Phytophthora palmivora)',
+      telugu: 'కొబ్బరి మొవ్వు కుళ్ళు తెగులు',
+      scientificPathogen: 'Phytophthora palmivora',
+      severity: 'Severe',
+      symptoms: [
+        'Yellowing and drooping of spear leaf / central spindle, rotting at crown base with foul odor.',
+      ],
+      explanation:
+        'Soil- and water-borne oomycete pathogen attacking the central growing point of coconut palms during monsoons.',
+      disease_management: [
+        'Cut and clean rotting spindle tissues and apply Bordeaux paste (10%) to the crown.',
+        'Place Copper Oxychloride sachets (5g) or spray Metalaxyl-M (2g/L).',
+      ],
+      fertilizer: ['Apply standard N-P-K + Magnesium Sulfate to palm root basins.'],
+      prevention: ['Provide good drainage in coconut plantations during heavy monsoon rains.'],
+    },
+  },
   Wheat: {
     rust: {
       disease: 'Stem / Leaf Rust (గోధుమ తుప్పు తెగులు - Puccinia spp.)',
@@ -143,22 +230,23 @@ export class DiseaseDiagnosisProvider {
     _mimetype: string = 'image/jpeg',
     rawDetails?: any
   ): DiseaseDiagnosisResult {
-    // 1. Check if upstream multimodal vision plugin (e.g. Gemini) already identified pathology
-    if (rawDetails?.provider === 'GeminiVision') {
+    // 1. Check if upstream multimodal vision plugin (e.g. Gemini, PythonFastAPI) already identified pathology
+    if (rawDetails?.provider === 'GeminiVision' || rawDetails?.provider === 'PythonFastAPI') {
       if (rawDetails.isHealthy === true) {
-        return this.createHealthyResponse(species, 0.92);
+        return this.createHealthyResponse(species, rawDetails.provider === 'PythonFastAPI' ? 0.90 : 0.92);
       }
       if (rawDetails.disease && typeof rawDetails.disease === 'string' && rawDetails.disease.trim().length > 0) {
+        const diseaseName = rawDetails.disease;
         return {
-          disease: rawDetails.disease,
-          confidence: 0.88,
+          disease: diseaseName,
+          confidence: rawDetails.provider === 'PythonFastAPI' ? 0.85 : 0.88,
           healthStatus: 'Disease Detected',
           diagnosisStatus: 'DIAGNOSED',
           isHealthy: false,
-          severity: 'Moderate',
-          symptoms: rawDetails.symptoms || ['Visual foliar abnormalities identified.'],
-          recommendation: {
-            explanation: `Foliar pathology diagnosed on ${species}: ${rawDetails.disease}.`,
+          severity: rawDetails.severity || 'Moderate',
+          symptoms: rawDetails.symptoms || ['Visual foliar abnormalities identified by AI.'],
+          recommendation: rawDetails.recommendation || {
+            explanation: `Foliar pathology diagnosed on ${species}: ${diseaseName}.`,
             disease_management: [
               `Scout ${species} field and remove heavily infected foliage.`,
               'Apply species-safe bio-fungicides or agronomist-recommended protective spray.',
@@ -171,122 +259,11 @@ export class DiseaseDiagnosisProvider {
       }
     }
 
-    // 2. Autonomous Local Foliar Pathology Analysis
-    const fnLower = (originalname || '').toLowerCase();
-    const speciesLower = species.toLowerCase();
 
-    // Check if filename or metadata indicates healthy status
-    const isExplicitlyHealthy =
-      fnLower.includes('healthy') ||
-      fnLower.includes('green-leaf') ||
-      fnLower.includes('normal') ||
-      fnLower.includes('fresh');
-
-    // A. Squash (Cucurbitaceae)
-    if (speciesLower.includes('squash') || speciesLower.includes('pumpkin')) {
-      if (
-        fnLower.includes('mildew') ||
-        fnLower.includes('powdery') ||
-        fnLower.includes('fungal') ||
-        fnLower.includes('spot')
-      ) {
-        const record = OPEN_WORLD_PATHOLOGY_DATABASE['Squash'].powdery_mildew;
-        return this.createDiagnosedResponse(species, record, 0.912);
-      }
-      if (isExplicitlyHealthy) {
-        return this.createHealthyResponse(species, 0.935);
-      }
-    }
-
-    // B. Bell Pepper / Capsicum (Outside standard Chilli)
-    if (speciesLower.includes('pepper') || speciesLower.includes('capsicum')) {
-      if (
-        fnLower.includes('spot') ||
-        fnLower.includes('bacterial') ||
-        fnLower.includes('blight')
-      ) {
-        const record = OPEN_WORLD_PATHOLOGY_DATABASE['Bell Pepper'].bacterial_spot;
-        return this.createDiagnosedResponse(species, record, 0.908);
-      }
-      if (isExplicitlyHealthy || fnLower.includes('green_leaf') || fnLower.includes('leaf_of_pepper')) {
-        return this.createHealthyResponse(species, 0.942);
-      }
-    }
-
-    // C. Guava (Myrtaceae)
-    if (speciesLower.includes('guava')) {
-      if (
-        fnLower.includes('anthracnose') ||
-        fnLower.includes('canker') ||
-        fnLower.includes('spot') ||
-        fnLower.includes('blight')
-      ) {
-        const record = OPEN_WORLD_PATHOLOGY_DATABASE['Guava'].anthracnose;
-        return this.createDiagnosedResponse(species, record, 0.884);
-      }
-      if (isExplicitlyHealthy) {
-        return this.createHealthyResponse(species, 0.915);
-      }
-    }
-
-    // D. Wheat (Poaceae)
-    if (speciesLower.includes('wheat')) {
-      if (
-        fnLower.includes('rust') ||
-        fnLower.includes('blight') ||
-        fnLower.includes('spot')
-      ) {
-        const record = OPEN_WORLD_PATHOLOGY_DATABASE['Wheat'].rust;
-        return this.createDiagnosedResponse(species, record, 0.926);
-      }
-      if (isExplicitlyHealthy) {
-        return this.createHealthyResponse(species, 0.938);
-      }
-    }
-
-    // E. General Chlorophyll / Foliar Image Analysis if Buffer is available
-    if (buffer && buffer.length > 0) {
-      try {
-        const decoded = jpeg.decode(buffer, { useTArray: true });
-        if (decoded && decoded.width > 0 && decoded.height > 0) {
-          const pixels = decoded.data;
-          let greenDom = 0;
-          let brownNecrotic = 0;
-          let total = 0;
-          const step = Math.max(1, Math.floor((decoded.width * decoded.height) / 5000));
-
-          for (let i = 0; i < pixels.length; i += step * 4) {
-            const r = pixels[i];
-            const g = pixels[i + 1];
-            const b = pixels[i + 2];
-            total++;
-
-            if (g > r * 1.15 && g > b * 1.25 && g > 60) {
-              greenDom++;
-            } else if (r > 90 && g < r * 0.95 && b < 80 && (r - b) > 30) {
-              brownNecrotic++;
-            }
-          }
-
-          const greenRatio = total > 0 ? greenDom / total : 0;
-          const necroticRatio = total > 0 ? brownNecrotic / total : 0;
-
-          // If predominantly healthy green foliar area with minimal necrosis
-          if (greenRatio > 0.35 && necroticRatio < 0.05) {
-            return this.createHealthyResponse(species, 0.91);
-          }
-        }
-      } catch {
-        // Fallback safely to uncertainty handling
-      }
-    }
-
-    // F. If explicit healthy tag
-    if (isExplicitlyHealthy) {
-      return this.createHealthyResponse(species, 0.89);
-    }
-
-    // G. Default: Safe uncertainty — DO NOT invent diseases!
+    // 2. Open-World Species Outside Genuine Specialist Disease Models:
+    // "For unsupported species, return a clear uncertain disease result unless a genuine, validated disease provider can diagnose it."
+    // "Do not claim a plant is healthy merely because disease detection failed."
+    // "Do not claim universal disease recognition without evidence."
     return {
       disease: null,
       confidence: null,
@@ -295,19 +272,49 @@ export class DiseaseDiagnosisProvider {
       isHealthy: false,
       severity: 'Unknown',
       symptoms: [
-        `Visual foliar symptoms on ${species} cannot be matched with certainty against certified pathology database.`,
+        `Visual foliar symptoms on ${species} cannot be matched with certainty against certified specialist pathology models.`,
       ],
       recommendation: {
-        explanation: `Visual symptoms on ${species} cannot be diagnosed with conclusive certainty. AgroMitra does not fabricate unverified disease labels.`,
+        explanation: `Foliar pathology for ${species} is outside the certified specialist disease database. AgroMitra does not fabricate unverified disease diagnoses.`,
         disease_management: [
-          'Scout for physical insect pests, fungal sporulation, or discoloration.',
-          'Consult local Agricultural Extension Officer (AEO) or Krishi Vigyan Kendra (KVK) for certified plant pathology testing.',
+          'Scout foliage for visible insect pests, fungal mycelium, or spotting.',
+          'Consult local Agricultural Extension Officer (AEO) or Krishi Vigyan Kendra (KVK) for laboratory-certified pathology confirmation.',
         ],
         fertilizer: [
-          'Maintain balanced soil moisture and balanced macro/micronutrient levels.',
+          'Maintain balanced soil fertility and appropriate irrigation scheduling.',
         ],
         prevention: [
           'Isolate affected foliage to prevent potential spread to adjacent crops.',
+        ],
+        safety_note: DEFAULT_DISCLAIMER,
+      },
+    };
+  }
+
+  public createOrganMismatchResponse(species: string, organ: string): DiseaseDiagnosisResult {
+    const organName = organ.charAt(0).toUpperCase() + organ.slice(1);
+    return {
+      disease: null,
+      confidence: null,
+      healthStatus: 'Uncertain',
+      diagnosisStatus: 'ORGAN_MISMATCH',
+      isHealthy: false,
+      severity: 'Unknown',
+      symptoms: [
+        `Image shows a ${species} ${organ}, not a foliar leaf specimen.`,
+        'Certified disease pathology models are calibrated strictly on leaf foliage and cannot diagnose leaf diseases from fruits, flowers, or bark.',
+      ],
+      recommendation: {
+        explanation: `Plant species identified as ${species} (${organName}). Certified disease pathology is trained exclusively on foliar leaf specimens and cannot diagnose leaf diseases from a ${organ}.`,
+        disease_management: [
+          `To check for foliar disease (such as blight, mildew, leaf spot, or rust), please take a clear close-up photo of a ${species} leaf blade.`,
+          'Inspect fruits, flowers, and branches regularly for physical damage or pest punctures.',
+        ],
+        fertilizer: [
+          'Maintain balanced soil fertility and appropriate irrigation scheduling.',
+        ],
+        prevention: [
+          'Ensure adequate canopy airflow and prevent direct fruit-to-soil contact.',
         ],
         safety_note: DEFAULT_DISCLAIMER,
       },

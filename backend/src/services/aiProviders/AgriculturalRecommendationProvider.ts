@@ -84,24 +84,29 @@ export class AgriculturalRecommendationProvider {
     };
 
     // Find real products with stock > 0 and isActive !== false
-    let products = await Product.find({
-      isActive: { $ne: false },
-      stock: { $gt: 0 },
-      $or: [categoryQuery, nameOrDescQuery],
-    })
-      .populate('shopOwner', 'name shopName phone address status isApproved')
-      .limit(30)
-      .lean();
-
-    // If specific search yielded zero, fallback to any available crop protection / fertilizer products with stock > 0
-    if (products.length === 0) {
+    let products: any[] = [];
+    try {
       products = await Product.find({
         isActive: { $ne: false },
         stock: { $gt: 0 },
+        $or: [categoryQuery, nameOrDescQuery],
       })
         .populate('shopOwner', 'name shopName phone address status isApproved')
-        .limit(10)
+        .limit(30)
         .lean();
+
+      // If specific search yielded zero, fallback to any available crop protection / fertilizer products with stock > 0
+      if (products.length === 0) {
+        products = await Product.find({
+          isActive: { $ne: false },
+          stock: { $gt: 0 },
+        })
+          .populate('shopOwner', 'name shopName phone address status isApproved')
+          .limit(10)
+          .lean();
+      }
+    } catch (dbErr: any) {
+      console.warn('[AgriculturalRecommendationProvider]: Non-fatal product catalog lookup error:', dbErr?.message || dbErr);
     }
 
     const recommendedProducts: RecommendedProduct[] = [];
