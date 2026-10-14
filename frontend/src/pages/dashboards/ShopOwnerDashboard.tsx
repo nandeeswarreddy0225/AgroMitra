@@ -164,10 +164,10 @@ export const ShopOwnerDashboard: React.FC = () => {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
-              {isAgriPartner ? 'Agri Partner Portal' : 'Shop Owner Portal'}
+              {isAgriPartner ? t('rolePartner', 'Agri Partner Portal') : t('shopDashboardTitle', 'Shop Owner Portal')}
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Welcome, <strong className="text-slate-800 dark:text-slate-200">{shopName || user?.name}</strong> • {isAgriPartner ? 'Partner Services & Catalog Distribution' : 'Store Operations & Catalog Management'}
+              {t('welcomeBack', 'Welcome')}, <strong className="text-slate-800 dark:text-slate-200">{shopName || user?.name}</strong> • {isAgriPartner ? t('partnerServices', 'Partner Services & Catalog Distribution') : t('storeOperations', 'Store Operations & Catalog Management')}
             </p>
           </div>
         </div>
@@ -185,11 +185,11 @@ export const ShopOwnerDashboard: React.FC = () => {
           className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-amber-300 dark:hover:border-amber-700 transition-all flex items-center justify-between group"
         >
           <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Catalog & Pricing</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">{t('catalogPricing', 'Catalog & Pricing')}</span>
             <h3 className="text-base font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-              Manage Products
+              {t('navCatalogMgmt', 'Manage Products')}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Add seeds, pesticides & equipment</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('catalogDesc', 'Add seeds, pesticides & equipment')}</p>
           </div>
 
           <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors">
@@ -202,11 +202,11 @@ export const ShopOwnerDashboard: React.FC = () => {
           className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-amber-300 dark:hover:border-amber-700 transition-all flex items-center justify-between group"
         >
           <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Fulfillment</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">{t('fulfillment', 'Fulfillment')}</span>
             <h3 className="text-base font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-              Orders & Dispatch
+              {t('navFulfillOrders', 'Orders & Dispatch')}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Accept orders & assign delivery</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('dispatchDesc', 'Accept orders & assign delivery')}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors">
             <Truck className="w-5 h-5" />
@@ -215,12 +215,12 @@ export const ShopOwnerDashboard: React.FC = () => {
 
         <div className="bg-gradient-to-br from-amber-600 to-amber-700 rounded-2xl p-6 text-white shadow-md flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-amber-200 uppercase tracking-wide">Instant Settlement</span>
+            <span className="text-xs font-bold text-amber-200 uppercase tracking-wide">{t('instantSettlement', 'Instant Settlement')}</span>
             <h3 className="text-base font-heading font-extrabold text-white">
-              Dynamic UPI QR
+              {t('dynamicUpiQr', 'Dynamic UPI QR')}
             </h3>
             <p className="text-xs text-amber-100">
-              {upiId ? `Active: ${upiId}` : 'Set UPI ID below'}
+              {upiId ? `Active: ${upiId}` : t('setUpiPrompt', 'Set UPI ID below')}
             </p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center">
@@ -261,7 +261,7 @@ export const ShopOwnerDashboard: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Agri Store Name
+                  {t('storeNameLabel', 'Agri Store Name')}
                 </label>
                 <input
                   type="text"
@@ -275,7 +275,7 @@ export const ShopOwnerDashboard: React.FC = () => {
 
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Store Partner UPI ID (PhonePe / GPay / BHIM)
+                  {t('storeUpiLabel', 'Store Partner UPI ID (PhonePe / GPay / BHIM)')}
                 </label>
 
                 <input
@@ -292,7 +292,7 @@ export const ShopOwnerDashboard: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Contact Mobile Number
+                  {t('phoneLabel', 'Contact Mobile Number')}
                 </label>
                 <input
                   type="text"
@@ -306,7 +306,7 @@ export const ShopOwnerDashboard: React.FC = () => {
 
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Street / Market Yard Location
+                  {t('streetAddress', 'Street / Market Yard Location')}
                 </label>
                 <input
                   type="text"
@@ -320,7 +320,7 @@ export const ShopOwnerDashboard: React.FC = () => {
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">City / Town</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t('cityDistrict', 'City / Town')}</label>
                 <input
                   type="text"
                   value={city}
@@ -330,7 +330,7 @@ export const ShopOwnerDashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">State</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t('state', 'State')}</label>
                 <input
                   type="text"
                   value={state}
@@ -340,7 +340,7 @@ export const ShopOwnerDashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Pincode</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t('pincode', 'Pincode')}</label>
                 <input
                   type="text"
                   value={pincode}
@@ -358,7 +358,7 @@ export const ShopOwnerDashboard: React.FC = () => {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white font-heading font-bold text-xs shadow-md transition-all"
               >
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                <span>{t('save', 'Save Store Payment Details')}</span>
+                <span>{t('save', 'Save Changes')}</span>
               </button>
             </div>
           </form>

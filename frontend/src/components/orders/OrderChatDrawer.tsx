@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { getOrderMessagesApi, sendOrderMessageApi } from '../../services/api';
 import { OrderMessage } from '../../types/order';
+import { useTranslation } from '../../context/LanguageContext';
 
 interface OrderChatDrawerProps {
   orderId: string;
@@ -23,15 +24,6 @@ interface OrderChatDrawerProps {
   currentUserId?: string;
 }
 
-const QUICK_PROMPTS = [
-  'When will the order be dispatched?',
-  'Is the order packed and ready for pickup?',
-  'Please call when you reach near the farm gate.',
-  'Order confirmed and packed with genuine batch.',
-  'Courier is on the way with your agricultural supplies.',
-  'Payment has been verified via UPI QR.',
-];
-
 export const OrderChatDrawer: React.FC<OrderChatDrawerProps> = ({
   orderId,
   orderNumber,
@@ -40,6 +32,7 @@ export const OrderChatDrawer: React.FC<OrderChatDrawerProps> = ({
   currentUserRole = 'FARMER',
   currentUserId,
 }) => {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<OrderMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -123,31 +116,40 @@ export const OrderChatDrawer: React.FC<OrderChatDrawerProps> = ({
       case 'SHOP_OWNER':
       case 'AGRI_PARTNER':
         return {
-          label: 'Store Partner',
+          label: t('navStorePortal', 'Store Partner'),
           icon: Store,
           bg: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
         };
       case 'DELIVERY_BOY':
         return {
-          label: 'Delivery Partner',
+          label: t('footerDeliveryTitle', 'Delivery Partner'),
           icon: Truck,
           bg: 'bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700',
         };
       case 'FARMER':
         return {
-          label: 'Farmer',
+          label: t('farmerCardTitle', 'Farmer'),
           icon: User,
           bg: 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700',
         };
       case 'ADMIN':
       default:
         return {
-          label: 'AgroMitra Support',
+          label: t('brandName', 'AgroMitra Support'),
           icon: ShieldCheck,
           bg: 'bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-700',
         };
     }
   };
+
+  const quickPrompts = [
+    t('quickPrompt1', 'When will the order be dispatched?'),
+    t('quickPrompt2', 'Is the order packed and ready for pickup?'),
+    t('quickPrompt3', 'Please call when you reach near the farm gate.'),
+    t('quickPrompt4', 'Order confirmed and packed with genuine batch.'),
+    t('quickPrompt5', 'Courier is on the way with your agricultural supplies.'),
+    t('paymentSuccess', 'Payment has been verified via UPI QR.'),
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -161,12 +163,12 @@ export const OrderChatDrawer: React.FC<OrderChatDrawerProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-heading font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
-                  Direct Order Chat
+                  {t('inOrderChatTitle', 'Direct Order Chat')}
                 </h3>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Order #{orderNumber} • Farmer, Store & Courier
+                {t('orderNumber', 'Order #')}{orderNumber}
               </p>
             </div>
           </div>
@@ -203,10 +205,10 @@ export const OrderChatDrawer: React.FC<OrderChatDrawerProps> = ({
                 <Sparkles className="w-6 h-6" />
               </div>
               <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                No messages yet
+                {t('noMessagesYet', 'No messages yet')}
               </p>
               <p className="text-xs text-slate-400 max-w-xs mx-auto">
-                Need updates or special delivery instructions? Ask the Agri Store or Courier Partner directly below.
+                {t('chatEmptyPrompt', 'Need updates or special delivery instructions? Ask the Agri Store or Courier Partner directly below.')}
               </p>
             </div>
           )}
@@ -265,7 +267,7 @@ export const OrderChatDrawer: React.FC<OrderChatDrawerProps> = ({
 
         {/* Quick Suggestion Chips */}
         <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto flex items-center gap-1.5 no-scrollbar">
-          {QUICK_PROMPTS.map((prompt, i) => (
+          {quickPrompts.map((prompt, i) => (
             <button
               key={i}
               onClick={() => handleSendMessage(prompt)}
@@ -285,7 +287,7 @@ export const OrderChatDrawer: React.FC<OrderChatDrawerProps> = ({
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type message to store / courier..."
+              placeholder={t('chatPlaceholder', 'Type message to store / courier...')}
               disabled={sending}
               maxLength={1000}
               className="flex-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"

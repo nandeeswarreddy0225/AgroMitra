@@ -79,7 +79,7 @@ export const Navbar: React.FC = () => {
   const getRoleShortLabel = (role?: string) => {
     switch (role) {
       case 'MARKET_OWNER':
-        return 'Market Owner';
+        return t('roleMarketOwner', 'Market Owner');
       case 'SHOP_OWNER':
         return t('roleShopOwner', 'Shop Owner');
       case 'AGRI_PARTNER':
@@ -89,7 +89,7 @@ export const Navbar: React.FC = () => {
       case 'FARMER':
         return t('roleFarmer', 'Farmer');
       case 'ADMIN':
-        return 'Admin';
+        return t('roleAdmin', 'Admin');
       default:
         return 'User';
     }
@@ -142,7 +142,7 @@ export const Navbar: React.FC = () => {
               }`}
             >
               <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>Mandi Rates</span>
+              <span>{t('navMandi', 'Mandi Rates')}</span>
             </Link>
 
             {/* Mandi Owner Portal (Direct Access) */}
@@ -155,7 +155,7 @@ export const Navbar: React.FC = () => {
               }`}
             >
               <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span>Mandi Portal</span>
+              <span>{t('navMandiPortal', 'Mandi Portal')}</span>
             </Link>
 
             {isAuthenticated && user ? (
@@ -218,7 +218,7 @@ export const Navbar: React.FC = () => {
                       }`}
                     >
                       <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                      <span>Mandi Dashboard</span>
+                      <span>{t('navMandiDashboard', 'Mandi Dashboard')}</span>
                     </Link>
                   </>
                 )}
@@ -235,7 +235,7 @@ export const Navbar: React.FC = () => {
                       }`}
                     >
                       <Package className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                      <span>Inventory</span>
+                      <span>{t('navInventory', 'Inventory')}</span>
                     </Link>
 
                     <Link
@@ -247,7 +247,7 @@ export const Navbar: React.FC = () => {
                       }`}
                     >
                       <Store className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                      <span>Fulfill Orders</span>
+                      <span>{t('navFulfillOrders', 'Fulfill Orders')}</span>
                     </Link>
                   </>
                 )}
@@ -264,7 +264,7 @@ export const Navbar: React.FC = () => {
                       }`}
                     >
                       <CreditCard className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                      <span>Store Payment & UPI</span>
+                      <span>{t('navPaymentConfig', 'Store Payment & UPI')}</span>
                     </Link>
 
                     <Link
@@ -276,7 +276,7 @@ export const Navbar: React.FC = () => {
                       }`}
                     >
                       <Package className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                      <span>Catalog Management</span>
+                      <span>{t('navCatalogMgmt', 'Catalog Management')}</span>
                     </Link>
                   </>
                 )}
@@ -292,7 +292,7 @@ export const Navbar: React.FC = () => {
                     }`}
                   >
                     <Truck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span>Deliveries</span>
+                    <span>{t('navDeliveries', 'Deliveries')}</span>
                   </Link>
                 )}
               </>
@@ -491,7 +491,7 @@ export const Navbar: React.FC = () => {
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2 rounded-xl text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
-              Live Mandi Rates
+              {t('navMandi', 'Live Mandi Rates')}
             </Link>
 
             <Link
@@ -499,7 +499,7 @@ export const Navbar: React.FC = () => {
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2 rounded-xl text-sm font-bold text-purple-600 dark:text-purple-400 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
-              🏛️ Mandi Owner Portal
+              🏛️ {t('navMandiPortal', 'Mandi Owner Portal')}
             </Link>
 
             {isAuthenticated && user ? (
@@ -556,7 +556,7 @@ export const Navbar: React.FC = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className="block px-3 py-2 rounded-xl text-sm font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40"
                     >
-                      Mandi Owner Dashboard
+                      {t('navMandiDashboard', 'Mandi Owner Dashboard')}
                     </Link>
                   </>
                 )}
@@ -568,14 +568,14 @@ export const Navbar: React.FC = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className="block px-3 py-2 rounded-xl text-sm font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40"
                     >
-                      {user.role === 'AGRI_PARTNER' ? 'Agri Partner Orders' : 'Shop Owner Orders'}
+                      {t('navFulfillOrders', 'Fulfill Orders')}
                     </Link>
                     <Link
                       to="/shop/products"
                       onClick={() => setMobileMenuOpen(false)}
                       className="block px-3 py-2 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                     >
-                      Manage Inventory
+                      {t('navInventory', 'Manage Inventory')}
                     </Link>
                   </>
                 )}
@@ -587,14 +587,14 @@ export const Navbar: React.FC = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className="block px-3 py-2 rounded-xl text-sm font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40"
                     >
-                      Admin Dashboard
+                      {t('navDashboard', 'Admin Dashboard')}
                     </Link>
                     <Link
                       to="/admin/products"
                       onClick={() => setMobileMenuOpen(false)}
                       className="block px-3 py-2 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                     >
-                      Catalog Management
+                      {t('navCatalogMgmt', 'Catalog Management')}
                     </Link>
                   </>
                 )}
@@ -605,7 +605,7 @@ export const Navbar: React.FC = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-3 py-2 rounded-xl text-sm font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40"
                   >
-                    Delivery Partner Dashboard
+                    {t('deliveryHubTitle', 'Delivery Partner Dashboard')}
                   </Link>
                 )}
 

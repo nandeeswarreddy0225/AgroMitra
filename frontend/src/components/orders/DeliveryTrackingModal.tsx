@@ -17,6 +17,7 @@ import {
 
 import { getOrderTrackingApi } from '../../services/api';
 import { TrackingTelemetry } from '../../types/order';
+import { useTranslation } from '../../context/LanguageContext';
 
 interface DeliveryTrackingModalProps {
   orderId: string;
@@ -33,6 +34,7 @@ export const DeliveryTrackingModal: React.FC<DeliveryTrackingModalProps> = ({
   onClose,
   onOpenChat,
 }) => {
+  const { t } = useTranslation();
   const [telemetry, setTelemetry] = useState<TrackingTelemetry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -174,14 +176,14 @@ export const DeliveryTrackingModal: React.FC<DeliveryTrackingModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-heading font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
-                  Live Farm Dispatch Tracking
+                  {t('liveTrackingTitle', 'Live Farm Dispatch Tracking')}
                 </h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
                   {telemetry?.status || 'IN_TRANSIT'}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Order #{orderNumber} • Real-time GPS & Road Simulation
+                {t('orderNumber', 'Order #')}{orderNumber} • {t('liveSimulationActive', 'Real-time GPS & Road Simulation')}
               </p>
             </div>
           </div>
@@ -222,9 +224,9 @@ export const DeliveryTrackingModal: React.FC<DeliveryTrackingModalProps> = ({
             <div className="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
               <div className="flex items-center gap-2 pointer-events-auto bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-slate-700 text-white shadow-xl text-xs font-bold">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping inline-block mr-1" />
-                <span>Live Route Simulation</span>
+                <span>{t('liveSimulationActive', 'Live Route Simulation')}</span>
                 <span className="text-slate-400 font-normal">|</span>
-                <span className="text-emerald-400 font-extrabold">{simulatedProgress.toFixed(0)}% Completed</span>
+                <span className="text-emerald-400 font-extrabold">{simulatedProgress.toFixed(0)}% {t('completed', 'Completed')}</span>
               </div>
 
               {/* Simulation Player Controls */}
@@ -416,9 +418,9 @@ export const DeliveryTrackingModal: React.FC<DeliveryTrackingModalProps> = ({
               <div className="flex items-center gap-2 border-r border-slate-700/60 pr-2">
                 <Clock className="w-4 h-4 text-cyan-400 shrink-0" />
                 <div>
-                  <span className="text-[9px] uppercase font-bold text-slate-400 block">Est. Time</span>
+                  <span className="text-[9px] uppercase font-bold text-slate-400 block">{t('estimatedArrival', 'Est. Time')}</span>
                   <span className="text-xs sm:text-sm font-heading font-black text-white">
-                    {simulatedProgress >= 100 ? 'At Location' : `~${currentEtaMins} mins`}
+                    {simulatedProgress >= 100 ? t('timelineDelivered', 'At Location') : `~${currentEtaMins} mins`}
                   </span>
                 </div>
               </div>
@@ -426,7 +428,7 @@ export const DeliveryTrackingModal: React.FC<DeliveryTrackingModalProps> = ({
               <div className="flex items-center gap-2 border-r border-slate-700/60 pr-2">
                 <Navigation className="w-4 h-4 text-emerald-400 shrink-0" />
                 <div>
-                  <span className="text-[9px] uppercase font-bold text-slate-400 block">Remaining</span>
+                  <span className="text-[9px] uppercase font-bold text-slate-400 block">{t('distanceLabel', 'Remaining')}</span>
                   <span className="text-xs sm:text-sm font-heading font-black text-emerald-400">
                     {simulatedProgress >= 100 ? '0 km' : `${currentDistKm} km`}
                   </span>
@@ -436,7 +438,7 @@ export const DeliveryTrackingModal: React.FC<DeliveryTrackingModalProps> = ({
               <div className="flex items-center gap-2">
                 <Gauge className="w-4 h-4 text-amber-400 shrink-0" />
                 <div>
-                  <span className="text-[9px] uppercase font-bold text-slate-400 block">Vehicle Speed</span>
+                  <span className="text-[9px] uppercase font-bold text-slate-400 block">{t('speedLabel', 'Vehicle Speed')}</span>
                   <span className="text-xs sm:text-sm font-heading font-black text-amber-300">
                     {simulatedProgress >= 100 ? '0 km/h' : '34 km/h'}
                   </span>
@@ -456,11 +458,11 @@ export const DeliveryTrackingModal: React.FC<DeliveryTrackingModalProps> = ({
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-heading font-bold text-slate-900 dark:text-white">
-                      {telemetry?.deliveryPartner.name || 'Assigned Courier Partner'}
+                      {telemetry?.deliveryPartner.name || t('deliveryPartnerLabel', 'Assigned Courier Partner')}
                     </span>
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold">
                       <ShieldCheck className="w-3 h-3" />
-                      Verified
+                      {t('genuineGuarantee', 'Verified')}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -476,7 +478,7 @@ export const DeliveryTrackingModal: React.FC<DeliveryTrackingModalProps> = ({
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition"
                   >
                     <Phone className="w-3.5 h-3.5" />
-                    <span>Call Courier</span>
+                    <span>{t('callPartnerBtn', 'Call Courier')}</span>
                   </a>
                 )}
                 {onOpenChat && (
@@ -484,7 +486,7 @@ export const DeliveryTrackingModal: React.FC<DeliveryTrackingModalProps> = ({
                     onClick={onOpenChat}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-600 transition"
                   >
-                    <span>Open Chat</span>
+                    <span>{t('chatWithStoreBtn', 'Open Chat')}</span>
                   </button>
                 )}
               </div>
@@ -493,13 +495,13 @@ export const DeliveryTrackingModal: React.FC<DeliveryTrackingModalProps> = ({
             {/* Handover OTP Verification Card */}
             <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 flex flex-col justify-center items-center text-center">
               <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-300 block mb-1">
-                Handover Verification OTP
+                {t('handoverOtp', 'Handover Verification OTP')}
               </span>
               <div className="text-2xl sm:text-3xl font-heading font-black tracking-widest text-amber-900 dark:text-amber-200 py-1 px-4 bg-white dark:bg-slate-900 rounded-xl border border-amber-300 dark:border-amber-700 shadow-sm">
                 {telemetry?.deliveryOtp || '8419'}
               </div>
               <span className="text-[10px] text-amber-700 dark:text-amber-400 mt-1.5 font-medium">
-                Share with courier upon delivery verification
+                {t('shareOtpNote', 'Share with courier upon delivery verification')}
               </span>
             </div>
           </div>
@@ -508,7 +510,7 @@ export const DeliveryTrackingModal: React.FC<DeliveryTrackingModalProps> = ({
           {telemetry?.milestones && telemetry.milestones.length > 0 && (
             <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700">
               <h4 className="text-xs font-heading font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4">
-                Shipment Progression Status
+                {t('orderTimeline', 'Shipment Progression Status')}
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                 {telemetry.milestones.map((m) => (

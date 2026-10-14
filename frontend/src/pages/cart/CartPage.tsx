@@ -13,8 +13,10 @@ import {
   Store,
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useTranslation } from '../../context/LanguageContext';
 
 export const CartPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { cart, items, totalItems, subtotal, total, isLoading, updateQuantity, removeItem, clearCart } = useCart();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export const CartPage: React.FC = () => {
     return (
       <div className="min-h-[450px] flex flex-col items-center justify-center max-w-7xl mx-auto px-4 py-16">
         <Loader2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400 animate-spin mb-3" />
-        <p className="text-base font-medium text-slate-700 dark:text-slate-300">Loading your cart from database...</p>
+        <p className="text-base font-medium text-slate-700 dark:text-slate-300">{t('loadingCart', 'Loading your cart from database...')}</p>
       </div>
     );
   }
@@ -74,11 +76,10 @@ export const CartPage: React.FC = () => {
           <ShoppingCart className="w-10 h-10" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-heading font-bold text-slate-900 dark:text-white">Your Cart is Empty</h2>
+          <h2 className="text-2xl sm:text-3xl font-heading font-bold text-slate-900 dark:text-white">{t('cartEmptyTitle', 'Your Cart is Empty')}</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            You don't have any agricultural products in your cart yet. Explore the Marketplace to source certified seeds, crop protection, and tools.
+            {t('cartEmptySubtitle', "You don't have any agricultural products in your cart yet. Explore the Marketplace to source certified seeds, crop protection, and tools.")}
           </p>
-
         </div>
         <div className="pt-2">
           <Link
@@ -86,7 +87,7 @@ export const CartPage: React.FC = () => {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Browse Marketplace</span>
+            <span>{t('exploreProductsBtn', 'Browse Marketplace')}</span>
           </Link>
         </div>
       </div>
@@ -102,10 +103,10 @@ export const CartPage: React.FC = () => {
         <div>
           <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white flex items-center gap-3">
             <ShoppingCart className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-            <span>Shopping Cart ({totalItems} items)</span>
+            <span>{t('cartTitle', 'Shopping Cart')} ({totalItems})</span>
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Review and adjust order quantities before proceeding to checkout.
+            {t('cartSubtitle', 'Review and adjust order quantities before proceeding to checkout.')}
           </p>
         </div>
 
@@ -114,7 +115,7 @@ export const CartPage: React.FC = () => {
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 self-start transition-colors"
         >
           <Trash2 className="w-4 h-4" />
-          <span>Clear Entire Cart</span>
+          <span>{t('clearCartBtn', 'Clear Entire Cart')}</span>
         </button>
       </div>
 
@@ -126,7 +127,7 @@ export const CartPage: React.FC = () => {
             <span>{errorMsg}</span>
           </div>
           <button onClick={() => setErrorMsg(null)} className="text-rose-700 dark:text-rose-300 hover:text-rose-900 text-xs font-semibold">
-            Dismiss
+            {t('dismiss', 'Dismiss')}
           </button>
         </div>
       )}
@@ -135,7 +136,7 @@ export const CartPage: React.FC = () => {
         <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2">
           <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <span>
-            Some items in your cart exceed available stock. Please adjust quantities before proceeding to checkout.
+            {t('cartStockWarning', 'Some items in your cart exceed available stock. Please adjust quantities before proceeding to checkout.')}
           </span>
         </div>
       )}
@@ -191,7 +192,7 @@ export const CartPage: React.FC = () => {
                     {shop?.name && (
                       <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                         <Store className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Supplier: {shop.name}</span>
+                        <span>{t('soldBy', 'Supplier:')} {shop.name}</span>
                       </div>
                     )}
 
@@ -200,12 +201,12 @@ export const CartPage: React.FC = () => {
                         ₹{item.currentPrice}
                       </span>
                       <span className="text-xs text-slate-500 dark:text-slate-400">/ {item.unit}</span>
-                      <span className="text-xs text-slate-400 dark:text-slate-500">• Available: {item.currentStock} {item.unit}</span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500">• {t('inStock', 'Available:')} {item.currentStock} {item.unit}</span>
                     </div>
 
                     {!item.isAvailable && (
                       <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 pt-1">
-                        Requested {item.quantity} exceeds available {item.currentStock} {item.unit}
+                        {t('cartQuantityExceeds', 'Requested')} {item.quantity} {t('exceedsAvailable', 'exceeds available')} {item.currentStock} {item.unit}
                       </p>
                     )}
                   </div>
@@ -214,7 +215,7 @@ export const CartPage: React.FC = () => {
                 {/* Quantity Controls & Subtotal */}
                 <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">Subtotal</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">{t('subtotal', 'Subtotal')}</span>
                     <span className="text-lg font-heading font-black text-slate-900 dark:text-white">₹{item.subtotal.toFixed(2)}</span>
                   </div>
 
@@ -245,7 +246,7 @@ export const CartPage: React.FC = () => {
                       onClick={() => handleRemoveItem(prodId)}
                       disabled={isItemLoading}
                       className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
-                      title="Remove product from cart"
+                      title={t('removeProduct', 'Remove product from cart')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -260,24 +261,24 @@ export const CartPage: React.FC = () => {
         <div className="lg:col-span-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-6 shadow-sm sticky top-24">
             <h3 className="text-lg font-heading font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-              Order Summary
+              {t('orderSummary', 'Order Summary')}
             </h3>
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                <span>Total Items</span>
+                <span>{t('totalItems', 'Total Items')}</span>
                 <span className="font-semibold text-slate-900 dark:text-white">{totalItems}</span>
               </div>
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                <span>Subtotal</span>
+                <span>{t('subtotal', 'Subtotal')}</span>
                 <span className="font-semibold text-slate-900 dark:text-white">₹{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                <span>Estimated Taxes & Platform Fee</span>
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">₹0.00 (Free)</span>
+                <span>{t('taxesAndFees', 'Estimated Taxes & Platform Fee')}</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">₹0.00 ({t('freeDelivery', 'Free')})</span>
               </div>
               <div className="border-t border-slate-100 dark:border-slate-800 pt-3 flex justify-between text-base font-heading font-extrabold text-slate-900 dark:text-white">
-                <span>Total Amount</span>
+                <span>{t('orderTotal', 'Total Amount')}</span>
                 <span className="text-xl text-emerald-600 dark:text-emerald-400">₹{total.toFixed(2)}</span>
               </div>
             </div>
@@ -287,7 +288,7 @@ export const CartPage: React.FC = () => {
               disabled={hasUnavailableItems}
               className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md hover:shadow-lg disabled:opacity-50 transition-all"
             >
-              <span>Proceed to Checkout</span>
+              <span>{t('proceedToCheckoutBtn', 'Proceed to Checkout')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -297,7 +298,7 @@ export const CartPage: React.FC = () => {
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Continue Shopping</span>
+                <span>{t('continueShoppingBtn', 'Continue Shopping')}</span>
               </Link>
             </div>
           </div>

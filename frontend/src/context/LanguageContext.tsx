@@ -13,7 +13,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<SupportedLanguage>(() => {
-    const saved = localStorage.getItem('krishisetu_language') as SupportedLanguage | null;
+    const saved = (localStorage.getItem('agromitra_language') || localStorage.getItem('krishisetu_language')) as SupportedLanguage | null;
     if (saved && ['en', 'te', 'hi', 'kn', 'ta', 'mr'].includes(saved)) {
       return saved;
     }
@@ -21,6 +21,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
 
   useEffect(() => {
+    localStorage.setItem('agromitra_language', language);
     localStorage.setItem('krishisetu_language', language);
     document.documentElement.lang = language;
   }, [language]);
@@ -33,6 +34,9 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     const langDict = translations[language];
     if (langDict && langDict[key]) {
       return langDict[key];
+    }
+    if (import.meta.env?.DEV && !translations.en[key] && !fallback) {
+      console.warn(`[i18n] Missing translation key: "${key}" for language "${language}"`);
     }
     // Fallback to English
     if (translations.en[key]) {

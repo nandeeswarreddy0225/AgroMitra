@@ -600,7 +600,7 @@ export const CropDiseasePage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
               <h2 className="text-base font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Camera className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                <span>Leaf Image Capture</span>
+                <span>{t('leafImageCapture', 'Leaf Image Capture')}</span>
               </h2>
 
               <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
@@ -618,7 +618,7 @@ export const CropDiseasePage: React.FC = () => {
                   }`}
                 >
                   <Camera className="w-3.5 h-3.5" />
-                  <span>Live Camera</span>
+                  <span>{t('liveCamera', 'Live Camera')}</span>
                 </button>
 
                 <button
@@ -634,7 +634,7 @@ export const CropDiseasePage: React.FC = () => {
                   }`}
                 >
                   <UploadCloud className="w-3.5 h-3.5" />
-                  <span>File Upload</span>
+                  <span>{t('fileUpload', 'File Upload')}</span>
                 </button>
               </div>
             </div>
@@ -702,7 +702,7 @@ export const CropDiseasePage: React.FC = () => {
                       className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-sm shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                     >
                       <Camera className="w-5 h-5 text-slate-950" />
-                      <span>Capture Photo</span>
+                      <span>{t('takePhotoBtn', 'Capture Photo')}</span>
                     </button>
 
                     <button
@@ -724,7 +724,7 @@ export const CropDiseasePage: React.FC = () => {
                   <div className="w-14 h-14 rounded-2xl bg-slate-800 text-emerald-400 flex items-center justify-center mb-3">
                     <UploadCloud className="w-7 h-7" />
                   </div>
-                  <p className="text-sm font-bold text-white">Click or Drag Leaf Photo</p>
+                  <p className="text-sm font-bold text-white">{t('dragDropLeafPrompt', 'Click or Drag Leaf Photo')}</p>
                   <p className="text-xs text-slate-400 mt-1">JPEG, PNG, or WebP up to 10MB</p>
                 </div>
               )}
@@ -755,7 +755,7 @@ export const CropDiseasePage: React.FC = () => {
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 shadow-xs"
               >
                 <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Open Phone Camera (Direct Native)</span>
+                <span>{t('openPhoneCamera', 'Open Phone Camera (Direct Native)')}</span>
               </button>
 
               <button
@@ -763,7 +763,7 @@ export const CropDiseasePage: React.FC = () => {
                 onClick={() => galleryInputRef.current?.click()}
                 className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 shadow-xs"
               >
-                <span>Gallery</span>
+                <span>{t('gallery', 'Gallery')}</span>
               </button>
             </div>
 
@@ -801,12 +801,12 @@ export const CropDiseasePage: React.FC = () => {
                 {isAnalyzing ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Executing Deep Neural Inference...</span>
+                    <span>{t('scanningLeaf', 'Executing Deep Neural Inference...')}</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5 text-amber-300" />
-                    <span>Run AI Diagnosis</span>
+                    <span>{t('runAiDiagnosis', 'Run AI Diagnosis')}</span>
                   </>
                 )}
               </button>
@@ -817,7 +817,7 @@ export const CropDiseasePage: React.FC = () => {
                   onClick={handleResetScanner}
                   className="px-4 py-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm transition-colors"
                 >
-                  Clear
+                  {t('clear', 'Clear')}
                 </button>
               )}
             </div>

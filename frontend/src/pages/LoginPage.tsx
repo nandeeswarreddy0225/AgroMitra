@@ -19,6 +19,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import { getPostLoginRedirectPath, UserRole } from '../types/auth';
 import { AgroMitraLogo } from '../components/common/AgroMitraLogo';
 import axios from 'axios';
@@ -35,6 +36,7 @@ const handleImageError = (
 };
 
 export const LoginPage: React.FC = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const initialRoleParam = (searchParams.get('role') || searchParams.get('portal') || '').toUpperCase();
   const validRoles: UserRole[] = ['FARMER', 'SHOP_OWNER', 'AGRI_PARTNER', 'MARKET_OWNER', 'DELIVERY_BOY', 'ADMIN'];
@@ -63,11 +65,11 @@ export const LoginPage: React.FC = () => {
   const isEmailInput = phone.includes('@') || /[a-zA-Z]/.test(phone);
 
   const portals = [
-    { role: 'FARMER' as UserRole, label: 'Farmer', icon: Sprout, desc: 'Inputs & AI health' },
-    { role: 'SHOP_OWNER' as UserRole, label: 'Shop Owner', icon: Store, desc: 'Inventory & orders' },
-    { role: 'AGRI_PARTNER' as UserRole, label: 'Agri Partner', icon: HeartHandshake, desc: 'Partner services' },
-    { role: 'MARKET_OWNER' as UserRole, label: 'Market Owner', icon: Building2, desc: 'Mandi spot rates' },
-    { role: 'DELIVERY_BOY' as UserRole, label: 'Delivery Boy', icon: Truck, desc: 'Field deliveries' },
+    { role: 'FARMER' as UserRole, label: t('roleFarmer', 'Farmer'), icon: Sprout, desc: t('roleFarmerDesc', 'Inputs & AI health') },
+    { role: 'SHOP_OWNER' as UserRole, label: t('roleShopOwner', 'Shop Owner'), icon: Store, desc: t('roleShopOwnerDesc', 'Inventory & orders') },
+    { role: 'AGRI_PARTNER' as UserRole, label: t('rolePartner', 'Agri Partner'), icon: HeartHandshake, desc: t('rolePartnerDesc', 'Partner services') },
+    { role: 'MARKET_OWNER' as UserRole, label: t('roleMarketOwner', 'Market Owner'), icon: Building2, desc: t('roleMarketOwnerDesc', 'Mandi spot rates') },
+    { role: 'DELIVERY_BOY' as UserRole, label: t('roleDelivery', 'Delivery Boy'), icon: Truck, desc: t('roleDeliveryDesc', 'Field deliveries') },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -223,15 +225,15 @@ export const LoginPage: React.FC = () => {
           
           <div className="space-y-2 mb-6">
             <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
-              Sign In to AgroMitra
+              {t('signInTitle', 'Sign In to AgroMitra')}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              New to AgroMitra?{' '}
+              {t('newToKrishiSetu', 'New to AgroMitra? Create account')}{' '}
               <Link
                 to={`/register?role=${selectedPortal}`}
                 className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
               >
-                Create an account
+                {t('navRegister', 'Create account')}
               </Link>
             </p>
           </div>
@@ -239,7 +241,7 @@ export const LoginPage: React.FC = () => {
           {/* 5-Portal Selector Chips */}
           <div className="mb-6">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2.5">
-              Select Your Agricultural Portal:
+              {t('portalSelection', 'Select Your Agricultural Portal:')}
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {portals.map((p) => {
@@ -279,7 +281,7 @@ export const LoginPage: React.FC = () => {
             {/* Phone Number or Email Input */}
             <div>
               <label htmlFor="phone" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                Phone Number or Email <span className="text-rose-500">*</span>
+                {t('phoneOrEmailLabel', 'Phone Number or Email')} <span className="text-rose-500">*</span>
               </label>
               <div className="relative rounded-xl shadow-xs flex">
                 <span className="inline-flex items-center px-3.5 rounded-l-xl border border-r-0 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs">
@@ -301,7 +303,7 @@ export const LoginPage: React.FC = () => {
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="9876543210 or user@example.com"
+                    placeholder={t('phoneOrEmailPlaceholder', '9876543210 or user@example.com')}
                     maxLength={100}
                     className="block w-full pl-9 pr-3 py-3 border border-slate-300 dark:border-slate-700 rounded-r-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                   />
@@ -313,13 +315,13 @@ export const LoginPage: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label htmlFor="password" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Password <span className="text-rose-500">*</span>
+                  {t('passwordLabel', 'Password')} <span className="text-rose-500">*</span>
                 </label>
                 <Link
                   to="/forgot-password"
                   className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline transition-colors"
                 >
-                  Forgot Password?
+                  {t('forgotPasswordLink', 'Forgot Password?')}
                 </Link>
               </div>
               <div className="relative rounded-xl shadow-xs">
@@ -361,12 +363,12 @@ export const LoginPage: React.FC = () => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Signing in...</span>
+                    <span>{t('loggingIn', 'Signing in...')}</span>
                   </>
                 ) : (
                   <>
                     <LogIn className="w-4 h-4" />
-                    <span>Sign In to {portals.find(p => p.role === selectedPortal)?.label || 'Portal'}</span>
+                    <span>{t('navSignIn', 'Sign In')} ({portals.find(p => p.role === selectedPortal)?.label || 'Portal'})</span>
                   </>
                 )}
               </button>
@@ -376,9 +378,9 @@ export const LoginPage: React.FC = () => {
 
           {/* Quick Help Footer */}
           <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center text-xs text-slate-400">
-            <span>Need portal assistance? </span>
+            <span>{t('brandTagline', 'Smart Farming. Better Crops. Better Future.')} • </span>
             <Link to="/marketplace" className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline">
-              Explore AgroMitra Marketplace
+              {t('navMarketplace', 'Explore AgroMitra Marketplace')}
             </Link>
           </div>
 

@@ -36,9 +36,11 @@ import {
   MarketComparisonResponse,
 } from '../../types/marketOwner';
 import { AgroMitraLogo } from '../../components/common/AgroMitraLogo';
+import { useTranslation } from '../../context/LanguageContext';
 
 export const FarmerMarketPricesPage: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [commodities, setCommodities] = useState<Commodity[]>([]);
   const [selectedCommodity, setSelectedCommodity] = useState<string>('');
   const [selectedCommodityDoc, setSelectedCommodityDoc] = useState<Commodity | null>(null);
@@ -350,10 +352,10 @@ export const FarmerMarketPricesPage: React.FC = () => {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
-              Agricultural Market Comparison
+              {t('mandiRatesTitle', 'Agricultural Market Comparison')}
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Compare wholesale commodity rates across authorized APMC mandis, view 7/30-day historical price trends, and identify optimal selling venues.
+              {t('mandiSubtitle', 'Compare wholesale commodity rates across authorized APMC mandis, view 7/30-day historical price trends, and identify optimal selling venues.')}
             </p>
           </div>
         </div>
@@ -373,7 +375,7 @@ export const FarmerMarketPricesPage: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs"
           >
             <Building2 className="w-3.5 h-3.5" />
-            <span>{user?.role === 'MARKET_OWNER' ? 'Mandi Dashboard' : 'Mandi Owner Portal'}</span>
+            <span>{user?.role === 'MARKET_OWNER' ? t('navMandiDashboard', 'Mandi Dashboard') : t('navMandiPortal', 'Mandi Owner Portal')}</span>
           </Link>
         </div>
       </div>
@@ -393,7 +395,7 @@ export const FarmerMarketPricesPage: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-            Select Commodity
+            {t('selectCommodity', 'Select Commodity')}
           </span>
           <span className="text-xs text-slate-400">
             {commodities.length} active commodities

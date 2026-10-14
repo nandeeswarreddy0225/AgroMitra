@@ -31,6 +31,7 @@ import {
 } from '../../types/cropAdvisor';
 import { WeatherData } from '../../types/weather';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../context/LanguageContext';
 import { Link } from 'react-router-dom';
 
 interface SeasonalCropAdvisorCardProps {
@@ -43,6 +44,7 @@ export const SeasonalCropAdvisorCard: React.FC<SeasonalCropAdvisorCardProps> = (
   className = '',
 }) => {
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
 
   const [data, setData] = useState<SeasonalAdvisorResponse | null>(null);
   const [selectedSeason, setSelectedSeason] = useState<CropSeason | undefined>(undefined);
@@ -236,12 +238,12 @@ export const SeasonalCropAdvisorCard: React.FC<SeasonalCropAdvisorCardProps> = (
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-slate-900 dark:text-white">
-                🌱 My Farm Planner & Seasonal Advisor
+                {t('farmPlannerTitle', '🌱 My Farm Planner & Seasonal Advisor')}
               </h2>
               {data?.currentSeason && (
                 <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
                   <span>{data.currentSeason.icon}</span>
-                  <span>{data.currentSeason.name} Season</span>
+                  <span>{data.currentSeason.name} {t('season', 'Season')}</span>
                 </span>
               )}
             </div>
@@ -251,13 +253,13 @@ export const SeasonalCropAdvisorCard: React.FC<SeasonalCropAdvisorCardProps> = (
                 <span>
                   {weather?.location?.city
                     ? `${weather.location.city}, ${weather.location.state || 'India'}`
-                    : 'Location Detected'}
+                    : t('locationDetected', 'Location Detected')}
                 </span>
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>Current Season: <strong>{data?.currentSeason?.name || 'Kharif'}</strong></span>
+                <span>{t('currentSeasonLabel', 'Current Season:')} <strong>{data?.currentSeason?.name || 'Kharif'}</strong></span>
               </span>
               {weather && (
                 <>
@@ -311,11 +313,11 @@ export const SeasonalCropAdvisorCard: React.FC<SeasonalCropAdvisorCardProps> = (
                 1
               </span>
               <h3 className="font-heading font-extrabold text-base text-slate-900 dark:text-white">
-                Select Your Soil Type
+                {t('selectSoilType', 'Select Your Soil Type')}
               </h3>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              GPS detects where your farm is, but <strong>you choose your exact soil</strong> for accurate crop suitability.
+              {t('soilTypeDesc', 'GPS detects where your farm is, but you choose your exact soil for accurate crop suitability.')}
             </p>
           </div>
 
@@ -325,7 +327,7 @@ export const SeasonalCropAdvisorCard: React.FC<SeasonalCropAdvisorCardProps> = (
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 text-xs font-bold transition-all shadow-xs self-start sm:self-auto"
           >
             <FlaskConical className="w-3.5 h-3.5" />
-            <span>{showSoilTestDrawer ? 'Hide Soil Test Details' : '🧪 Add Soil Test (Optional)'}</span>
+            <span>{showSoilTestDrawer ? t('hideSoilTest', 'Hide Soil Test Details') : t('addSoilTest', '🧪 Add Soil Test (Optional)')}</span>
           </button>
         </div>
 
@@ -337,7 +339,7 @@ export const SeasonalCropAdvisorCard: React.FC<SeasonalCropAdvisorCardProps> = (
               onChange={(e) => handleSoilChange(e.target.value)}
               className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
             >
-              <option value="">-- Select your soil type --</option>
+              <option value="">{t('selectSoilPrompt', '-- Select your soil type --')}</option>
               {SOIL_TYPE_OPTIONS.map((soil) => (
                 <option key={soil} value={soil}>
                   {soil}

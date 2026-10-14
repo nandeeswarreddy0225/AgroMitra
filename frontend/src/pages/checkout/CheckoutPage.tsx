@@ -13,12 +13,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useTranslation } from '../../context/LanguageContext';
 import { createOrderApi } from '../../services/api';
 import axios from 'axios';
 
 import { PaymentMethod } from '../../types/order';
 
 export const CheckoutPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { items, totalItems, subtotal, total, clearCart } = useCart();
@@ -73,14 +75,14 @@ export const CheckoutPage: React.FC = () => {
         <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
           <Package className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-heading font-bold text-slate-900 dark:text-white">Your cart is empty</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Please add products to your cart before proceeding to checkout.</p>
+        <h2 className="text-2xl font-heading font-bold text-slate-900 dark:text-white">{t('cartEmptyTitle', 'Your cart is empty')}</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t('cartEmptySubtitle', 'Please add products to your cart before proceeding to checkout.')}</p>
         <Link
           to="/marketplace"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Go to Marketplace</span>
+          <span>{t('exploreProductsBtn', 'Go to Marketplace')}</span>
         </Link>
       </div>
     );
@@ -132,10 +134,10 @@ export const CheckoutPage: React.FC = () => {
           className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Shopping Cart</span>
+          <span>{t('backToCart', 'Back to Shopping Cart')}</span>
         </Link>
         <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
-          Checkout & Place Order
+          {t('checkoutTitle', 'Checkout & Place Order')}
         </h1>
       </div>
 
@@ -143,10 +145,9 @@ export const CheckoutPage: React.FC = () => {
       <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-sm text-blue-900 dark:text-blue-200 flex items-start gap-3 shadow-sm">
         <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
         <div>
-          <span className="font-semibold">Seamless Settlement: </span>
+          <span className="font-semibold">{t('seamlessSettlement', 'Seamless Settlement:')} </span>
           <span>
-            Placing this order creates your verified order record. You will be redirected to complete payment directly via Agri Store Partner UPI QR or Razorpay.
-
+            {t('checkoutNote', 'Placing this order creates your verified order record. You will be redirected to complete payment directly via Agri Store Partner UPI QR or Razorpay.')}
           </span>
         </div>
       </div>
@@ -172,20 +173,20 @@ export const CheckoutPage: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4 shadow-sm transition-colors">
             <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Building className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Farmer Account Information</span>
+              <span>{t('farmerAccountInfo', 'Farmer Account Information')}</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-slate-50 dark:bg-slate-800/70 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
               <div>
-                <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold block">Full Name</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold block">{t('fullName', 'Full Name')}</span>
                 <span className="font-bold text-slate-900 dark:text-white">{user?.name}</span>
               </div>
               <div>
-                <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold block">Contact Phone</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold block">{t('contactPhone', 'Contact Phone')}</span>
                 <span className="font-bold text-slate-900 dark:text-white">{user?.phone}</span>
               </div>
               <div className="sm:col-span-2">
-                <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold block">Email</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold block">{t('email', 'Email')}</span>
                 <span className="font-bold text-slate-900 dark:text-white">{user?.email}</span>
               </div>
             </div>
@@ -196,7 +197,7 @@ export const CheckoutPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Farm / Delivery Address</span>
+                <span>{t('deliveryAddressTitle', 'Farm / Delivery Address')}</span>
               </h3>
               <button
                 type="button"
@@ -205,19 +206,19 @@ export const CheckoutPage: React.FC = () => {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-100 transition-colors"
               >
                 <MapPin className={`w-3.5 h-3.5 ${isDetectingLocation ? 'animate-bounce' : ''}`} />
-                <span>{gpsDetected ? 'GPS Location Linked' : isDetectingLocation ? 'Locating...' : 'Use My GPS Location'}</span>
+                <span>{gpsDetected ? t('gpsLinked', 'GPS Location Linked') : isDetectingLocation ? t('locating', 'Locating...') : t('useGpsLocation', 'Use My GPS Location')}</span>
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Street / Village / Farm Address <span className="text-rose-500">*</span>
+                  {t('streetAddress', 'Street / Village / Farm Address')} <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Survey No. 42, Green Farm Road"
+                  placeholder={t('streetAddressPlaceholder', 'e.g. Survey No. 42, Green Farm Road')}
                   value={address.street}
                   onChange={(e) => setAddress({ ...address, street: e.target.value })}
                   className="block w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -227,12 +228,12 @@ export const CheckoutPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    City / Town <span className="text-rose-500">*</span>
+                    {t('cityDistrict', 'City / Town')} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Kurnool"
+                    placeholder={t('cityPlaceholder', 'e.g. Kurnool')}
                     value={address.city}
                     onChange={(e) => setAddress({ ...address, city: e.target.value })}
                     className="block w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -241,12 +242,12 @@ export const CheckoutPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    State <span className="text-rose-500">*</span>
+                    {t('state', 'State')} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Andhra Pradesh"
+                    placeholder={t('statePlaceholder', 'e.g. Andhra Pradesh')}
                     value={address.state}
                     onChange={(e) => setAddress({ ...address, state: e.target.value })}
                     className="block w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -255,12 +256,12 @@ export const CheckoutPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Pincode <span className="text-rose-500">*</span>
+                    {t('pincode', 'Pincode')} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. 518001"
+                    placeholder={t('pincodePlaceholder', 'e.g. 518001')}
                     value={address.pincode}
                     onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
                     className="block w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -274,7 +275,7 @@ export const CheckoutPage: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4 shadow-sm transition-colors">
             <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Select Payment Method</span>
+              <span>{t('choosePaymentMethod', 'Select Payment Method')}</span>
             </h3>
 
             <div className="space-y-3">
@@ -298,14 +299,14 @@ export const CheckoutPage: React.FC = () => {
                 <div className="space-y-0.5 flex-1">
                   <div className="flex items-center justify-between">
                     <span className="font-heading font-bold text-sm text-slate-900 dark:text-white">
-                      Direct Agri Store Partner UPI QR
+                      {t('directUpiOption', 'Direct Agri Store Partner UPI QR')}
                     </span>
                     <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
-                      Recommended
+                      {t('recommended', 'Recommended')}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Scan dealer's merchant QR via PhonePe, Google Pay, Paytm, BHIM, or any UPI app with zero transaction surcharge.
+                    {t('scanQrDesktopPrompt', "Scan dealer's merchant QR via PhonePe, Google Pay, Paytm, BHIM, or any UPI app with zero transaction surcharge.")}
                   </p>
                 </div>
               </label>
@@ -329,10 +330,10 @@ export const CheckoutPage: React.FC = () => {
                 />
                 <div className="space-y-0.5 flex-1">
                   <span className="font-heading font-bold text-sm text-slate-900 dark:text-white block">
-                    Razorpay Online Gateway
+                    {t('razorpayOption', 'Razorpay Online Gateway')}
                   </span>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Pay securely using Debit/Credit Cards, NetBanking, UPI, or Digital Wallets with instant verification.
+                    {t('razorpayDesc', 'Pay securely using Debit/Credit Cards, NetBanking, UPI, or Digital Wallets with instant verification.')}
                   </p>
                 </div>
               </label>
@@ -357,14 +358,14 @@ export const CheckoutPage: React.FC = () => {
                 <div className="space-y-0.5 flex-1">
                   <div className="flex items-center justify-between">
                     <span className="font-heading font-bold text-sm text-slate-900 dark:text-white">
-                      Cash on Delivery (COD)
+                      {t('codOption', 'Cash on Delivery (COD)')}
                     </span>
                     <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                      Doorstep
+                      {t('doorstep', 'Doorstep')}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Pay in cash directly to the delivery partner upon arrival at your farm/doorstep.
+                    {t('codDesc', 'Pay in cash directly to the delivery partner upon arrival at your farm/doorstep.')}
                   </p>
                 </div>
               </label>
@@ -376,7 +377,7 @@ export const CheckoutPage: React.FC = () => {
         <div className="lg:col-span-5 space-y-6">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-6 shadow-sm transition-colors">
             <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-              Order Items Snapshot ({totalItems})
+              {t('orderSummary', 'Order Items Snapshot')} ({totalItems})
             </h3>
 
             {/* Items List */}
@@ -401,15 +402,15 @@ export const CheckoutPage: React.FC = () => {
             {/* Financial Totals */}
             <div className="space-y-2 text-sm pt-2 border-t border-slate-100 dark:border-slate-800">
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                <span>Subtotal</span>
+                <span>{t('subtotal', 'Subtotal')}</span>
                 <span className="font-semibold text-slate-900 dark:text-white">₹{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                <span>Direct Delivery from Local Stores</span>
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">Free</span>
+                <span>{t('deliveryFee', 'Direct Delivery from Local Stores')}</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">{t('freeDelivery', 'Free')}</span>
               </div>
               <div className="border-t border-slate-100 dark:border-slate-800 pt-3 flex justify-between text-base font-heading font-extrabold text-slate-900 dark:text-white">
-                <span>Total Payable</span>
+                <span>{t('orderTotal', 'Total Payable')}</span>
                 <span className="text-2xl text-emerald-600 dark:text-emerald-400">₹{total.toFixed(2)}</span>
               </div>
             </div>
@@ -422,12 +423,12 @@ export const CheckoutPage: React.FC = () => {
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Processing Order...</span>
+                  <span>{t('placingOrder', 'Processing Order...')}</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-5 h-5" />
-                  <span>Place Order & Proceed to Pay (₹{total.toFixed(2)})</span>
+                  <span>{t('placeOrderBtn', 'Place Order & Proceed to Pay')} (₹{total.toFixed(2)})</span>
                 </>
               )}
             </button>

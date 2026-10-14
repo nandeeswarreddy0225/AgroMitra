@@ -20,6 +20,7 @@ import {
 import { getLiveWeatherApi } from '../../services/api';
 import { WeatherData } from '../../types/weather';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../context/LanguageContext';
 import { getAccurateDeviceLocation } from '../../utils/geolocation';
 
 interface LiveWeatherCardProps {
@@ -38,6 +39,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
   onWeatherLoaded,
 }) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isLocatingGeo, setIsLocatingGeo] = useState<boolean>(false);
@@ -255,7 +257,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="font-heading font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
-                Live Farm Weather
+                {t('liveFarmWeather', 'Live Farm Weather')}
               </span>
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" title="Live meteorological feed" />
             </div>
@@ -277,7 +279,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
                     title={gpsAccuracy !== null ? `High-accuracy GPS fix (±${gpsAccuracy} m)` : 'Live device GPS location'}
                   >
                     <Navigation className="w-2.5 h-2.5 shrink-0" />
-                    <span>Live GPS Location</span>
+                    <span>{t('liveGpsLocation', 'Live GPS Location')}</span>
                     {gpsAccuracy !== null && (
                       <span className="font-mono text-[9px] bg-emerald-100 dark:bg-emerald-900/60 px-1 py-0.2 rounded text-emerald-800 dark:text-emerald-300">
                         ±{gpsAccuracy}m
@@ -287,12 +289,12 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
                 ) : locationMode === 'saved_profile' ? (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[10px] font-bold">
                     <MapPin className="w-2.5 h-2.5" />
-                    <span>Farm Profile Location</span>
+                    <span>{t('farmProfileLocation', 'Farm Profile Location')}</span>
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[10px] font-bold">
                     <MapPin className="w-2.5 h-2.5" />
-                    <span>Selected Location</span>
+                    <span>{t('selectedLocation', 'Selected Location')}</span>
                   </span>
                 )}
 
@@ -306,7 +308,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
                   title="Search / Change Location"
                 >
                   <Edit3 className="w-3 h-3" />
-                  <span className="text-[11px] underline">Change</span>
+                  <span className="text-[11px] underline">{t('changeLocation', 'Change')}</span>
                 </button>
               </div>
             )}
@@ -325,12 +327,12 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
             {isLocatingGeo ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Detecting your location...</span>
+                <span>{t('detectingLocation', 'Detecting your location...')}</span>
               </>
             ) : (
               <>
                 <Compass className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Use Current Location</span>
+                <span>{t('useCurrentLocation', 'Use Current Location')}</span>
               </>
             )}
           </button>
@@ -338,7 +340,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
           {/* Timestamp Indicator */}
           {lastFetchTime && (
             <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/60">
-              {weather?.cached ? `Cached • ${timeAgoText}` : `Live • ${timeAgoText}`}
+              {weather?.cached ? `${t('cachedLabel', 'Cached')} • ${timeAgoText}` : `${t('liveLabel', 'Live')} • ${timeAgoText}`}
             </span>
           )}
 
@@ -350,7 +352,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
             title="Refresh Live Weather"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
+            <span>{t('refresh', 'Refresh')}</span>
           </button>
         </div>
       </div>
@@ -367,7 +369,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
             className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors self-start sm:self-auto"
           >
             <Compass className="w-3 h-3" />
-            <span>Enable GPS Access</span>
+            <span>{t('enableGpsAccess', 'Enable GPS Access')}</span>
           </button>
         </div>
       )}
@@ -513,16 +515,16 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
                 }`}
               >
                 <CloudRain className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span>Rain Probability: {weather.rainProbability}%</span>
+                <span>{t('rainProbability', 'Rain Probability')}: {weather.rainProbability}%</span>
               </span>
 
               {weather.cached ? (
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                  ⚡ Cached
+                  ⚡ {t('cachedLabel', 'Cached')}
                 </span>
               ) : (
                 <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800">
-                  ● LIVE
+                  ● {t('liveLabel', 'LIVE')}
                 </span>
               )}
             </div>
@@ -534,19 +536,19 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
             <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
               <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 <Thermometer className="w-3.5 h-3.5 text-rose-500" />
-                <span>Temperature</span>
+                <span>{t('temperature', 'Temperature')}</span>
               </div>
               <p className="text-xl font-heading font-black text-slate-900 dark:text-white">
                 {weather.temperature}°C
               </p>
-              <span className="text-[10px] text-slate-400">Feels {weather.feelsLike}°C</span>
+              <span className="text-[10px] text-slate-400">{t('feelsLike', 'Feels')} {weather.feelsLike}°C</span>
             </div>
 
             {/* Rain Chance */}
             <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
               <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 <CloudRain className="w-3.5 h-3.5 text-blue-500" />
-                <span>Rain Chance</span>
+                <span>{t('rainChance', 'Rain Chance')}</span>
               </div>
               <p
                 className={`text-xl font-heading font-black ${
@@ -558,7 +560,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
                 {weather.rainProbability}%
               </p>
               <span className="text-[10px] text-slate-400">
-                Precip: {weather.precipitation.toFixed(1)} mm
+                {t('precipitation', 'Precip')}: {weather.precipitation.toFixed(1)} mm
               </span>
             </div>
 
@@ -566,24 +568,24 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
             <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
               <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 <Droplets className="w-3.5 h-3.5 text-cyan-500" />
-                <span>Humidity</span>
+                <span>{t('humidity', 'Humidity')}</span>
               </div>
               <p className="text-xl font-heading font-black text-slate-900 dark:text-white">
                 {weather.humidity}%
               </p>
-              <span className="text-[10px] text-slate-400">Relative moisture</span>
+              <span className="text-[10px] text-slate-400">{t('relativeMoisture', 'Relative moisture')}</span>
             </div>
 
             {/* Wind Speed */}
             <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
               <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 <Wind className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Wind Speed</span>
+                <span>{t('windSpeed', 'Wind Speed')}</span>
               </div>
               <p className="text-xl font-heading font-black text-slate-900 dark:text-white">
                 {weather.windSpeed} <span className="text-xs font-normal">km/h</span>
               </p>
-              <span className="text-[10px] text-slate-400">10m surface wind</span>
+              <span className="text-[10px] text-slate-400">{t('surfaceWind', '10m surface wind')}</span>
             </div>
           </div>
 
@@ -594,11 +596,11 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span className="font-heading font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-                    {weather.forecast.length}-Day Farm Forecast & Predictions
+                    {weather.forecast.length}-{t('forecastTitle', 'Day Farm Forecast & Predictions')}
                   </span>
                 </div>
                 <span className="text-[10px] text-slate-400 font-medium">
-                  Direct meteorological model
+                  {t('meteorologicalModel', 'Direct meteorological model')}
                 </span>
               </div>
 
@@ -651,7 +653,7 @@ export const LiveWeatherCard: React.FC<LiveWeatherCardProps> = ({
           <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-900 dark:text-emerald-200 space-y-1">
             <div className="flex items-center gap-1.5 font-bold">
               <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Real-Time Farm Advisory:</span>
+              <span>{t('farmAdvisoryTitle', 'Real-Time Farm Advisory:')}</span>
             </div>
             <p className="leading-relaxed font-medium">{weather.advisory}</p>
           </div>

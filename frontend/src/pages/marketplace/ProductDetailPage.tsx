@@ -18,9 +18,11 @@ import { getProductByIdApi } from '../../services/api';
 import { Product } from '../../types/product';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useTranslation } from '../../context/LanguageContext';
 import axios from 'axios';
 
 export const ProductDetailPage: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -118,7 +120,7 @@ export const ProductDetailPage: React.FC = () => {
     return (
       <div className="min-h-[500px] flex flex-col items-center justify-center max-w-7xl mx-auto px-4 py-16">
         <Loader2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400 animate-spin mb-3" />
-        <p className="text-base font-medium text-slate-700 dark:text-slate-300">Loading product details from database...</p>
+        <p className="text-base font-medium text-slate-700 dark:text-slate-300">{t('loadingProduct', 'Loading product details...')}</p>
       </div>
     );
   }
@@ -129,15 +131,15 @@ export const ProductDetailPage: React.FC = () => {
         <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
           <AlertCircle className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-heading font-bold text-slate-900 dark:text-white">Product Not Found</h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400">{errorMsg || 'The requested product does not exist or has been removed.'}</p>
+        <h2 className="text-2xl font-heading font-bold text-slate-900 dark:text-white">{t('productNotFound', 'Product Not Found')}</h2>
+        <p className="text-sm text-slate-600 dark:text-slate-400">{errorMsg || t('productNotFound', 'The requested product does not exist or has been removed.')}</p>
         <div className="pt-4">
           <Link
             to="/marketplace"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Return to Marketplace</span>
+            <span>{t('exploreProductsBtn', 'Return to Marketplace')}</span>
           </Link>
         </div>
       </div>
@@ -168,7 +170,7 @@ export const ProductDetailPage: React.FC = () => {
         className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Back to Marketplace</span>
+        <span>{t('exploreProductsBtn', 'Back to Marketplace')}</span>
       </button>
 
       {/* Cart Success Alert */}
@@ -184,10 +186,10 @@ export const ProductDetailPage: React.FC = () => {
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors"
             >
               <ShoppingCart className="w-3.5 h-3.5" />
-              <span>Go to Cart</span>
+              <span>{t('navCart', 'Go to Cart')}</span>
             </Link>
             <button onClick={() => setCartSuccessMsg(null)} className="text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 text-xs font-semibold">
-              Dismiss
+              {t('dismiss', 'Dismiss')}
             </button>
           </div>
         </div>
@@ -201,7 +203,7 @@ export const ProductDetailPage: React.FC = () => {
             <span>{errorMsg}</span>
           </div>
           <button onClick={() => setErrorMsg(null)} className="text-rose-700 dark:text-rose-300 hover:text-rose-900 text-xs font-semibold">
-            Dismiss
+            {t('dismiss', 'Dismiss')}
           </button>
         </div>
       )}
@@ -224,7 +226,7 @@ export const ProductDetailPage: React.FC = () => {
             ) : (
               <div className="flex flex-col items-center justify-center text-slate-400">
                 <Package className="w-16 h-16" />
-                <span className="text-sm mt-2">No product image uploaded</span>
+                <span className="text-sm mt-2">{t('noImage', 'No product image uploaded')}</span>
               </div>
             )}
             <span className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -238,7 +240,7 @@ export const ProductDetailPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider block">
-                Brand: {product.brand}
+                {product.brand}
               </span>
               <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white mt-1">
                 {product.name}
@@ -249,7 +251,7 @@ export const ProductDetailPage: React.FC = () => {
             <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex flex-wrap items-baseline justify-between gap-4">
               <div>
                 <span className="text-xs text-emerald-800 dark:text-emerald-300 font-semibold block uppercase">
-                  Verified Retail Price
+                  {t('genuineGuarantee', 'Verified Retail Price')}
                 </span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl sm:text-4xl font-heading font-black text-slate-900 dark:text-white">
@@ -272,12 +274,12 @@ export const ProductDetailPage: React.FC = () => {
                   {product.stock > 0 ? (
                     <>
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>In Stock ({product.stock} {product.unit} available)</span>
+                      <span>{t('inStock', 'In Stock')} ({product.stock} {product.unit} {t('inStock', 'available')})</span>
                     </>
                   ) : (
                     <>
                       <AlertCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                      <span>Out of Stock</span>
+                      <span>{t('outOfStock', 'Out of Stock')}</span>
                     </>
                   )}
                 </span>
@@ -287,7 +289,7 @@ export const ProductDetailPage: React.FC = () => {
             {/* Description */}
             <div className="space-y-2">
               <h3 className="text-sm font-heading font-bold text-slate-900 dark:text-white uppercase tracking-wide">
-                Product Description & Specifications
+                {t('productDescription', 'Product Description & Specifications')}
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-800/70 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
                 {product.description}
@@ -297,7 +299,7 @@ export const ProductDetailPage: React.FC = () => {
             {/* Quantity Selector & Add to Cart */}
             <div className="pt-2 space-y-4">
               <div className="flex items-center gap-4">
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Quantity:</span>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('stockQuantity', 'Quantity')}:</span>
                 <div className="flex items-center border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
                   <button
                     onClick={handleDecrement}
@@ -329,12 +331,12 @@ export const ProductDetailPage: React.FC = () => {
                   {isAdding ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Adding to Cart...</span>
+                      <span>{t('placingOrder', 'Adding to Cart...')}</span>
                     </>
                   ) : (
                     <>
                       <ShoppingCart className="w-5 h-5" />
-                      <span>Add to Cart</span>
+                      <span>{t('addToCart', 'Add to Cart')}</span>
                     </>
                   )}
                 </button>
@@ -346,7 +348,7 @@ export const ProductDetailPage: React.FC = () => {
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
             <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
               <Store className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Fulfilled by: {shopName}</span>
+              <span>{t('soldBy', 'Fulfilled by:')} {shopName}</span>
             </div>
             {shopLocation && (
               <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
@@ -357,13 +359,13 @@ export const ProductDetailPage: React.FC = () => {
             {shopPhone && (
               <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                 <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                <span>Contact: {shopPhone}</span>
+                <span>{t('contactPhone', 'Contact Phone')}: {shopPhone}</span>
               </div>
             )}
             {shopEmail && (
               <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                 <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                <span>Email: {shopEmail}</span>
+                <span>{t('email', 'Email')}: {shopEmail}</span>
               </div>
             )}
           </div>

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { getGovernmentSchemesApi } from '../../services/api';
 import { Scheme } from '../../types/scheme';
+import { useTranslation } from '../../context/LanguageContext';
 import axios from 'axios';
 
 const SCHEME_CATEGORIES = [
@@ -34,6 +35,7 @@ const SCHEME_CATEGORIES = [
 ];
 
 export const GovernmentSchemesPage: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedState, setSelectedState] = useState<'Andhra Pradesh' | 'Telangana'>('Andhra Pradesh');
   const [selectedCategory, setSelectedCategory] = useState<string>('All Schemes');
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,11 +107,11 @@ export const GovernmentSchemesPage: React.FC = () => {
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-heading font-extrabold tracking-tight">
-            Government Agriculture Schemes
+            {t('schemesTitle', 'Government Agriculture Schemes')}
           </h1>
 
           <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed max-w-2xl">
-            Verified agricultural schemes, cash support programs, equipment subsidies, and free crop insurance for farmers in <strong>Andhra Pradesh</strong> and <strong>Telangana</strong>.
+            {t('schemesSubtitle', 'Verified financial subsidies, crop insurance, and equipment schemes for Indian farmers.')}
           </p>
 
           {/* Search Form */}
@@ -120,7 +122,7 @@ export const GovernmentSchemesPage: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search schemes (e.g., Rythu Bharosa, Annadatha Sukhibhava, Drip, Seeds, Insurance)..."
+                placeholder={t('searchSchemesPlaceholder', 'Search schemes (e.g., Rythu Bharosa, Annadatha Sukhibhava, Drip, Seeds, Insurance)...')}
                 className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-md font-medium border border-slate-200 dark:border-slate-700"
               />
             </div>
@@ -128,7 +130,7 @@ export const GovernmentSchemesPage: React.FC = () => {
               type="submit"
               className="px-6 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-heading font-extrabold text-xs sm:text-sm shadow-md transition-colors flex items-center justify-center gap-2 shrink-0"
             >
-              <span>Search Schemes</span>
+              <span>{t('search', 'Search')}</span>
             </button>
           </form>
         </div>
@@ -140,7 +142,7 @@ export const GovernmentSchemesPage: React.FC = () => {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2">
-            <span>Select Farmer State:</span>
+            <span>{t('selectState', 'Select State:')}</span>
           </div>
 
           {/* State Switcher Buttons */}
@@ -158,9 +160,9 @@ export const GovernmentSchemesPage: React.FC = () => {
             >
               <span className="text-base">🌾</span>
               <div className="text-left">
-                <span className="block leading-tight font-heading">Andhra Pradesh</span>
+                <span className="block leading-tight font-heading">{t('andhraPradesh', 'Andhra Pradesh')}</span>
                 <span className={`text-[10px] font-normal ${selectedState === 'Andhra Pradesh' ? 'text-emerald-100' : 'text-slate-400 dark:text-slate-500'}`}>
-                  ఆంధ్రప్రదేశ్ పథకాలు
+                  {t('andhraPradesh', 'Andhra Pradesh')}
                 </span>
               </div>
               {selectedState === 'Andhra Pradesh' && <Check className="w-4 h-4 ml-auto text-emerald-200" />}
@@ -179,9 +181,9 @@ export const GovernmentSchemesPage: React.FC = () => {
             >
               <span className="text-base">🌾</span>
               <div className="text-left">
-                <span className="block leading-tight font-heading">Telangana</span>
+                <span className="block leading-tight font-heading">{t('telangana', 'Telangana')}</span>
                 <span className={`text-[10px] font-normal ${selectedState === 'Telangana' ? 'text-emerald-100' : 'text-slate-400 dark:text-slate-500'}`}>
-                  తెలంగాణ పథకాలు
+                  {t('telangana', 'Telangana')}
                 </span>
               </div>
               {selectedState === 'Telangana' && <Check className="w-4 h-4 ml-auto text-emerald-200" />}
@@ -194,7 +196,7 @@ export const GovernmentSchemesPage: React.FC = () => {
             className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold self-end sm:self-auto"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
+            <span>{t('refresh', 'Refresh')}</span>
           </button>
         </div>
 

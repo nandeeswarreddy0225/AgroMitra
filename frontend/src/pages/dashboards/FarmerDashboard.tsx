@@ -44,21 +44,21 @@ export const FarmerDashboard: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                AgroMitra Intelligent Agriculture
+                {t('brandName', 'AgroMitra')} {t('techAdvisorTitle', 'Intelligent Agriculture')}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
-              AgroMitra Farmer Dashboard
+              {t('farmerDashboardTitle', 'AgroMitra Farmer Dashboard')}
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              {t('welcomeBack', 'Welcome back')}, <strong className="text-slate-800 dark:text-slate-200">{user?.name || 'Farmer'}</strong> • Field Intelligence & Input Marketplace
+              {t('welcomeBack', 'Welcome back')}, <strong className="text-slate-800 dark:text-slate-200">{user?.name || t('roleFarmer', 'Farmer')}</strong> • {t('farmerWelcomeSubtitle', 'Field Intelligence & Input Marketplace')}
             </p>
 
           </div>
         </div>
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold self-start sm:self-auto">
           <Shield className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span>{t('roleFarmer', 'Farmer Account')}</span>
+          <span>{t('farmerAccountBadge', 'Farmer Account')}</span>
         </div>
       </div>
 
@@ -71,11 +71,11 @@ export const FarmerDashboard: React.FC = () => {
         >
 
           <div className="space-y-1">
-            <span className="text-xs font-bold text-purple-200 uppercase tracking-wide">AI Diagnosis</span>
+            <span className="text-xs font-bold text-purple-200 uppercase tracking-wide">{t('techAiTitle', 'AI Diagnosis')}</span>
             <h3 className="text-base font-heading font-extrabold text-white">
               {t('toolLeafScanner', 'AI Leaf Scanner')}
             </h3>
-            <p className="text-xs text-purple-100">Deep learning leaf diagnosis</p>
+            <p className="text-xs text-purple-100">{t('toolLeafScannerDesc', 'Deep learning leaf diagnosis')}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
             <Sparkles className="w-5 h-5" />
@@ -87,11 +87,11 @@ export const FarmerDashboard: React.FC = () => {
           className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-emerald-300 dark:hover:border-emerald-700 transition-all flex items-center justify-between group"
         >
           <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Procurement</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">{t('toolProcurement', 'Procurement')}</span>
             <h3 className="text-base font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
               {t('navMarketplace', 'Marketplace')}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Authentic seeds & crop protection</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('toolProcurementDesc', 'Authentic seeds & crop protection')}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
             <ShoppingBag className="w-5 h-5" />
@@ -103,11 +103,11 @@ export const FarmerDashboard: React.FC = () => {
           className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-emerald-300 dark:hover:border-emerald-700 transition-all flex items-center justify-between group"
         >
           <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Tracking</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">{t('navOrders', 'Tracking')}</span>
             <h3 className="text-base font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
               {t('navOrders', 'My Orders')}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Delivery tracking & status</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('ordersSubtitle', 'Delivery tracking & status')}</p>
           </div>
 
           <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
@@ -120,11 +120,11 @@ export const FarmerDashboard: React.FC = () => {
           className="bg-gradient-to-br from-emerald-600 to-green-700 rounded-2xl p-6 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-between group"
         >
           <div className="space-y-1">
-            <span className="text-xs font-bold text-emerald-200 uppercase tracking-wide">Subsidies</span>
+            <span className="text-xs font-bold text-emerald-200 uppercase tracking-wide">{t('navSchemes', 'Subsidies')}</span>
             <h3 className="text-base font-heading font-extrabold text-white">
               {t('navSchemes', 'Govt Schemes')}
             </h3>
-            <p className="text-xs text-emerald-100">17 verified subsidies</p>
+            <p className="text-xs text-emerald-100">{t('toolGovtSchemesDesc', 'Subsidies and farmer benefits')}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
             <Landmark className="w-5 h-5" />
@@ -150,7 +150,7 @@ export const FarmerDashboard: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2 text-slate-900 dark:text-white font-heading font-bold text-base">
                 <Bot className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                <span>{t('smartAdvisoryTitle', 'Field Intelligence')} & Crop Planner</span>
+                <span>{t('techAdvisorTitle', 'Field Intelligence')} & {t('seasonalCropHeader', 'Crop Planner')}</span>
               </div>
               <span className="text-xs font-bold text-slate-400">
                 {new Date().toLocaleString('en-US', { month: 'short' })} {new Date().getFullYear()}

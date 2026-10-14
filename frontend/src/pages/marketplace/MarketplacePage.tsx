@@ -141,13 +141,13 @@ export const MarketplacePage: React.FC = () => {
         <div className="relative z-10 max-w-2xl space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-emerald-300 text-xs font-semibold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Direct From Verified Retail Stores</span>
+            <span>{t('footerGenuineBadge', 'Direct From Verified Retail Stores')}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-heading font-extrabold tracking-tight">
-            AgroMitra Marketplace
+            {t('marketplaceTitle', 'AgroMitra Marketplace')}
           </h1>
           <p className="text-sm sm:text-base text-emerald-100 dark:text-slate-300">
-            Browse certified seeds, bio-pesticides, crop protection, and agricultural equipment directly from verified local Agri Store Partners.
+            {t('marketplaceSubtitle', 'Browse certified seeds, bio-pesticides, crop protection, and agricultural equipment directly from verified local Agri Store Partners.')}
           </p>
 
 
@@ -164,7 +164,7 @@ export const MarketplacePage: React.FC = () => {
             </div>
             <input
               type="text"
-              placeholder="Search by product name, brand (e.g. IFFCO, Bayer), category..."
+              placeholder={t('searchPlaceholder', 'Search products, crops, mandi prices...')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="block w-full pl-10 pr-24 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
@@ -173,7 +173,7 @@ export const MarketplacePage: React.FC = () => {
               type="submit"
               className="absolute inset-y-1.5 right-1.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
             >
-              Search
+              {t('search', 'Search')}
             </button>
           </form>
 
@@ -184,10 +184,10 @@ export const MarketplacePage: React.FC = () => {
               onChange={(e) => setSort(e.target.value)}
               className="px-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="newest">Newest Arrivals</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
-              <option value="rating">Top Rated</option>
+              <option value="newest">{t('sortNewest', 'Newest Arrivals')}</option>
+              <option value="price_asc">{t('sortPriceAsc', 'Price: Low to High')}</option>
+              <option value="price_desc">{t('sortPriceDesc', 'Price: High to Low')}</option>
+              <option value="rating">{t('sortPopular', 'Top Rated')}</option>
             </select>
 
             <button
@@ -209,7 +209,7 @@ export const MarketplacePage: React.FC = () => {
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
-            All Products
+            {t('categoryAll', 'All Products')}
           </button>
           {Array.from(new Set([...PRODUCT_CATEGORIES, ...products.map((p) => p.category).filter(Boolean)])).map(
             (cat) => (
@@ -222,7 +222,7 @@ export const MarketplacePage: React.FC = () => {
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
-                {cat}
+                {t(`category${cat}`, cat)}
               </button>
             )
           )}
@@ -252,22 +252,22 @@ export const MarketplacePage: React.FC = () => {
           <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center">
             <Package className="w-8 h-8" />
           </div>
-          <h3 className="text-xl font-heading font-bold text-slate-900 dark:text-white">No matching products found</h3>
+          <h3 className="text-xl font-heading font-bold text-slate-900 dark:text-white">{t('noProductsMatchFilter', 'No matching products found')}</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md">
-            No products match your current search and filter criteria. Try adjusting your filters or search terms.
+            {t('noDataFound', 'No products match your current search and filter criteria. Try adjusting your filters or search terms.')}
           </p>
           <button
             onClick={handleResetFilters}
             className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
           >
-            <span>Clear All Filters</span>
+            <span>{t('clearFilters', 'Clear All Filters')}</span>
           </button>
         </div>
       ) : (
         <div className="space-y-4">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
-            <span>Showing <strong>{products.length}</strong> available products</span>
-            <span>Verified Agri Store Partner Inventory</span>
+            <span>{t('all', 'Showing')} <strong>{products.length}</strong> {t('categoryAll', 'available products')}</span>
+            <span>{t('footerGenuineBadge', 'Verified Agri Store Partner Inventory')}</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -300,13 +300,13 @@ export const MarketplacePage: React.FC = () => {
                       ) : (
                         <div className="flex flex-col items-center justify-center text-slate-400">
                           <Package className="w-12 h-12" />
-                          <span className="text-[11px] mt-1">Agricultural Product</span>
+                          <span className="text-[11px] mt-1">{t('categoryAll', 'Agricultural Product')}</span>
                         </div>
                       )}
 
                       {/* Category Badge */}
                       <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm text-slate-800 dark:text-slate-200 shadow-sm">
-                        {product.category}
+                        {t(`category${product.category}`, product.category)}
                       </span>
 
                       {/* Stock Status Badge */}
@@ -317,7 +317,7 @@ export const MarketplacePage: React.FC = () => {
                             : 'bg-rose-500 text-white'
                         }`}
                       >
-                        {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
+                        {product.stock > 0 ? t('inStock', 'In Stock') : t('outOfStock', 'Out of Stock')}
                       </span>
                     </div>
 
@@ -372,7 +372,7 @@ export const MarketplacePage: React.FC = () => {
                       to={`/marketplace/product/${prodId}`}
                       className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-heading font-bold transition-colors shadow-sm"
                     >
-                      <span>View Details</span>
+                      <span>{t('viewDetails', 'View Details')}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>

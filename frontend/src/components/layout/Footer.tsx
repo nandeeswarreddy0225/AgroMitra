@@ -36,15 +36,15 @@ export const Footer: React.FC = () => {
             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 pt-2">
               <div className="flex items-center gap-1">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>100% Genuine Inputs</span>
+                <span>{t('footerGenuineBadge', '100% Genuine Inputs')}</span>
               </div>
               <div className="flex items-center gap-1">
                 <QrCode className="w-4 h-4 text-amber-400" />
-                <span>Direct UPI & Razorpay</span>
+                <span>{t('footerUpiBadge', 'Direct UPI & Razorpay')}</span>
               </div>
               <div className="flex items-center gap-1">
                 <HeartHandshake className="w-4 h-4 text-blue-400" />
-                <span>Direct Farmer Connect</span>
+                <span>{t('footerConnectBadge', 'Direct Farmer Connect')}</span>
               </div>
             </div>
           </div>
@@ -53,32 +53,32 @@ export const Footer: React.FC = () => {
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider font-heading flex items-center gap-1.5">
               <Sprout className="w-3.5 h-3.5 text-emerald-400" />
-              <span>For Farmers</span>
+              <span>{t('footerFarmersTitle', 'For Farmers')}</span>
             </h4>
             <ul className="space-y-2 text-xs text-slate-400">
               <li>
                 <Link to="/marketplace" className="hover:text-emerald-400 transition-colors">
-                  Agricultural Marketplace
+                  {t('navMarketplace', 'Agricultural Marketplace')}
                 </Link>
               </li>
               <li>
                 <Link to="/ai/crop-disease" className="hover:text-emerald-400 transition-colors">
-                  AI Leaf Pathology Scanner
+                  {t('navLeafScanner', 'AI Leaf Pathology Scanner')}
                 </Link>
               </li>
               <li>
                 <Link to="/dashboard" className="hover:text-emerald-400 transition-colors">
-                  Agro-Weather Advisory
+                  {t('navWeather', 'Agro-Weather Advisory')}
                 </Link>
               </li>
               <li>
                 <Link to="/market/prices" className="hover:text-emerald-400 transition-colors">
-                  APMC Mandi Spot Rates
+                  {t('mandiRatesTitle', 'APMC Mandi Spot Rates')}
                 </Link>
               </li>
               <li>
                 <Link to="/schemes" className="hover:text-emerald-400 transition-colors">
-                  Government Subsidy Schemes
+                  {t('navSchemes', 'Government Subsidy Schemes')}
                 </Link>
               </li>
             </ul>
@@ -88,27 +88,22 @@ export const Footer: React.FC = () => {
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider font-heading flex items-center gap-1.5">
               <Store className="w-3.5 h-3.5 text-amber-400" />
-              <span>Store Partners</span>
+              <span>{t('footerStoresTitle', 'Store Partners')}</span>
             </h4>
             <ul className="space-y-2 text-xs text-slate-400">
               <li>
                 <Link to="/shop/products" className="hover:text-amber-400 transition-colors">
-                  Product Inventory Management
+                  {t('navInventory', 'Product Inventory Management')}
                 </Link>
               </li>
               <li>
                 <Link to="/shop/orders" className="hover:text-amber-400 transition-colors">
-                  Farmer Order Fulfillment
-                </Link>
-              </li>
-              <li>
-                <Link to="/shop/orders" className="hover:text-amber-400 transition-colors">
-                  Delivery Partner Assignment
+                  {t('navFulfillOrders', 'Farmer Order Fulfillment')}
                 </Link>
               </li>
               <li>
                 <Link to="/register?role=SHOP_OWNER" className="hover:text-amber-400 transition-colors">
-                  Store Partner Registration
+                  {t('roleShopOwner', 'Store Partner Registration')}
                 </Link>
               </li>
             </ul>
@@ -118,27 +113,22 @@ export const Footer: React.FC = () => {
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider font-heading flex items-center gap-1.5">
               <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Market Owners</span>
+              <span>{t('footerMandiTitle', 'Market Owners')}</span>
             </h4>
             <ul className="space-y-2 text-xs text-slate-400">
               <li>
                 <Link to="/market-owner/dashboard" className="hover:text-indigo-400 transition-colors">
-                  Mandi Owner Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link to="/market-owner/prices" className="hover:text-indigo-400 transition-colors">
-                  Publish Daily Spot Rates
+                  {t('navMandiDashboard', 'Mandi Owner Dashboard')}
                 </Link>
               </li>
               <li>
                 <Link to="/market/prices" className="hover:text-indigo-400 transition-colors">
-                  Mandi Price Comparisons
+                  {t('navMandi', 'Mandi Price Comparisons')}
                 </Link>
               </li>
               <li>
                 <Link to="/register?role=MARKET_OWNER" className="hover:text-indigo-400 transition-colors">
-                  Market Owner Registration
+                  {t('roleMarketOwner', 'Market Owner Registration')}
                 </Link>
               </li>
             </ul>
@@ -148,22 +138,17 @@ export const Footer: React.FC = () => {
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider font-heading flex items-center gap-1.5">
               <Truck className="w-3.5 h-3.5 text-blue-400" />
-              <span>Delivery Partners</span>
+              <span>{t('footerDeliveryTitle', 'Delivery Partners')}</span>
             </h4>
             <ul className="space-y-2 text-xs text-slate-400">
               <li>
                 <Link to="/delivery/dashboard" className="hover:text-blue-400 transition-colors">
-                  Delivery Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link to="/delivery/dashboard" className="hover:text-blue-400 transition-colors">
-                  Assigned Shipments
+                  {t('deliveryHubTitle', 'Delivery Dashboard')}
                 </Link>
               </li>
               <li>
                 <Link to="/register?role=DELIVERY_BOY" className="hover:text-blue-400 transition-colors">
-                  Delivery Partner Registration
+                  {t('roleDelivery', 'Delivery Partner Registration')}
                 </Link>
               </li>
             </ul>
@@ -173,13 +158,13 @@ export const Footer: React.FC = () => {
 
         {/* Bottom copyright */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} AgroMitra Platforms. Built for Indian Agriculture.</p>
+          <p>© {new Date().getFullYear()} {t('brandName', 'AgroMitra')}. {t('footerRightsReserved', 'Dedicated to the Prosperity of Indian Agriculture.')}</p>
           <div className="flex items-center space-x-6">
-            <span>Smart Farming</span>
+            <span>{t('trustSmartFarming', 'Smart Farming')}</span>
             <span>•</span>
-            <span>Better Decisions</span>
+            <span>{t('trustMarketIntel', 'Market Intelligence')}</span>
             <span>•</span>
-            <span>Stronger Connections</span>
+            <span>{t('trustLiveWeather', 'Live Weather')}</span>
           </div>
         </div>
       </div>

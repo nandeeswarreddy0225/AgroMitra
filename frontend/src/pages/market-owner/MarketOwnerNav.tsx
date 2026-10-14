@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from '../../context/LanguageContext';
 import {
   LayoutDashboard,
   TrendingUp,
@@ -22,38 +23,39 @@ export const MarketOwnerNav: React.FC<MarketOwnerNavProps> = ({
   marketState,
 }) => {
   const location = useLocation();
+  const { t } = useTranslation();
 
   const currentPath = location.pathname;
 
   const navItems = [
     {
       path: '/market-owner/dashboard',
-      label: 'Overview',
+      label: t('navOverview', 'Overview'),
       icon: LayoutDashboard,
     },
     {
       path: '/market-owner/prices',
-      label: 'Daily Prices',
+      label: t('navDailyPrices', 'Daily Prices'),
       icon: TrendingUp,
     },
     {
       path: '/market-owner/price-history',
-      label: 'Price History & Audits',
+      label: t('navPriceHistory', 'Price History & Audits'),
       icon: History,
     },
     {
       path: '/market-owner/market',
-      label: 'Mandi Profile',
+      label: t('navMandiProfile', 'Mandi Profile'),
       icon: Building2,
     },
     {
       path: '/market-owner/weather',
-      label: 'Mandi Weather',
+      label: t('navMandiWeather', 'Mandi Weather'),
       icon: CloudSun,
     },
     {
       path: '/market-owner/profile',
-      label: 'My Profile',
+      label: t('navProfile', 'My Profile'),
       icon: User,
     },
   ];
@@ -81,7 +83,7 @@ export const MarketOwnerNav: React.FC<MarketOwnerNavProps> = ({
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors self-end sm:self-auto"
         >
-          <span>Public Farmer View</span>
+          <span>{t('publicFarmerView', 'Public Farmer View')}</span>
           <ExternalLink className="w-3.5 h-3.5" />
         </Link>
       </div>

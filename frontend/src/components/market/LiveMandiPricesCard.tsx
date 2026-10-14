@@ -19,6 +19,7 @@ import {
 } from '../../types/mandiPrice';
 import { WeatherData } from '../../types/weather';
 import { Link } from 'react-router-dom';
+import { useTranslation } from '../../context/LanguageContext';
 
 interface LiveMandiPricesCardProps {
   weather?: WeatherData | null;
@@ -31,6 +32,7 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
   className = '',
   limit = 20,
 }) => {
+  const { t } = useTranslation();
 
   const [data, setData] = useState<MandiPriceResponse | null>(null);
   const [selectedState, setSelectedState] = useState<string>('');
@@ -124,28 +126,28 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-slate-900 dark:text-white">
-                Latest Mandi Market Prices
+                {t('latestMandiPrices', 'Latest Mandi Market Prices')}
               </h2>
               <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold">
                 <Database className="w-3 h-3" />
-                <span>Official APMC Data</span>
+                <span>{t('officialApmcData', 'Official APMC Data')}</span>
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
               <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
                 <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{selectedState ? `${selectedState} APMC Mandis` : 'National Mandi Network'}</span>
+                <span>{selectedState ? `${selectedState} APMC Mandis` : t('nationalMandiNetwork', 'National Mandi Network')}</span>
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>Latest Available: <strong>{data?.records[0]?.priceDate || 'Today'}</strong></span>
+                <span>{t('latestAvailable', 'Latest Available:')} <strong>{data?.records[0]?.priceDate || 'Today'}</strong></span>
               </span>
               {data?.isCached && (
                 <>
                   <span>•</span>
                   <span className="text-[11px] text-slate-400">
-                    Cached bulletin ({new Date(data.cachedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                    {t('cachedBulletin', 'Cached bulletin')} ({new Date(data.cachedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
                   </span>
                 </>
               )}
@@ -160,7 +162,7 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
             className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs"
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>Mandi Rates & Comparisons</span>
+            <span>{t('mandiRatesComparisons', 'Mandi Rates & Comparisons')}</span>
           </Link>
           <button
             type="button"
@@ -169,7 +171,7 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all shadow-xs disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
-            <span>{isRefreshing ? 'Updating...' : 'Refresh Prices'}</span>
+            <span>{isRefreshing ? t('updating', 'Updating...') : t('refreshPrices', 'Refresh Prices')}</span>
           </button>
         </div>
       </div>
@@ -183,7 +185,7 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
           </div>
           <input
             type="text"
-            placeholder="Search commodity or market (e.g. Paddy, Cotton, Gangavathi)..."
+            placeholder={t('searchMandiPlaceholder', 'Search commodity or market (e.g. Paddy, Cotton, Gangavathi)...')}
             value={searchCommodity}
             onChange={(e) => setSearchCommodity(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -197,7 +199,7 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
             onChange={(e) => setSelectedState(e.target.value)}
             className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
-            <option value="">All Indian States</option>
+            <option value="">{t('allIndianStates', 'All Indian States')}</option>
             <option value="Karnataka">Karnataka</option>
             <option value="Andhra Pradesh">Andhra Pradesh</option>
             <option value="Telangana">Telangana</option>
@@ -217,7 +219,7 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
         <div className="py-12 flex flex-col items-center justify-center space-y-3">
           <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
           <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-            Loading latest market prices from official APMC mandis...
+            {t('loadingMandiPrices', 'Loading latest market prices from official APMC mandis...')}
           </p>
         </div>
       )}
@@ -233,7 +235,7 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Retry</span>
+            <span>{t('retry', 'Retry')}</span>
           </button>
         </div>
       )}
@@ -246,10 +248,10 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-300">
                 <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>🤖 AI Market Insight</span>
+                <span>🤖 {t('aiMarketInsight', 'AI Market Insight')}</span>
               </div>
               <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                Analysis of {data.totalRecords} active market quotes
+                {t('analysisOf', 'Analysis of')} {data.totalRecords} {t('activeQuotes', 'active market quotes')}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
@@ -286,19 +288,19 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
                   {/* Modal Price Highlight */}
                   <div className="mt-3.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-700/70 space-y-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Modal Wholesale Price
+                      {t('modalWholesalePrice', 'Modal Wholesale Price')}
                     </span>
                     <div className="flex items-baseline justify-between">
                       <span className="text-xl sm:text-2xl font-heading font-black text-slate-900 dark:text-white">
                         ₹{item.modalPrice.toLocaleString('en-IN')}
                       </span>
-                      <span className="text-[11px] font-bold text-slate-500">per Quintal</span>
+                      <span className="text-[11px] font-bold text-slate-500">{t('perQuintal', 'per Quintal')}</span>
                     </div>
 
                     {/* Min - Max Range */}
                     <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
-                      <span>Min: <strong className="text-slate-700 dark:text-slate-300">₹{item.minPrice.toLocaleString('en-IN')}</strong></span>
-                      <span>Max: <strong className="text-slate-700 dark:text-slate-300">₹{item.maxPrice.toLocaleString('en-IN')}</strong></span>
+                      <span>{t('min', 'Min')}: <strong className="text-slate-700 dark:text-slate-300">₹{item.minPrice.toLocaleString('en-IN')}</strong></span>
+                      <span>{t('max', 'Max')}: <strong className="text-slate-700 dark:text-slate-300">₹{item.maxPrice.toLocaleString('en-IN')}</strong></span>
                     </div>
                   </div>
                 </div>
@@ -313,7 +315,7 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
                   </div>
                   <div className="flex items-center justify-between text-[10px] text-slate-400">
                     <span>{item.state}</span>
-                    <span>Date: {item.priceDate}</span>
+                    <span>{t('date', 'Date')}: {item.priceDate}</span>
                   </div>
                 </div>
               </div>
@@ -323,14 +325,14 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
           {filteredRecords.length === 0 && (
             <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
               <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                No matching commodities found for &ldquo;{searchCommodity}&rdquo;.
+                {t('noMatchingCommodities', 'No matching commodities found for')} &ldquo;{searchCommodity}&rdquo;.
               </p>
               <button
                 type="button"
                 onClick={() => setSearchCommodity('')}
                 className="text-xs font-bold text-emerald-600 hover:underline"
               >
-                Clear Search Filter
+                {t('clearFilters', 'Clear Filters')}
               </button>
             </div>
           )}
@@ -340,16 +342,16 @@ export const LiveMandiPricesCard: React.FC<LiveMandiPricesCardProps> = ({
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
-                Source: <strong>{data.source}</strong>. Daily wholesale mandi realizations across APMCs.
+                {t('source', 'Source')}: <strong>{data.source}</strong>. {t('mandiRealizationNote', 'Daily wholesale mandi realizations across APMCs.')}
               </span>
             </div>
             <div className="flex items-center gap-3 shrink-0 font-bold">
               <Link to="/market/prices" className="text-emerald-600 dark:text-emerald-400 hover:underline">
-                Full Mandi Price Portal →
+                {t('fullMandiPortal', 'Full Mandi Price Portal')} →
               </Link>
               <span>•</span>
               <Link to="/marketplace" className="text-slate-600 dark:text-slate-300 hover:underline">
-                Agri Marketplace →
+                {t('navMarketplace', 'Marketplace')} →
               </Link>
             </div>
           </div>
