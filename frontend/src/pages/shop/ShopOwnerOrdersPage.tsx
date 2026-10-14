@@ -21,6 +21,8 @@ import {
   Search,
   CreditCard,
   TrendingUp,
+  Navigation,
+  MessageSquare,
 } from 'lucide-react';
 import {
   getShopOwnerOrdersApi,
@@ -34,6 +36,8 @@ import {
 } from '../../services/api';
 import { ShopOwnerOrderView, OrderStatus, OrderPaymentStatus } from '../../types/order';
 import { DeliveryBoy } from '../../types/delivery';
+import { DeliveryTrackingModal } from '../../components/orders/DeliveryTrackingModal';
+import { OrderChatDrawer } from '../../components/orders/OrderChatDrawer';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 
@@ -46,8 +50,13 @@ export const ShopOwnerOrdersPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  // Live GPS Tracking & Direct Chat states
+  const [trackingOrder, setTrackingOrder] = useState<{ id: string; orderNumber: string } | null>(null);
+  const [chatOrder, setChatOrder] = useState<{ id: string; orderNumber: string } | null>(null);
+
   // Active filter tab
   const [activeTab, setActiveTab] = useState<'ALL' | 'PENDING' | 'IN_PROGRESS' | 'DELIVERED' | 'CANCELLED'>('ALL');
+
 
   // Search Query state
   const [searchQuery, setSearchQuery] = useState('');
@@ -688,6 +697,25 @@ export const ShopOwnerOrdersPage: React.FC = () => {
                         </button>
                       )}
 
+                      {/* Live GPS Track Button */}
+                      <button
+                        onClick={() => setTrackingOrder({ id: order.id, orderNumber: order.orderNumber })}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors"
+                        title="View Live GPS Route & Delivery Progression"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                        <span>Track GPS</span>
+                      </button>
+
+                      {/* Chat with Farmer & Courier */}
+                      <button
+                        onClick={() => setChatOrder({ id: order.id, orderNumber: order.orderNumber })}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-slate-700 text-xs font-bold shadow-sm transition-colors"
+                        title="Direct In-Order Chat with Farmer and Courier"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>Chat</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1027,6 +1055,34 @@ export const ShopOwnerOrdersPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Live Delivery Tracking Simulation Modal */}
+      {trackingOrder && (
+        <DeliveryTrackingModal
+          orderId={trackingOrder.id}
+          orderNumber={trackingOrder.orderNumber}
+          isOpen={Boolean(trackingOrder)}
+          onClose={() => setTrackingOrder(null)}
+          onOpenChat={() => {
+            const current = trackingOrder;
+            setTrackingOrder(null);
+            setChatOrder(current);
+          }}
+        />
+      )}
+
+      {/* Direct Order Chat Drawer */}
+      {chatOrder && (
+        <OrderChatDrawer
+          orderId={chatOrder.id}
+          orderNumber={chatOrder.orderNumber}
+          isOpen={Boolean(chatOrder)}
+          onClose={() => setChatOrder(null)}
+          currentUserRole="SHOP_OWNER"
+          currentUserId={user?.id || (user as any)?._id}
+        />
+      )}
     </div>
   );
 };
+

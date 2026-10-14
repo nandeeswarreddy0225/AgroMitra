@@ -19,9 +19,13 @@ import {
   ChevronDown,
   ChevronUp,
   Store,
+  Navigation,
+  MessageSquare,
 } from 'lucide-react';
 import { getFarmerOrdersApi, cancelOrderApi } from '../../services/api';
 import { Order, OrderStatus, OrderPaymentStatus } from '../../types/order';
+import { DeliveryTrackingModal } from '../../components/orders/DeliveryTrackingModal';
+import { OrderChatDrawer } from '../../components/orders/OrderChatDrawer';
 import axios from 'axios';
 
 export const FarmerOrdersPage: React.FC = () => {
@@ -32,6 +36,10 @@ export const FarmerOrdersPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  // Live Tracking and Direct Chat states
+  const [trackingOrder, setTrackingOrder] = useState<{ id: string; orderNumber: string } | null>(null);
+  const [chatOrder, setChatOrder] = useState<{ id: string; orderNumber: string } | null>(null);
+
   // Filter tabs state
   const [activeTab, setActiveTab] = useState<'ALL' | 'ACTIVE' | 'DELIVERED' | 'CANCELLED'>('ALL');
 
@@ -40,6 +48,7 @@ export const FarmerOrdersPage: React.FC = () => {
 
   // Check if routed after checkout with a new order number
   const newOrderNumber = location.state?.newOrderNumber;
+
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -429,20 +438,43 @@ export const FarmerOrdersPage: React.FC = () => {
                     )}
                   </div>
 
-                  {order.deliveryStatus && order.deliveryStatus !== 'NOT_ASSIGNED' && (
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase ${
-                        order.deliveryStatus === 'DELIVERED'
-                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                          : order.deliveryStatus === 'OUT_FOR_DELIVERY'
-                          ? 'bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-                          : 'bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
-                      }`}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {order.deliveryStatus && order.deliveryStatus !== 'NOT_ASSIGNED' && (
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase ${
+                          order.deliveryStatus === 'DELIVERED'
+                            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                            : order.deliveryStatus === 'OUT_FOR_DELIVERY'
+                            ? 'bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                            : 'bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
+                        }`}
+                      >
+                        {order.deliveryStatus.replace(/_/g, ' ')}
+                      </span>
+                    )}
+
+                    {/* Live GPS Track Button */}
+                    <button
+                      onClick={() => setTrackingOrder({ id: orderId, orderNumber: order.orderNumber })}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition"
+                      title="Open Live GPS Trajectory & Milestones"
                     >
-                      {order.deliveryStatus.replace(/_/g, ' ')}
-                    </span>
-                  )}
+                      <Navigation className="w-3.5 h-3.5" />
+                      <span>Live GPS Track</span>
+                    </button>
+
+                    {/* Direct Chat Button */}
+                    <button
+                      onClick={() => setChatOrder({ id: orderId, orderNumber: order.orderNumber })}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-bold text-xs transition"
+                      title="Direct Chat with Agri Store & Delivery Partner"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Chat</span>
+                    </button>
+                  </div>
                 </div>
+
 
                 {/* Live Order Routing & Fulfillment Status Notice */}
                 {order.status === 'WAITING_FOR_SHOP' && (
@@ -654,6 +686,33 @@ export const FarmerOrdersPage: React.FC = () => {
           })}
         </div>
       )}
+
+      {/* Live Delivery Tracking Simulation Modal */}
+      {trackingOrder && (
+        <DeliveryTrackingModal
+          orderId={trackingOrder.id}
+          orderNumber={trackingOrder.orderNumber}
+          isOpen={Boolean(trackingOrder)}
+          onClose={() => setTrackingOrder(null)}
+          onOpenChat={() => {
+            const current = trackingOrder;
+            setTrackingOrder(null);
+            setChatOrder(current);
+          }}
+        />
+      )}
+
+      {/* Direct Order Chat Drawer */}
+      {chatOrder && (
+        <OrderChatDrawer
+          orderId={chatOrder.id}
+          orderNumber={chatOrder.orderNumber}
+          isOpen={Boolean(chatOrder)}
+          onClose={() => setChatOrder(null)}
+          currentUserRole="FARMER"
+        />
+      )}
     </div>
   );
 };
+

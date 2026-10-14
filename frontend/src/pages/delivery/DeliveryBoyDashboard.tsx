@@ -15,8 +15,12 @@ import {
   X,
   Ban,
   BellRing,
+  Navigation,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { DeliveryTrackingModal } from '../../components/orders/DeliveryTrackingModal';
+import { OrderChatDrawer } from '../../components/orders/OrderChatDrawer';
 
 import {
   getDeliveryBoyOrdersApi,
@@ -33,9 +37,14 @@ export const DeliveryBoyDashboard: React.FC = () => {
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Live GPS Tracking & Direct Chat states
+  const [trackingOrder, setTrackingOrder] = useState<{ id: string; orderNumber: string } | null>(null);
+  const [chatOrder, setChatOrder] = useState<{ id: string; orderNumber: string } | null>(null);
+
   // Reject modal state
   const [rejectModalOrder, setRejectModalOrder] = useState<{ id: string; orderNumber: string } | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('');
+
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -411,6 +420,28 @@ export const DeliveryBoyDashboard: React.FC = () => {
                       <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                         Payment: {order.paymentStatus}
                       </span>
+
+                      {/* Live GPS Route Map Button */}
+                      <button
+                        type="button"
+                        onClick={() => setTrackingOrder({ id: orderId, orderNumber: order.orderNumber })}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition"
+                        title="Open Interactive GPS Route & Turn-by-Turn Map"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                        <span>GPS Map</span>
+                      </button>
+
+                      {/* In-Order Chat */}
+                      <button
+                        type="button"
+                        onClick={() => setChatOrder({ id: orderId, orderNumber: order.orderNumber })}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-emerald-50 hover:text-emerald-700 font-bold text-xs shadow-sm transition"
+                        title="Chat directly with Farmer and Store"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>Chat</span>
+                      </button>
                     </div>
                   </div>
 
@@ -587,6 +618,34 @@ export const DeliveryBoyDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Live GPS Trajectory Tracking Modal */}
+      {trackingOrder && (
+        <DeliveryTrackingModal
+          orderId={trackingOrder.id}
+          orderNumber={trackingOrder.orderNumber}
+          isOpen={Boolean(trackingOrder)}
+          onClose={() => setTrackingOrder(null)}
+          onOpenChat={() => {
+            const current = trackingOrder;
+            setTrackingOrder(null);
+            setChatOrder(current);
+          }}
+        />
+      )}
+
+      {/* Direct Order Chat Drawer */}
+      {chatOrder && (
+        <OrderChatDrawer
+          orderId={chatOrder.id}
+          orderNumber={chatOrder.orderNumber}
+          isOpen={Boolean(chatOrder)}
+          onClose={() => setChatOrder(null)}
+          currentUserRole="DELIVERY_BOY"
+          currentUserId={user?.id || (user as any)?._id}
+        />
+      )}
     </div>
   );
 };
+

@@ -183,3 +183,83 @@ export interface CreateOrderInput {
   deliveryAddress?: Partial<OrderDeliveryAddress>;
   paymentMethod?: PaymentMethod;
 }
+
+export interface TrackingCoordinate {
+  latitude: number;
+  longitude: number;
+}
+
+export interface TrackingMilestone {
+  step: number;
+  title: string;
+  description: string;
+  done: boolean;
+  active: boolean;
+  time?: string;
+}
+
+export interface TrackingTelemetry {
+  orderId: string;
+  orderNumber: string;
+  status: OrderStatus;
+  deliveryStatus: DeliveryStatus;
+  paymentStatus: OrderPaymentStatus;
+  origin: {
+    name: string;
+    phone?: string;
+    street: string;
+    city: string;
+    state: string;
+    coordinate: TrackingCoordinate;
+  };
+  destination: {
+    farmerName: string;
+    phone?: string;
+    street: string;
+    city: string;
+    state: string;
+    pincode: string;
+    coordinate: TrackingCoordinate;
+  };
+  currentLocation: {
+    latitude: number;
+    longitude: number;
+    bearing: number;
+    speedKmh: number;
+  };
+  route: {
+    totalDistanceKm: number;
+    distanceRemainingKm: number;
+    etaMinutes: number;
+    progressPercent: number;
+    waypoints: TrackingCoordinate[];
+  };
+  deliveryPartner: {
+    name: string;
+    phone: string;
+    vehicleType: string;
+    deliveryArea: string;
+  };
+  deliveryOtp: string;
+  milestones: TrackingMilestone[];
+}
+
+export interface OrderMessage {
+  id: string;
+  _id?: string;
+  order: string;
+  sender: string | { _id: string; name: string };
+  senderName: string;
+  senderRole: 'FARMER' | 'SHOP_OWNER' | 'AGRI_PARTNER' | 'DELIVERY_BOY' | 'ADMIN';
+  message: string;
+  readBy?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderMessagesResponse {
+  success: boolean;
+  count: number;
+  messages: OrderMessage[];
+}
+

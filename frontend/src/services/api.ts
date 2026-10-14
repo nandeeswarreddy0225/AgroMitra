@@ -317,6 +317,46 @@ export const readyForPickupShopOrderApi = async (id: string): Promise<SingleOrde
   return response.data;
 };
 
+// Live Delivery Tracking API
+export const getOrderTrackingApi = async (
+  orderId: string
+): Promise<{ success: boolean; telemetry: import('../types/order').TrackingTelemetry }> => {
+  const response = await apiClient.get<{ success: boolean; telemetry: import('../types/order').TrackingTelemetry }>(
+    `/orders/${orderId}/tracking`
+  );
+  return response.data;
+};
+
+// In-App Direct Order Chat Messages (Farmer <-> Shopkeeper <-> Delivery Partner)
+export const getOrderMessagesApi = async (
+  orderId: string
+): Promise<import('../types/order').OrderMessagesResponse> => {
+  const response = await apiClient.get<import('../types/order').OrderMessagesResponse>(
+    `/orders/${orderId}/messages`
+  );
+  return response.data;
+};
+
+export const sendOrderMessageApi = async (
+  orderId: string,
+  message: string
+): Promise<{ success: boolean; message: import('../types/order').OrderMessage }> => {
+  const response = await apiClient.post<{ success: boolean; message: import('../types/order').OrderMessage }>(
+    `/orders/${orderId}/messages`,
+    { message }
+  );
+  return response.data;
+};
+
+export const markOrderMessagesReadApi = async (
+  orderId: string
+): Promise<{ success: boolean; message: string }> => {
+  const response = await apiClient.patch<{ success: boolean; message: string }>(
+    `/orders/${orderId}/messages/read`
+  );
+  return response.data;
+};
+
 // Payment API endpoints (Razorpay & Store UPI)
 export const getStorePaymentConfigApi = async (): Promise<import('../types/payment').StorePaymentConfigResponse> => {
   const response = await apiClient.get<import('../types/payment').StorePaymentConfigResponse>(

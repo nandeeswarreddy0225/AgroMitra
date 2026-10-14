@@ -12,6 +12,12 @@ import {
   prepareShopOrder,
   readyForPickupShopOrder,
 } from '../controllers/order.controller';
+import { getOrderTrackingTelemetry } from '../controllers/orderTracking.controller';
+import {
+  getOrderMessages,
+  sendOrderMessage,
+  markOrderMessagesRead,
+} from '../controllers/orderChat.controller';
 
 const router = Router();
 
@@ -29,6 +35,14 @@ router.get('/shop-orders', authorize('SHOP_OWNER', 'AGRI_PARTNER', 'ADMIN'), get
 // Individual order details (Farmer, Shop Owner of item, or Admin)
 router.get('/:id', getOrderById);
 
+// Live Delivery Tracking Telemetry & Simulation
+router.get('/:id/tracking', getOrderTrackingTelemetry);
+
+// Order In-App Direct Chat (Farmer <-> Shopkeeper <-> Delivery Boy)
+router.get('/:id/messages', getOrderMessages);
+router.post('/:id/messages', sendOrderMessage);
+router.patch('/:id/messages/read', markOrderMessagesRead);
+
 // Order actions (supports both PUT and PATCH)
 router.put('/:id/cancel', authorize('FARMER', 'ADMIN'), cancelOrder);
 router.patch('/:id/cancel', authorize('FARMER', 'ADMIN'), cancelOrder);
@@ -44,3 +58,4 @@ router.put('/:id/ready-for-pickup', authorize('SHOP_OWNER', 'AGRI_PARTNER', 'ADM
 router.patch('/:id/ready-for-pickup', authorize('SHOP_OWNER', 'AGRI_PARTNER', 'ADMIN'), readyForPickupShopOrder);
 
 export default router;
+
