@@ -108,7 +108,7 @@ export class ExistingModelProvider {
 
       return {
         plantResult: {
-          isPlant: !isExplicitNonPlant && rawResult.species !== null,
+          isPlant: !isExplicitNonPlant && (rawResult.species !== null || Boolean(rawResult.detectedCrop && rawResult.detectedCrop !== 'Background')),
           species: null,
           confidence: rawResult.speciesConfidence ?? null,
           source: null,

@@ -862,7 +862,7 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       specialistSpecies !== 'Unknown' &&
       !specialistClass.startsWith('Background___') &&
       !specialistClass.startsWith('Unknown___') &&
-      specialistConf >= 0.70;
+      (providerResult?.rawResult?.isValid ? specialistConf >= 0.45 : specialistConf >= 0.65);
 
     const isSpecialistConfident = Boolean(isSpecialistClassValid && isSpecialistCropName);
 
