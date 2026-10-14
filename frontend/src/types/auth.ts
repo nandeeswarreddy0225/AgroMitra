@@ -60,9 +60,10 @@ export interface AuthResponse {
 
 export const getRoleDisplayName = (role?: UserRole | string): string => {
   switch (role) {
-    case 'AGRI_PARTNER':
     case 'SHOP_OWNER':
-      return 'Agri Store Partner';
+      return 'Shop Owner';
+    case 'AGRI_PARTNER':
+      return 'Agri Partner';
 
     case 'FARMER':
       return 'Farmer';
@@ -178,17 +179,11 @@ export const isPathAllowedForRole = (pathname: string, role?: UserRole | string)
       cleanPath === '/agri-partner' ||
       cleanPath === '/agri-partner/products' ||
       cleanPath === '/agri-partner/orders' ||
-      cleanPath === '/shop-owner/dashboard' ||
-      cleanPath === '/shop-owner' ||
-      cleanPath === '/store-dashboard' ||
-      cleanPath === '/shop-owner/products' ||
-      cleanPath === '/shop-owner/orders' ||
       cleanPath === '/inventory' ||
       cleanPath === '/admin/products' ||
       cleanPath === '/shop/orders' ||
       cleanPath === '/shop/products' ||
       cleanPath.startsWith('/agri-partner/') ||
-      cleanPath.startsWith('/shop-owner/') ||
       cleanPath.startsWith('/shop/')
     );
   }

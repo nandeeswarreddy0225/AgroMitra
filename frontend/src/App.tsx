@@ -156,7 +156,7 @@ export const App: React.FC = () => {
               <Route
                 path="shop-owner/dashboard"
                 element={
-                  <ProtectedRoute allowedRoles={['SHOP_OWNER', 'AGRI_PARTNER']}>
+                  <ProtectedRoute allowedRoles={['SHOP_OWNER']}>
                     <ShopOwnerDashboard />
                   </ProtectedRoute>
                 }
@@ -164,7 +164,7 @@ export const App: React.FC = () => {
               <Route
                 path="shop-owner"
                 element={
-                  <ProtectedRoute allowedRoles={['SHOP_OWNER', 'AGRI_PARTNER']}>
+                  <ProtectedRoute allowedRoles={['SHOP_OWNER']}>
                     <ShopOwnerDashboard />
                   </ProtectedRoute>
                 }
@@ -172,7 +172,7 @@ export const App: React.FC = () => {
               <Route
                 path="agri-partner/dashboard"
                 element={
-                  <ProtectedRoute allowedRoles={['AGRI_PARTNER', 'SHOP_OWNER']}>
+                  <ProtectedRoute allowedRoles={['AGRI_PARTNER']}>
                     <ShopOwnerDashboard />
                   </ProtectedRoute>
                 }
@@ -180,7 +180,7 @@ export const App: React.FC = () => {
               <Route
                 path="agri-partner"
                 element={
-                  <ProtectedRoute allowedRoles={['AGRI_PARTNER', 'SHOP_OWNER']}>
+                  <ProtectedRoute allowedRoles={['AGRI_PARTNER']}>
                     <ShopOwnerDashboard />
                   </ProtectedRoute>
                 }

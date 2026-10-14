@@ -218,9 +218,9 @@ export const RegisterPage: React.FC = () => {
                   }`}
                 >
                   <Store className={`w-5 h-5 mb-1 ${role === 'SHOP_OWNER' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
-                  <span className="text-xs font-bold text-center">Shop Owner</span>
+                  <span className="text-xs font-bold text-center">{t('roleShopOwner', 'Shop Owner')}</span>
                   <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
-                    Store inventory & sales
+                    {t('roleShopOwnerDesc', 'Store inventory & sales')}
                   </span>
                 </button>
 
@@ -234,9 +234,9 @@ export const RegisterPage: React.FC = () => {
                   }`}
                 >
                   <HeartHandshake className={`w-5 h-5 mb-1 ${role === 'AGRI_PARTNER' ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400'}`} />
-                  <span className="text-xs font-bold text-center">Agri Partner</span>
+                  <span className="text-xs font-bold text-center">{t('rolePartner', 'Agri Partner')}</span>
                   <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
-                    Partner services
+                    {t('rolePartnerDesc', 'Partner services')}
                   </span>
                 </button>
 
@@ -250,9 +250,9 @@ export const RegisterPage: React.FC = () => {
                   }`}
                 >
                   <Building2 className={`w-5 h-5 mb-1 ${role === 'MARKET_OWNER' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
-                  <span className="text-xs font-bold text-center">Market Owner</span>
+                  <span className="text-xs font-bold text-center">{t('roleMarketOwner', 'Market Owner')}</span>
                   <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
-                    Mandi spot rates
+                    {t('roleMarketOwnerDesc', 'Mandi spot rates')}
                   </span>
                 </button>
 
@@ -266,9 +266,9 @@ export const RegisterPage: React.FC = () => {
                   }`}
                 >
                   <Truck className={`w-5 h-5 mb-1 ${role === 'DELIVERY_BOY' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`} />
-                  <span className="text-xs font-bold">Delivery Boy</span>
+                  <span className="text-xs font-bold text-center">{t('roleDelivery', 'Delivery Partner')}</span>
                   <span className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5 text-center">
-                    Field deliveries
+                    {t('roleDeliveryDesc', 'Field deliveries')}
                   </span>
                 </button>
               </div>

@@ -441,7 +441,7 @@ export const HomePage: React.FC = () => {
             </div>
 
             <Link
-              to={isAuthenticated && (user?.role === 'SHOP_OWNER' || user?.role === 'AGRI_PARTNER') ? '/shop/orders' : '/register'}
+              to={isAuthenticated && (user?.role === 'SHOP_OWNER' || user?.role === 'AGRI_PARTNER') ? '/shop/orders' : '/register?role=SHOP_OWNER'}
               className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
             >
               <span>{t('partnerCta', 'Manage Your Store')}</span>
@@ -494,7 +494,7 @@ export const HomePage: React.FC = () => {
             </div>
 
             <Link
-              to={isAuthenticated && user?.role === 'DELIVERY_BOY' ? '/delivery/dashboard' : '/register'}
+              to={isAuthenticated && user?.role === 'DELIVERY_BOY' ? '/delivery/dashboard' : '/register?role=DELIVERY_BOY'}
               className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
             >
               <span>{t('deliveryCta', 'Manage Deliveries')}</span>
@@ -547,7 +547,7 @@ export const HomePage: React.FC = () => {
             </div>
 
             <Link
-              to={isAuthenticated && user?.role === 'MARKET_OWNER' ? '/market-owner/dashboard' : '/register'}
+              to={isAuthenticated && user?.role === 'MARKET_OWNER' ? '/market-owner/dashboard' : '/register?role=MARKET_OWNER'}
               className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
             >
               <span>{isAuthenticated && user?.role === 'MARKET_OWNER' ? 'Mandi Dashboard' : 'Join as Market Owner'}</span>

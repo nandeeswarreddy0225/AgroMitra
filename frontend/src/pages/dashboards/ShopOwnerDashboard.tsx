@@ -77,11 +77,13 @@ export const ShopOwnerDashboard: React.FC = () => {
 
   // Generate dynamic QR Code preview whenever UPI ID or Shop Name changes
   useEffect(() => {
+    const isAgriPartner = user?.role === 'AGRI_PARTNER';
+
     const generatePreviewQR = async () => {
       if (upiId && upiId.trim()) {
         const sampleAmount = 500;
         const upiString = `upi://pay?pa=${encodeURIComponent(upiId.trim())}&pn=${encodeURIComponent(
-          shopName.trim() || 'Agri Store Partner'
+          shopName.trim() || (isAgriPartner ? 'Agri Partner' : 'Shop Owner')
         )}&am=${sampleAmount}&cu=INR&tn=AgroMitra-Sample-Order`;
         try {
           const url = await QRCode.toDataURL(upiString, {
@@ -101,7 +103,7 @@ export const ShopOwnerDashboard: React.FC = () => {
       }
     };
     generatePreviewQR();
-  }, [upiId, shopName]);
+  }, [upiId, shopName, user?.role]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +111,7 @@ export const ShopOwnerDashboard: React.FC = () => {
     setSaveSuccess(null);
     setSaveError(null);
 
+    const isAgriPartner = user?.role === 'AGRI_PARTNER';
     const cleanUpi = upiId.trim();
     if (cleanUpi) {
       const upiRegex = /^[a-zA-Z0-9.\-_]{2,100}@[a-zA-Z0-9]{2,64}$/;
@@ -134,15 +137,17 @@ export const ShopOwnerDashboard: React.FC = () => {
 
       if (res.success && res.user) {
         updateUser(res.user);
-        setSaveSuccess('Agri Store Partner profile and payment details updated successfully!');
+        setSaveSuccess(`${isAgriPartner ? 'Agri Partner' : 'Shop Owner'} profile and payment details updated successfully!`);
         setTimeout(() => setSaveSuccess(null), 4000);
       }
     } catch (err: any) {
-      setSaveError(err.response?.data?.message || 'Failed to update store partner profile.');
+      setSaveError(err.response?.data?.message || `Failed to update ${isAgriPartner ? 'partner' : 'store'} profile.`);
     } finally {
       setIsSaving(false);
     }
   };
+
+  const isAgriPartner = user?.role === 'AGRI_PARTNER';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
@@ -155,20 +160,20 @@ export const ShopOwnerDashboard: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                AgroMitra Partner Ecosystem
+                {isAgriPartner ? 'AgroMitra Partner Ecosystem' : 'AgroMitra Store Ecosystem'}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
-              Agri Store Partner Portal
+              {isAgriPartner ? 'Agri Partner Portal' : 'Shop Owner Portal'}
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Welcome, <strong className="text-slate-800 dark:text-slate-200">{shopName || user?.name}</strong> • Store Operations & Catalog Management
+              Welcome, <strong className="text-slate-800 dark:text-slate-200">{shopName || user?.name}</strong> • {isAgriPartner ? 'Partner Services & Catalog Distribution' : 'Store Operations & Catalog Management'}
             </p>
           </div>
         </div>
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-bold self-start sm:self-auto">
           <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-          <span>{t('rolePartner', 'Agri Store Partner')}</span>
+          <span>{isAgriPartner ? t('rolePartner', 'Agri Partner') : t('roleShopOwner', 'Shop Owner')}</span>
         </div>
       </div>
 

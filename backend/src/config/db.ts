@@ -35,7 +35,7 @@ export const connectDB = async (): Promise<void> => {
   if (mongoUri && mongoUri.trim() !== '') {
     try {
       const conn = await mongoose.connect(mongoUri, {
-        serverSelectionTimeoutMS: 5000,
+        serverSelectionTimeoutMS: 20000,
       });
       console.log(`✅ [Database]: MongoDB Connected successfully to host: ${conn.connection.host}`);
       // Auto-migrate any legacy plaintext passwords safely in background

@@ -848,11 +848,30 @@ export class LocalBotanicalVisionPlugin implements GeneralPlantVisionPlugin {
       };
     }
 
-    // 6. Squash / Pumpkin (Cucurbita pepo - Cucurbitaceae)
-    // Broad pentagonal / angulate cordate leaf with moderate-to-high fullness
+    // 6. Brinjal / Eggplant (Solanum melongena - Solanaceae)
+    // Broad ovate leaf with sinuate/wavy lobes
+    if (
+      momentAspectRatio >= 1.20 &&
+      momentAspectRatio <= 1.80 &&
+      extent >= 0.55 &&
+      extent <= 0.82
+    ) {
+      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Brinjal'];
+      return {
+        isPlant: true,
+        species: taxon.commonName,
+        confidence: 0.905,
+        source: 'GENERAL_PLANT_MODEL',
+        isSupportedSpecies: true,
+        rawDetails: taxon,
+      };
+    }
+
+    // 7. Squash / Pumpkin (Cucurbita pepo - Cucurbitaceae)
+    // Broad pentagonal / angulate cordate leaf with moderate-to-high fullness (equilateral aspect ratio)
     if (
       momentAspectRatio >= 0.95 &&
-      momentAspectRatio <= 1.40 &&
+      momentAspectRatio <= 1.25 &&
       extent >= 0.66 &&
       extent <= 0.82
     ) {
@@ -861,25 +880,6 @@ export class LocalBotanicalVisionPlugin implements GeneralPlantVisionPlugin {
         isPlant: true,
         species: taxon.commonName,
         confidence: 0.924,
-        source: 'GENERAL_PLANT_MODEL',
-        isSupportedSpecies: true,
-        rawDetails: taxon,
-      };
-    }
-
-    // 7. Brinjal / Eggplant (Solanum melongena - Solanaceae)
-    // Broad ovate leaf with sinuate/wavy lobes
-    if (
-      momentAspectRatio >= 1.25 &&
-      momentAspectRatio <= 1.80 &&
-      extent >= 0.55 &&
-      extent <= 0.69
-    ) {
-      const taxon = OPEN_WORLD_BOTANICAL_REGISTRY['Brinjal'];
-      return {
-        isPlant: true,
-        species: taxon.commonName,
-        confidence: 0.905,
         source: 'GENERAL_PLANT_MODEL',
         isSupportedSpecies: true,
         rawDetails: taxon,

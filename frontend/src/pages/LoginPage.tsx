@@ -97,8 +97,14 @@ export const LoginPage: React.FC = () => {
       const destination = getPostLoginRedirectPath(from, userRole);
       navigate(destination, { replace: true });
     } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.data?.message) {
-        setErrorMsg(err.response.data.message);
+      if (axios.isAxiosError(err)) {
+        if (err.response?.data?.message) {
+          setErrorMsg(err.response.data.message);
+        } else if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+          setErrorMsg('Unable to connect to the AgroMitra backend server. Please verify that the backend is running on port 5000.');
+        } else {
+          setErrorMsg(err.message || 'Login failed. Please check your network connection.');
+        }
       } else if (err instanceof Error) {
         setErrorMsg(err.message);
       } else {

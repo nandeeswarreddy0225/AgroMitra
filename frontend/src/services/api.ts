@@ -35,7 +35,7 @@ export const getApiBaseUrl = (): string => {
       /^10\./.test(hostname) ||
       /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
     ) {
-      if (port === '5000') {
+      if (port === '5000' || port === '5173' || port === '4173' || !port) {
         return '/api';
       }
       return `http://${hostname}:5000/api`;
@@ -49,7 +49,7 @@ export const getApiBaseUrl = (): string => {
     return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
   }
 
-  return 'https://agromitra-ytqb.onrender.com/api';
+  return '/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();

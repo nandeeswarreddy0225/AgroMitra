@@ -34,9 +34,11 @@ import {
 } from '../../services/api';
 import { ShopOwnerOrderView, OrderStatus, OrderPaymentStatus } from '../../types/order';
 import { DeliveryBoy } from '../../types/delivery';
+import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 
 export const ShopOwnerOrdersPage: React.FC = () => {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<ShopOwnerOrderView[]>([]);
   const [deliveryBoys, setDeliveryBoys] = useState<DeliveryBoy[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -334,7 +336,7 @@ export const ShopOwnerOrdersPage: React.FC = () => {
         <div>
           <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white flex items-center gap-3">
             <Package className="w-8 h-8 text-amber-600 dark:text-amber-400" />
-            <span>Agri Store Partner Orders & Fulfillment</span>
+            <span>{user?.role === 'AGRI_PARTNER' ? 'Agri Partner Orders & Fulfillment' : 'Shop Owner Orders & Fulfillment'}</span>
           </h1>
 
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">

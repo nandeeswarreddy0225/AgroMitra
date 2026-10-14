@@ -85,6 +85,7 @@ mobile/.expo/
 mobile/package-lock.json
 
 # Scratch & Temporary Diagnostic Scripts
+backend/part_a_recorded_results.json
 backend/backup_old_model/
 backend/backup_pre_v3_promotion_20260914/
 backend/crop_disease_model_v2.onnx

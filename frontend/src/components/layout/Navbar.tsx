@@ -65,8 +65,9 @@ export const Navbar: React.FC = () => {
       case 'MARKET_OWNER':
         return 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800';
       case 'SHOP_OWNER':
-      case 'AGRI_PARTNER':
         return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800';
+      case 'AGRI_PARTNER':
+        return 'bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-800';
       case 'DELIVERY_BOY':
         return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800';
       case 'FARMER':
@@ -80,8 +81,9 @@ export const Navbar: React.FC = () => {
       case 'MARKET_OWNER':
         return 'Market Owner';
       case 'SHOP_OWNER':
+        return t('roleShopOwner', 'Shop Owner');
       case 'AGRI_PARTNER':
-        return t('rolePartner', 'Agri Store Partner');
+        return t('rolePartner', 'Agri Partner');
       case 'DELIVERY_BOY':
         return t('roleDelivery', 'Delivery Partner');
       case 'FARMER':
@@ -566,7 +568,7 @@ export const Navbar: React.FC = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className="block px-3 py-2 rounded-xl text-sm font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40"
                     >
-                      Store Partner Orders
+                      {user.role === 'AGRI_PARTNER' ? 'Agri Partner Orders' : 'Shop Owner Orders'}
                     </Link>
                     <Link
                       to="/shop/products"
