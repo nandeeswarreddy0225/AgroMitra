@@ -39,26 +39,6 @@ const RoleProfileRedirect: React.FC = () => {
   return <Navigate to={getRoleDashboardPath(user?.role)} replace />;
 };
 
-const RootEntryRedirect: React.FC = () => {
-  const { user, isAuthenticated, isLoading, getRoleDashboardPath } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Loading AgroMitra...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <Navigate to={getRoleDashboardPath(user.role)} replace />;
-};
 
 export const App: React.FC = () => {
   return (
@@ -69,8 +49,8 @@ export const App: React.FC = () => {
             <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
-              {/* Root Entry: Unauthenticated -> /login, Authenticated -> Role Dashboard */}
-              <Route index element={<RootEntryRedirect />} />
+              {/* Public Routes */}
+              <Route index element={<HomePage />} />
               <Route path="home" element={<HomePage />} />
               <Route path="login" element={<LoginPage />} />
               <Route path="register" element={<RegisterPage />} />

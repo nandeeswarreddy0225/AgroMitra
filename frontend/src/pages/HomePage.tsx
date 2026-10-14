@@ -16,6 +16,9 @@ import {
   Compass,
   Check,
   Building2,
+  HeartHandshake,
+  ShieldCheck,
+  Leaf,
 } from 'lucide-react';
 import {
   getProductsApi,
@@ -31,6 +34,17 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useTranslation } from '../context/LanguageContext';
 import { AgroMitraLogo } from '../components/common/AgroMitraLogo';
+
+// Safe image fallback helper
+const handleImageError = (
+  e: React.SyntheticEvent<HTMLImageElement, Event>,
+  fallbackSrc: string = 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80'
+) => {
+  const target = e.currentTarget;
+  if (target.src !== fallbackSrc) {
+    target.src = fallbackSrc;
+  }
+};
 
 export const HomePage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
@@ -133,81 +147,91 @@ export const HomePage: React.FC = () => {
     <div className="space-y-20 pb-24 overflow-hidden">
       
       {/* ========================================================================= */}
-      {/* 1. HERO SECTION: Full-width Agricultural Hero with Real Imagery & Trust Metrics */}
+      {/* 1. HERO SECTION: Modern Indian Agriculture with Tasteful Dark Green Overlay */}
       {/* ========================================================================= */}
-      <section className="relative min-h-[580px] lg:min-h-[640px] flex items-center bg-stone-900 text-white overflow-hidden rounded-3xl mx-2 sm:mx-4 lg:mx-8 mt-3 shadow-xl">
+      <section className="relative min-h-[600px] lg:min-h-[660px] flex items-center bg-stone-950 text-white overflow-hidden rounded-3xl mx-2 sm:mx-4 lg:mx-8 mt-3 shadow-2xl border border-emerald-950">
         {/* Real Indian Agriculture Hero Photograph */}
         <div className="absolute inset-0 z-0">
           <img
             src="https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=1920&q=80"
-            alt="Indian farmer inspecting lush green agricultural crop field"
+            alt="Indian farmer inspecting lush green agricultural crop field at golden sunrise"
+            onError={(e) => handleImageError(e, 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1920&q=80')}
             className="w-full h-full object-cover object-center scale-105 transform animate-in fade-in duration-700"
           />
-          {/* Subtle multi-stop gradient overlay for high text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-900/80 to-stone-900/40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-transparent to-transparent" />
+          {/* Multi-stop emerald & forest-green gradient overlay for text readability & contrast */}
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/95 via-stone-950/90 to-emerald-950/60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-stone-950/95 via-transparent to-stone-950/30" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-24 w-full">
-          <div className="max-w-2xl space-y-6">
+          <div className="max-w-3xl space-y-7">
             
-            {/* Brand Pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-md border border-emerald-400/40 text-emerald-300 text-xs font-bold tracking-wide shadow-sm">
+            {/* Brand Pill with Subtle Gold Accents */}
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-emerald-900/40 backdrop-blur-md border border-emerald-400/30 text-emerald-300 text-xs font-bold tracking-wide shadow-sm">
               <AgroMitraLogo variant="mark" size="sm" />
-              <span>{t('brandName', 'AgroMitra')} • {t('brandTagline', 'Smart Farming. Better Crops. Better Future.')}</span>
+              <span>AgroMitra</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              <span className="text-amber-300 font-semibold">{t('brandTagline', 'Smart Farming. Better Crops. Better Future.')}</span>
             </div>
 
-            {/* Main Headline */}
+            {/* Main Headline: Grow Smarter. Harvest Better. */}
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-heading font-extrabold tracking-tight leading-[1.12] text-white">
-              Smart Farming.<br />
-              <span className="text-emerald-400">Better Crops. Better Future.</span>
+              Grow Smarter.<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-300">
+                Harvest Better.
+              </span>
             </h1>
 
-            {/* Supporting Text */}
-            <p className="text-sm sm:text-base lg:text-lg text-stone-200/90 leading-relaxed max-w-xl font-normal">
-              {t(
-                'brandHeroSubtitle',
-                'AgroMitra connects farmers, agri store partners, mandi owners and delivery partners in one intelligent agricultural platform.'
-              )}
-
+            {/* Supporting Platform Description */}
+            <p className="text-base sm:text-lg text-stone-200 leading-relaxed max-w-2xl font-normal">
+              AgroMitra connects farmers, verified agricultural input retailers, APMC mandi yards, and logistics partners into one unified digital ecosystem. Empowering rural agriculture with computer vision disease diagnosis, transparent spot market pricing, and doorstep delivery.
             </p>
 
             {/* Primary Action Buttons */}
-            <div className="pt-2 flex flex-wrap items-center gap-3.5">
+            <div className="pt-2 flex flex-wrap items-center gap-4">
               <Link
                 to="/marketplace"
-                className="inline-flex items-center gap-2 px-6 sm:px-7 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-bold text-sm shadow-lg shadow-emerald-900/40 hover:shadow-emerald-900/60 transition-all hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-heading font-bold text-sm shadow-xl shadow-emerald-950/50 hover:shadow-emerald-900/70 transition-all hover:-translate-y-0.5"
               >
-                <span>{t('exploreProductsBtn', 'Explore Products')}</span>
-                <ArrowRight className="w-4 h-4" />
+                <Store className="w-4 h-4 text-emerald-200" />
+                <span>Explore Marketplace</span>
+                <ArrowRight className="w-4 h-4 text-emerald-200" />
               </Link>
 
               <Link
                 to="/ai/crop-disease"
-                className="inline-flex items-center gap-2 px-6 sm:px-7 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-heading font-bold text-sm transition-all hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-heading font-bold text-sm transition-all hover:-translate-y-0.5 shadow-md"
               >
-                <Sparkles className="w-4 h-4 text-emerald-400" />
-                <span>{t('scanCropBtn', 'Scan Your Crop')}</span>
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>Scan Your Crop</span>
               </Link>
             </div>
 
-            {/* Trust Indicators (Actual Working Capabilities Only) */}
-            <div className="pt-6 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold text-stone-300">
-              <div className="flex items-center gap-2">
-                <span className="text-base">🌾</span>
-                <span>{t('trustSmartFarming', 'Smart Farming')}</span>
+            {/* Trust Indicators Bar */}
+            <div className="pt-8 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold text-stone-200">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-300">
+                  <Leaf className="w-4 h-4" />
+                </div>
+                <span>Smart Crop AI</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-base">💰</span>
-                <span>{t('trustMarketIntel', 'Market Intelligence')}</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-300">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <span>APMC Spot Rates</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-base">🌦️</span>
-                <span>{t('trustLiveWeather', 'Live Weather')}</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-300">
+                  <CloudSun className="w-4 h-4" />
+                </div>
+                <span>Hyperlocal Weather</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-base">🤖</span>
-                <span>{t('trustAiAssistance', 'AI Crop Assistance')}</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-300">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <span>100% Genuine Inputs</span>
               </div>
             </div>
 
@@ -215,9 +239,417 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* ========================================================================= */}
+      {/* 2. PLATFORM FEATURES: 6 Core Capabilities with Real Photography & Direct CTAs */}
+      {/* ========================================================================= */}
+      <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+          <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+            Intelligent Agro-Tech
+          </span>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
+            Core Platform Capabilities
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Everything your agricultural operation requires — from real-time field diagnostics to direct marketplace commerce.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
+          
+          {/* Feature 1: AI Crop Disease Scanner */}
+          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between">
+            <div>
+              <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                <img
+                  src="https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80"
+                  alt="Farmer inspecting crop foliage for plant pathology"
+                  onError={(e) => handleImageError(e)}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
+                <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-600 text-white shadow-sm flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Computer Vision</span>
+                </span>
+              </div>
+              <div className="p-6 space-y-2">
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  AI Crop Disease Scanner
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Capture or upload leaf specimens for instantaneous botanical identification and foliar disease diagnosis, paired with verified curative and organic treatment recommendations.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 pt-0">
+              <Link
+                to="/ai/crop-disease"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-600 text-emerald-800 dark:text-emerald-300 hover:text-white font-heading font-bold text-xs transition-all"
+              >
+                <span>Launch Scanner</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Feature 2: Agricultural Marketplace */}
+          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between">
+            <div>
+              <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                <img
+                  src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=800&q=80"
+                  alt="Agricultural seeds and fertilizers at local verified supply store"
+                  onError={(e) => handleImageError(e)}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
+                <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-600 text-white shadow-sm flex items-center gap-1.5">
+                  <Store className="w-3.5 h-3.5" />
+                  <span>Direct Inputs</span>
+                </span>
+              </div>
+              <div className="p-6 space-y-2">
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  Agricultural Marketplace
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Browse verified certified seeds, bio-pesticides, organic nutrients, and farming tools listed by trusted local agricultural dealers with transparent pricing and live stock.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 pt-0">
+              <Link
+                to="/marketplace"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-600 text-amber-800 dark:text-amber-300 hover:text-white font-heading font-bold text-xs transition-all"
+              >
+                <span>Browse Catalog</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Feature 3: Live Weather Information */}
+          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between">
+            <div>
+              <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                <img
+                  src="https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=800&q=80"
+                  alt="Sun breaking through clouds over farmland"
+                  onError={(e) => handleImageError(e)}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
+                <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-teal-600 text-white shadow-sm flex items-center gap-1.5">
+                  <CloudSun className="w-3.5 h-3.5" />
+                  <span>Hyperlocal Telemetry</span>
+                </span>
+              </div>
+              <div className="p-6 space-y-2">
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  Live Agro-Weather
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Real-time temperature, precipitation probability, humidity, and wind speed tailored to the farmer's GPS coordinates, enabling proactive irrigation and spraying decisions.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 pt-0">
+              <Link
+                to="/dashboard"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-600 text-teal-800 dark:text-teal-300 hover:text-white font-heading font-bold text-xs transition-all"
+              >
+                <span>View Live Weather</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Feature 4: APMC Mandi Spot Rates */}
+          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between">
+            <div>
+              <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                <img
+                  src="https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80"
+                  alt="Fresh farm produce at Indian agricultural APMC mandi"
+                  onError={(e) => handleImageError(e)}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
+                <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-indigo-600 text-white shadow-sm flex items-center gap-1.5">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span>Spot Transparency</span>
+                </span>
+              </div>
+              <div className="p-6 space-y-2">
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  APMC Mandi Spot Prices
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Daily commodity modal, minimum, and maximum rates synchronized from authorized market yards across districts, ensuring fair price discovery for farmers.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 pt-0">
+              <Link
+                to="/market/prices"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-600 text-indigo-800 dark:text-indigo-300 hover:text-white font-heading font-bold text-xs transition-all"
+              >
+                <span>Check Mandi Rates</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Feature 5: Government Welfare Schemes */}
+          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between">
+            <div>
+              <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                <img
+                  src="https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&w=800&q=80"
+                  alt="Young green sprout growing in rich soil"
+                  onError={(e) => handleImageError(e)}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
+                <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-700 text-white shadow-sm flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Verified Subsidies</span>
+                </span>
+              </div>
+              <div className="p-6 space-y-2">
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  Government Schemes
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Verified central and state agricultural subsidies, crop insurance eligibility, direct benefit transfer schemes, and application guidelines curated for Indian farmers.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 pt-0">
+              <Link
+                to="/schemes"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-700 text-emerald-800 dark:text-emerald-300 hover:text-white font-heading font-bold text-xs transition-all"
+              >
+                <span>Explore Schemes</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Feature 6: Farm Delivery Logistics */}
+          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between">
+            <div>
+              <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                <img
+                  src="https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80"
+                  alt="Rural agricultural distribution and farm logistics"
+                  onError={(e) => handleImageError(e)}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
+                <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-600 text-white shadow-sm flex items-center gap-1.5">
+                  <Truck className="w-3.5 h-3.5" />
+                  <span>Farm Dispatch</span>
+                </span>
+              </div>
+              <div className="p-6 space-y-2">
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  Delivery Tracking
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  End-to-end milestone tracking from local retailer acceptance to field delivery. Includes phone coordination and proof of delivery verification.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 pt-0">
+              <Link
+                to={isAuthenticated ? '/orders' : '/login?role=FARMER'}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-600 text-blue-800 dark:text-blue-300 hover:text-white font-heading font-bold text-xs transition-all"
+              >
+                <span>Track Orders</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+        </div>
+      </section>
 
       {/* ========================================================================= */}
-      {/* 2. FROM SEED TO MARKET STORY: 4 Visual Steps of the Agricultural Journey */}
+      {/* 3. USER PORTALS: 5 Distinct Role Cards with Strict RBAC Isolation */}
+      {/* ========================================================================= */}
+      <section id="portals" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+          <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+            Dedicated Stakeholder Workspaces
+          </span>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
+            Built for Every Pillar of Agriculture
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Specialized portals engineered specifically for farmers, retail store owners, agricultural partners, field logistics, and APMC yard managers.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+          
+          {/* Portal 1: FARMER */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-emerald-100 dark:border-emerald-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-700 dark:text-emerald-300">
+                <Sprout className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Primary Producer</span>
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">Farmer</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Smart tools for crop diagnostics, schemes & marketplace orders.</p>
+              </div>
+
+              <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>AI Leaf Disease Scanner</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>APMC Mandi Spot Prices</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>Hyperlocal Weather Advisory</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>Direct Input Ordering</span></li>
+              </ul>
+            </div>
+
+            <Link
+              to={isAuthenticated && user?.role === 'FARMER' ? '/dashboard' : '/login?role=FARMER'}
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
+            >
+              <span>{isAuthenticated && user?.role === 'FARMER' ? 'Open Dashboard' : 'Farmer Sign In'}</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {/* Portal 2: SHOP OWNER */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-amber-100 dark:border-amber-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-700 dark:text-amber-300">
+                <Store className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Retail Merchant</span>
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">Shop Owner</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage physical store inventory, orders, and customer billing.</p>
+              </div>
+
+              <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>Catalog & Live Stock</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>Order Processing & Pickup</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>Store UPI QR Integration</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>Delivery Assignment</span></li>
+              </ul>
+            </div>
+
+            <Link
+              to={isAuthenticated && user?.role === 'SHOP_OWNER' ? '/shop-owner/dashboard' : '/login?role=SHOP_OWNER'}
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
+            >
+              <span>{isAuthenticated && user?.role === 'SHOP_OWNER' ? 'Open Dashboard' : 'Shop Sign In'}</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {/* Portal 3: AGRI PARTNER */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-teal-100 dark:border-teal-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 flex items-center justify-center text-teal-700 dark:text-teal-300">
+                <HeartHandshake className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">Ecosystem Services</span>
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">Agri Partner</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Institutional distributors, advisors, and corporate partners.</p>
+              </div>
+
+              <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" /><span>Bulk Input Distribution</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" /><span>Partner Advisory Ops</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" /><span>Supply Chain Fulfillment</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" /><span>Partner Portal Analytics</span></li>
+              </ul>
+            </div>
+
+            <Link
+              to={isAuthenticated && user?.role === 'AGRI_PARTNER' ? '/agri-partner/dashboard' : '/login?role=AGRI_PARTNER'}
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
+            >
+              <span>{isAuthenticated && user?.role === 'AGRI_PARTNER' ? 'Open Dashboard' : 'Partner Sign In'}</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {/* Portal 4: DELIVERY BOY */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-blue-100 dark:border-blue-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-700 dark:text-blue-300">
+                <Truck className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Field Logistics</span>
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">Delivery Boy</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Accept store pickups and deliver agricultural supplies to farms.</p>
+              </div>
+
+              <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" /><span>Instant Order Notifications</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" /><span>Pickup & Drop Routing</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" /><span>Delivery Status Milestone</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" /><span>Delivery History Logs</span></li>
+              </ul>
+            </div>
+
+            <Link
+              to={isAuthenticated && user?.role === 'DELIVERY_BOY' ? '/delivery/dashboard' : '/login?role=DELIVERY_BOY'}
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
+            >
+              <span>{isAuthenticated && user?.role === 'DELIVERY_BOY' ? 'Open Dashboard' : 'Rider Sign In'}</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {/* Portal 5: MARKET OWNER */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-indigo-100 dark:border-indigo-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-700 dark:text-indigo-300">
+                <Building2 className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">APMC Mandi</span>
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">Market Owner</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Publish daily arrivals, commodity spot rates, and yard updates.</p>
+              </div>
+
+              <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" /><span>Daily Price Publishing</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" /><span>Min/Max Modal Rates</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" /><span>Mandi Profile & Hours</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" /><span>Arrival Volume Logs</span></li>
+              </ul>
+            </div>
+
+            <Link
+              to={isAuthenticated && user?.role === 'MARKET_OWNER' ? '/market-owner/dashboard' : '/login?role=MARKET_OWNER'}
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
+            >
+              <span>{isAuthenticated && user?.role === 'MARKET_OWNER' ? 'Open Dashboard' : 'Mandi Sign In'}</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 4. FROM SEED TO MARKET: 4 Visual Lifecycle Steps */}
       {/* ========================================================================= */}
       <section id="ecosystem" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
@@ -225,10 +657,10 @@ export const HomePage: React.FC = () => {
             Lifecycle Ecosystem
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
-            {t('seedToMarketTitle', 'From Seed to Market')}
+            From Seed to Market
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            {t('seedToMarketSub', 'An integrated ecosystem supporting every stage of the agricultural journey.')}
+            An integrated agricultural workflow supporting every stage of seasonal cultivation.
           </p>
         </div>
 
@@ -244,13 +676,13 @@ export const HomePage: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
-                🌱 {t('step01Title', 'PLAN')}
+                🌱 PLAN
               </div>
               <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1">
                 Crop & Soil Guidance
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                {t('step01Desc', 'Crop & soil guidance tailored to your farm.')}
+                Determine suitable seasonal crops based on soil morphology, geographic zone, and historical weather patterns.
               </p>
             </div>
           </div>
@@ -265,13 +697,13 @@ export const HomePage: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide">
-                🌿 {t('step02Title', 'GROW')}
+                🌿 GROW
               </div>
               <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1">
                 Weather & AI Protection
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                {t('step02Desc', 'Hyperlocal weather forecasts and AI crop pathology diagnosis.')}
+                Monitor field humidity, incoming rain showers, and run mobile leaf scans to arrest fungal and bacterial blights early.
               </p>
             </div>
           </div>
@@ -286,15 +718,14 @@ export const HomePage: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
-                🛒 {t('step03Title', 'BUY')}
+                🛒 BUY
               </div>
               <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1">
-                Agricultural Products
+                Certified Farm Inputs
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                {t('step03Desc', 'Certified seeds, bio-protection, and equipment.')}
+                Order genuine fertilizers, micronutrients, certified seeds, and bio-protection directly from local dealers.
               </p>
-
             </div>
           </div>
 
@@ -308,13 +739,13 @@ export const HomePage: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                🚚 {t('step04Title', 'DELIVER')}
+                🚚 DELIVER
               </div>
               <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1">
-                Field Delivery
+                Farm-to-Gate Delivery
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                {t('step04Desc', 'Fast and reliable retailer-to-farmer field delivery.')}
+                Dedicated delivery riders transport agricultural bags and products directly to farm gates without disrupting labor.
               </p>
             </div>
           </div>
@@ -322,509 +753,27 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-
       {/* ========================================================================= */}
-      {/* 3. FOUR PRIMARY USERS: Farmer, Agri Store Partner, Delivery Partner, Market Owner */}
-      {/* ========================================================================= */}
-
-      <section id="users" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            One Unified Platform
-          </span>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
-            {t('builtForAgriTitle', 'Built for Agriculture')}
-          </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Empowering all four pillars of Indian agriculture with specialized digital tools.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          
-          {/* Card 1: FARMER */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-emerald-100 dark:border-emerald-950/80 p-7 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow space-y-6">
-            <div className="space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-700 dark:text-emerald-300">
-                <Sprout className="w-7 h-7" />
-              </div>
-              <div>
-                <h3 className="text-xl font-heading font-extrabold text-slate-900 dark:text-white">
-                  👨‍🌾 {t('farmerCardTitle', 'FARMER')}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {t('farmerCardSub', 'Everything a farmer needs to make smarter decisions.')}
-                </p>
-              </div>
-
-              {/* Feature Checklist */}
-              <ul className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>Live Hyperlocal Weather Advisory</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>APMC Mandi Spot Prices & Trends</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>Soil & Seasonal Crop Advisor</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>AI Leaf Disease Pathology Scanner</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>Verified Government Welfare Schemes</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>Direct Input Marketplace & Tracking</span>
-                </li>
-              </ul>
-            </div>
-
-            <Link
-              to={isAuthenticated && user?.role === 'FARMER' ? '/dashboard' : '/marketplace'}
-              className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
-            >
-              <span>{t('farmerCta', 'Explore Farmer Tools')}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {/* Card 2: AGRI STORE PARTNER */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-amber-100 dark:border-amber-950/80 p-7 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow space-y-6">
-            <div className="space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-700 dark:text-amber-300">
-                <Store className="w-7 h-7" />
-              </div>
-              <div>
-                <h3 className="text-xl font-heading font-extrabold text-slate-900 dark:text-white">
-                  🏪 {t('partnerCardTitle', 'AGRI STORE PARTNER')}
-                </h3>
-
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {t('partnerCardSub', 'Manage your agricultural business and serve farmers better.')}
-                </p>
-              </div>
-
-              {/* Feature Checklist */}
-              <ul className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Product Catalog & Pricing Management</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Live Inventory & Stock Tracking</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Farmer Order Reception & Processing</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Direct Store UPI QR & Razorpay Payments</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Delivery Partner Discovery & Assignment</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Order Lifecycle & Status Progression</span>
-                </li>
-              </ul>
-            </div>
-
-            <Link
-              to={isAuthenticated && (user?.role === 'SHOP_OWNER' || user?.role === 'AGRI_PARTNER') ? '/shop/orders' : '/register?role=SHOP_OWNER'}
-              className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
-            >
-              <span>{t('partnerCta', 'Manage Your Store')}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {/* Card 3: DELIVERY PARTNER */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-blue-100 dark:border-blue-950/80 p-7 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow space-y-6">
-            <div className="space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-700 dark:text-blue-300">
-                <Truck className="w-7 h-7" />
-              </div>
-              <div>
-                <h3 className="text-xl font-heading font-extrabold text-slate-900 dark:text-white">
-                  🚚 {t('deliveryCardTitle', 'DELIVERY PARTNER')}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {t('deliveryCardSub', 'Connect stores with farmers through reliable delivery.')}
-                </p>
-              </div>
-
-              {/* Feature Checklist */}
-              <ul className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                  <span>Real-time Delivery Assignment Requests</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                  <span>Instant Request Acceptance & Rejection</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                  <span>Store Pickup Verification & Navigation</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                  <span>Out for Delivery Real-time Milestones</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                  <span>Direct Delivery Confirmation to Farmer</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                  <span>Shipment History & Performance Log</span>
-                </li>
-              </ul>
-            </div>
-
-            <Link
-              to={isAuthenticated && user?.role === 'DELIVERY_BOY' ? '/delivery/dashboard' : '/register?role=DELIVERY_BOY'}
-              className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
-            >
-              <span>{t('deliveryCta', 'Manage Deliveries')}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {/* Card 4: MARKET / MANDI OWNER */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-indigo-100 dark:border-indigo-950/80 p-7 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow space-y-6">
-            <div className="space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-700 dark:text-indigo-300">
-                <Building2 className="w-7 h-7" />
-              </div>
-              <div>
-                <h3 className="text-xl font-heading font-extrabold text-slate-900 dark:text-white">
-                  🏛️ MARKET OWNER
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Manage APMC Mandi daily spot prices and market transparency.
-                </p>
-              </div>
-
-              {/* Feature Checklist */}
-              <ul className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                  <span>Daily Commodity Spot Price Publishing</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                  <span>Min, Max & Modal Price Validation</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                  <span>Real-time Price Audit & History Logs</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                  <span>APMC Yard Profile & Operating Hours</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                  <span>Mandi Hyperlocal Weather Advisory</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                  <span>Instant Sync to Public Farmer Portal</span>
-                </li>
-              </ul>
-            </div>
-
-            <Link
-              to={isAuthenticated && user?.role === 'MARKET_OWNER' ? '/market-owner/dashboard' : '/register?role=MARKET_OWNER'}
-              className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
-            >
-              <span>{isAuthenticated && user?.role === 'MARKET_OWNER' ? 'Mandi Dashboard' : 'Join as Market Owner'}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-        </div>
-      </section>
-
-
-      {/* ========================================================================= */}
-      {/* 4. AGRICULTURE IMAGE GALLERY: "Life Behind Every Harvest" */}
-      {/* ========================================================================= */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            Visual Tribute
-          </span>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
-            {t('lifeBehindHarvestTitle', 'Life Behind Every Harvest')}
-          </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            {t('lifeBehindHarvestSub', 'Honoring the dedication, resilience, and science powering Indian fields every single day.')}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          
-          {/* Photo 1: Sowing */}
-          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
-            <img
-              src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80"
-              alt="Indian farmer preparing the soil and sowing seeds in the field"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
-                {t('gallerySowing', 'Precision Sowing')}
-              </span>
-              <p className="text-xs text-stone-200 mt-1 font-medium">
-                {t('gallerySowingDesc', 'Early morning field preparation and seedbed planning.')}
-              </p>
-            </div>
-          </div>
-
-          {/* Photo 2: Water Irrigation */}
-          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
-            <img
-              src="https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80"
-              alt="Farmer managing farm water irrigation"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
-                {t('galleryIrrigation', 'Water Management')}
-              </span>
-              <p className="text-xs text-stone-200 mt-1 font-medium">
-                {t('galleryIrrigationDesc', 'Optimal hydration for maximum seasonal crop vitality.')}
-              </p>
-            </div>
-          </div>
-
-          {/* Photo 3: Leaf Inspection */}
-          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
-            <img
-              src="https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80"
-              alt="Farmer inspecting crop plant health and foliage"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
-                {t('galleryInspection', 'Crop Inspection')}
-              </span>
-              <p className="text-xs text-stone-200 mt-1 font-medium">
-                {t('galleryInspectionDesc', 'Proactive leaf monitoring and soil health checks.')}
-              </p>
-            </div>
-          </div>
-
-          {/* Photo 4: Harvest */}
-          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
-            <img
-              src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=800&q=80"
-              alt="Abundant agricultural grain harvest in rural India"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
-                {t('galleryHarvest', 'Abundant Harvest')}
-              </span>
-              <p className="text-xs text-stone-200 mt-1 font-medium">
-                {t('galleryHarvestDesc', 'Reaping the rewards of disciplined agronomic practices.')}
-              </p>
-            </div>
-          </div>
-
-          {/* Photo 5: Store Fulfillment */}
-          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
-            <img
-              src="https://images.unsplash.com/photo-1605000797499-95a51c5269ae?auto=format&fit=crop&w=800&q=80"
-              alt="Agri store partner fulfilling certified seeds and agricultural supplies"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
-
-            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-wide">
-                {t('galleryFulfillment', 'Store Fulfillment')}
-              </span>
-              <p className="text-xs text-stone-200 mt-1 font-medium">
-                {t('galleryFulfillmentDesc', 'Agri Store Partners preparing genuine inputs.')}
-              </p>
-            </div>
-
-          </div>
-
-          {/* Photo 6: Mobile Technology in Field */}
-          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
-            <img
-              src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80"
-              alt="Smart agricultural technology and data across green farmland"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
-              <span className="text-xs font-bold text-purple-400 uppercase tracking-wide">
-                {t('gallerySmartAgri', 'Smart Technology')}
-              </span>
-              <p className="text-xs text-stone-200 mt-1 font-medium">
-                {t('gallerySmartAgriDesc', 'Farmers leveraging mobile AI tools right in the field.')}
-              </p>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-
-      {/* ========================================================================= */}
-      {/* 5. SMART AGRICULTURE: Technology That Works With Farmers */}
-      {/* ========================================================================= */}
-      <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            Intelligent Agriculture
-          </span>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
-            {t('techWorksTitle', 'Technology That Works With Farmers')}
-          </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            {t('techWorksSub', 'Practical, honest AI and data services built for real field conditions.')}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          
-          {/* 1: AI Crop Diagnosis */}
-          <Link
-            to="/ai/crop-disease"
-            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between hover:border-purple-300 dark:hover:border-purple-700 transition-all shadow-sm group hover:-translate-y-1"
-          >
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-600 dark:text-purple-300">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-heading font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <span>🤖 {t('techAiTitle', 'AI Crop Diagnosis')}</span>
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                  {t('techAiDesc', 'Scan crop leaves and receive model-based analysis.')}
-                </p>
-              </div>
-            </div>
-            <div className="pt-4 flex items-center gap-1 text-xs font-bold text-purple-600 dark:text-purple-400">
-              <span>Scan Leaf Now</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
-
-          {/* 2: Live Weather */}
-          <Link
-            to="/dashboard"
-            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-sm group hover:-translate-y-1"
-          >
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-300">
-                <CloudSun className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-heading font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <span>🌦️ {t('techWeatherTitle', 'Live Weather')}</span>
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                  {t('techWeatherDesc', 'Get weather based on the farmer\'s current location.')}
-                </p>
-              </div>
-            </div>
-            <div className="pt-4 flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              <span>View Weather</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
-
-          {/* 3: Market Intelligence */}
-          <Link
-            to="/dashboard"
-            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between hover:border-amber-300 dark:hover:border-amber-700 transition-all shadow-sm group hover:-translate-y-1"
-          >
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-300">
-                <TrendingUp className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-heading font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <span>📈 {t('techMarketTitle', 'Market Intelligence')}</span>
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                  {t('techMarketDesc', 'Understand actual mandi market observations and trends.')}
-                </p>
-              </div>
-            </div>
-            <div className="pt-4 flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400">
-              <span>View Mandi Rates</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
-
-          {/* 4: Crop Advisor */}
-          <Link
-            to="/dashboard"
-            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between hover:border-blue-300 dark:hover:border-blue-700 transition-all shadow-sm group hover:-translate-y-1"
-          >
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-300">
-                <Compass className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-heading font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <span>🌱 {t('techAdvisorTitle', 'Crop Advisor')}</span>
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                  {t('techAdvisorDesc', 'Combine farmer-selected soil, location, season and weather.')}
-                </p>
-              </div>
-            </div>
-            <div className="pt-4 flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400">
-              <span>Open Advisor</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
-
-        </div>
-      </section>
-
-
-      {/* ========================================================================= */}
-      {/* 6. MARKETPLACE PREVIEW: Real Database Products */}
+      {/* 5. FEATURED PRODUCTS: Real Database Products with Cart Integration */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 pb-4 border-b border-slate-200 dark:border-slate-800">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-              Direct Agricultural Inputs
+              Direct Input Marketplace
             </span>
             <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
-              {t('everythingFarmNeedsTitle', 'Everything Your Farm Needs')}
+              Essential Inputs for Your Farm
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {t('everythingFarmNeedsSub', 'Certified seeds, bio-pesticides, and crop protection from trusted local stores.')}
+              Certified seeds, bio-pesticides, and crop care formulations from verified local agricultural store partners.
             </p>
-
           </div>
           <Link
             to="/marketplace"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 whitespace-nowrap"
           >
-            <span>{t('viewMarketplaceLink', 'View Marketplace →')}</span>
+            <span>Explore Full Catalog →</span>
           </Link>
         </div>
 
@@ -855,6 +804,8 @@ export const HomePage: React.FC = () => {
                       <img
                         src={product.images?.[0] || 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=600&q=80'}
                         alt={product.name}
+                        onError={(e) => handleImageError(e, 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=600&q=80')}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/90 dark:bg-slate-900/90 text-slate-800 dark:text-slate-200 backdrop-blur-md shadow-xs">
@@ -867,7 +818,7 @@ export const HomePage: React.FC = () => {
                         {product.name}
                       </h3>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
-                        {product.brand || 'Krishi Certified'} • {product.unit || 'Unit'}
+                        {product.brand || 'Krishi Certified'} • {product.unit || 'Standard Unit'}
                       </p>
                     </div>
                   </div>
@@ -876,7 +827,7 @@ export const HomePage: React.FC = () => {
                     <div>
                       <span className="text-[10px] text-slate-400 block font-semibold">Price</span>
                       <span className="text-base font-heading font-black text-emerald-600 dark:text-emerald-400">
-                        ₹{product.price.toFixed(2)}
+                        ₹{Number(product.price).toFixed(2)}
                       </span>
                     </div>
 
@@ -893,7 +844,7 @@ export const HomePage: React.FC = () => {
                       ) : (
                         <>
                           <ShoppingCart className="w-3.5 h-3.5" />
-                          <span>{t('addToCartBtn', 'Add to Cart')}</span>
+                          <span>Add to Cart</span>
                         </>
                       )}
                     </button>
@@ -904,34 +855,33 @@ export const HomePage: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-12 bg-slate-50 dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
-            <p className="text-xs text-slate-500 dark:text-slate-400">No products currently listed in the catalog.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Verified agricultural products are syncing from store partners.</p>
           </div>
         )}
       </section>
 
-
       {/* ========================================================================= */}
-      {/* 7. LIVE DATA DUAL SECTION: Mandi Spot Rates & Live Weather */}
+      {/* 6. REAL-TIME DATA DUAL SECTION: APMC Mandi Spot Rates & Hyperlocal Weather */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
-          {/* Left: Mandi Prices Preview */}
+          {/* Left: Mandi Spot Rates */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 block">
-                  APMC Spot Rates
+                  APMC Daily Spot Rates
                 </span>
                 <h3 className="text-lg sm:text-xl font-heading font-extrabold text-slate-900 dark:text-white">
-                  {t('knowYourMarketTitle', 'Know Your Market')}
+                  Market Transparency
                 </h3>
               </div>
               <Link
-                to="/dashboard"
+                to="/market/prices"
                 className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
               >
-                View Mandi Rates →
+                View All Mandi Rates →
               </Link>
             </div>
 
@@ -946,17 +896,17 @@ export const HomePage: React.FC = () => {
                 {mandiPrices.map((item, idx) => (
                   <div
                     key={idx}
-                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs"
+                    className="p-3.5 rounded-2xl bg-stone-50 dark:bg-slate-800/60 border border-stone-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs"
                   >
                     <div>
-                      <span className="font-bold text-slate-900 dark:text-white block">{item.commodity}</span>
+                      <span className="font-bold text-slate-900 dark:text-white block text-sm">{item.commodity}</span>
                       <span className="text-[11px] text-slate-500 dark:text-slate-400">{item.market}, {item.district}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs font-mono font-black text-slate-900 dark:text-white block">
+                      <span className="text-sm font-mono font-black text-emerald-700 dark:text-emerald-400 block">
                         ₹{item.modalPrice} / Qtl
                       </span>
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                      <span className="text-[10px] text-slate-500 font-semibold">
                         {item.priceDate}
                       </span>
                     </div>
@@ -964,19 +914,19 @@ export const HomePage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 py-6 text-center">Live market arrivals syncing from APMC network.</p>
+              <p className="text-xs text-slate-500 py-6 text-center">Live market arrivals syncing from national APMC network.</p>
             )}
           </div>
 
-          {/* Right: Hyperlocal Weather Preview */}
+          {/* Right: Hyperlocal Weather Telemetry */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 space-y-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block">
-                  Agro-Weather
+                  Field Agro-Weather
                 </span>
                 <h3 className="text-lg sm:text-xl font-heading font-extrabold text-slate-900 dark:text-white">
-                  {t('weatherForFarmTitle', 'Weather for Your Farm')}
+                  Field Conditions & Advisory
                 </h3>
               </div>
               <Link
@@ -991,7 +941,7 @@ export const HomePage: React.FC = () => {
               <div className="h-40 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse" />
             ) : liveWeather ? (
               <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-gradient-to-tr from-emerald-50 to-teal-50 dark:from-slate-800 dark:to-emerald-950/40 border border-emerald-200/60 dark:border-slate-700 flex items-center justify-between">
+                <div className="p-4 rounded-2xl bg-gradient-to-tr from-emerald-50 via-teal-50 to-stone-50 dark:from-slate-800 dark:to-emerald-950/40 border border-emerald-200/60 dark:border-slate-700 flex items-center justify-between">
                   <div>
                     <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
                       Location: {liveWeather.location.city || liveWeather.location.state || 'India'}
@@ -1032,9 +982,8 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-
       {/* ========================================================================= */}
-      {/* 8. GOVERNMENT SUPPORT & SCHEMES PREVIEW */}
+      {/* 7. GOVERNMENT WELFARE SCHEMES: Central & State Subsidies */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 pb-4 border-b border-slate-200 dark:border-slate-800">
@@ -1043,17 +992,17 @@ export const HomePage: React.FC = () => {
               Institutional Welfare
             </span>
             <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
-              {t('discoverGovtTitle', 'Discover Farmer Support')}
+              Farmer Support & Welfare Schemes
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {t('discoverGovtSub', 'Explore verified Central and State agricultural welfare and subsidy schemes.')}
+              Verified Central and State agricultural subsidy programs, equipment incentives, and financial welfare.
             </p>
           </div>
           <Link
             to="/schemes"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline whitespace-nowrap"
           >
-            <span>{t('viewGovtSchemesLink', 'Explore Government Schemes →')}</span>
+            <span>Explore All Schemes →</span>
           </Link>
         </div>
 
@@ -1091,7 +1040,7 @@ export const HomePage: React.FC = () => {
                     to="/schemes"
                     className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-emerald-600 group-hover:translate-x-0.5 transition-transform shrink-0"
                   >
-                    <span>View Scheme</span>
+                    <span>View Details</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -1101,84 +1050,221 @@ export const HomePage: React.FC = () => {
         ) : null}
       </section>
 
-
       {/* ========================================================================= */}
-      {/* 9. CONNECTED AGRICULTURAL DELIVERY WORKFLOW TIMELINE */}
+      {/* 8. VISUAL TRIBUTE: Life Behind Every Harvest (Real Photography Gallery) */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
+        <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+          <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+            Field Photography
+          </span>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
+            Life Behind Every Harvest
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Honoring the resilience, dedication, and agronomy driving Indian agricultural fields forward every day.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          {/* Photo 1: Sowing */}
+          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
+            <img
+              src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80"
+              alt="Indian farmer preparing soil and sowing crops in rich agricultural ground"
+              onError={(e) => handleImageError(e)}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
+              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
+                Precision Sowing
+              </span>
+              <p className="text-xs text-stone-200 mt-1 font-medium">
+                Early morning field preparation and seedbed planning.
+              </p>
+            </div>
+          </div>
+
+          {/* Photo 2: Water Irrigation */}
+          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
+            <img
+              src="https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80"
+              alt="Farmer managing farm water irrigation channel"
+              onError={(e) => handleImageError(e)}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
+              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
+                Water Management
+              </span>
+              <p className="text-xs text-stone-200 mt-1 font-medium">
+                Optimal hydration for maximum seasonal crop vitality.
+              </p>
+            </div>
+          </div>
+
+          {/* Photo 3: Foliar Health Inspection */}
+          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
+            <img
+              src="https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80"
+              alt="Farmer inspecting crop foliage and leaf pathology"
+              onError={(e) => handleImageError(e)}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
+              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
+                Crop Health Monitoring
+              </span>
+              <p className="text-xs text-stone-200 mt-1 font-medium">
+                Proactive leaf scouting and diagnostic protection.
+              </p>
+            </div>
+          </div>
+
+          {/* Photo 4: Abundant Harvest */}
+          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
+            <img
+              src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=800&q=80"
+              alt="Abundant agricultural grain harvest in rural field"
+              onError={(e) => handleImageError(e)}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
+              <span className="text-xs font-bold text-amber-400 uppercase tracking-wide">
+                Abundant Harvest
+              </span>
+              <p className="text-xs text-stone-200 mt-1 font-medium">
+                Reaping the rewards of disciplined agronomic practices.
+              </p>
+            </div>
+          </div>
+
+          {/* Photo 5: Retail Store Fulfillment */}
+          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
+            <img
+              src="https://images.unsplash.com/photo-1605000797499-95a51c5269ae?auto=format&fit=crop&w=800&q=80"
+              alt="Agri store partner preparing genuine inputs and certified seeds"
+              onError={(e) => handleImageError(e)}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
+              <span className="text-xs font-bold text-teal-400 uppercase tracking-wide">
+                Store Fulfillment
+              </span>
+              <p className="text-xs text-stone-200 mt-1 font-medium">
+                Agri Store Partners preparing genuine farmer orders.
+              </p>
+            </div>
+          </div>
+
+          {/* Photo 6: Field Technology */}
+          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
+            <img
+              src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80"
+              alt="Green agricultural farmland with digital technology connection"
+              onError={(e) => handleImageError(e)}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
+              <span className="text-xs font-bold text-emerald-300 uppercase tracking-wide">
+                Digital Field Agriculture
+              </span>
+              <p className="text-xs text-stone-200 mt-1 font-medium">
+                Farmers leveraging mobile computer vision directly in the field.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 9. THREE-PARTY LOGISTICS SUPPLY CHAIN TIMELINE */}
+      {/* ========================================================================= */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-r from-emerald-950 via-teal-950 to-stone-950 rounded-3xl p-8 sm:p-12 text-white shadow-2xl relative overflow-hidden border border-emerald-900/60">
           <div className="max-w-2xl space-y-2 mb-10">
             <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">
-              Three-Party Network
+              Supply Chain Synergy
             </span>
             <h2 className="text-2xl sm:text-3xl font-heading font-extrabold">
-              {t('deliveryWorkflowTitle', 'Connected Agricultural Delivery')}
+              Connected Agricultural Delivery
             </h2>
             <p className="text-xs sm:text-sm text-slate-300">
-              {t('deliveryWorkflowSub', 'A transparent supply chain connecting farmers, retail stores, and delivery personnel.')}
+              A transparent digital supply chain linking farmers, registered retail stores, and field delivery riders.
             </p>
           </div>
 
           {/* Workflow Steps */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 relative">
             
-            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-center space-y-1.5">
-              <span className="text-xl">🌾</span>
-              <h4 className="text-xs font-bold text-white uppercase">1. Farmer</h4>
-              <p className="text-[11px] text-slate-300">Places Order for Seeds & Bio-Inputs</p>
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-center space-y-2">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center mx-auto">
+                <Sprout className="w-5 h-5" />
+              </div>
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider">1. Farmer Order</h4>
+              <p className="text-[11px] text-slate-300">Farmer places an order for certified inputs or curative products.</p>
             </div>
-
 
             <div className="hidden md:flex items-center justify-center text-emerald-400">
               <ArrowRight className="w-6 h-6" />
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-center space-y-1.5">
-              <span className="text-xl">🏪</span>
-              <h4 className="text-xs font-bold text-white uppercase">2. Store Partner</h4>
-              <p className="text-[11px] text-slate-300">Accepts & Assigns Delivery Partner</p>
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-center space-y-2">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center mx-auto">
+                <Store className="w-5 h-5" />
+              </div>
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider">2. Store Dispatch</h4>
+              <p className="text-[11px] text-slate-300">Nearest eligible retail store verifies inventory and assigns rider.</p>
             </div>
-
 
             <div className="hidden md:flex items-center justify-center text-emerald-400">
               <ArrowRight className="w-6 h-6" />
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-center space-y-1.5">
-              <span className="text-xl">🚚</span>
-              <h4 className="text-xs font-bold text-white uppercase">3. Delivery Partner</h4>
-              <p className="text-[11px] text-slate-300">Picks Up & Delivers to Farmer's Farm</p>
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-center space-y-2">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center mx-auto">
+                <Truck className="w-5 h-5" />
+              </div>
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider">3. Field Delivery</h4>
+              <p className="text-[11px] text-slate-300">Delivery partner picks up inputs and fulfills directly to the farm.</p>
             </div>
 
           </div>
         </div>
       </section>
 
-
       {/* ========================================================================= */}
-      {/* 10. FINAL CALL TO ACTION: "Let's Build a Smarter Agricultural Future." */}
+      {/* 10. FINAL CALL TO ACTION: Build a Smarter Agricultural Future */}
       {/* ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 sm:p-14 text-center space-y-6 shadow-sm">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 via-green-600 to-emerald-500 flex items-center justify-center text-white mx-auto shadow-md shadow-emerald-600/30">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-emerald-500 flex items-center justify-center text-white mx-auto shadow-lg shadow-emerald-600/30">
             <Sprout className="w-8 h-8" />
           </div>
 
           <div className="max-w-xl mx-auto space-y-2">
             <h2 className="text-2xl sm:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
-              {t('finalCtaTitle', 'Let\'s Build a Smarter Agricultural Future.')}
+              Let's Build a Smarter Agricultural Future.
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              {t('finalCtaSub', 'One platform connecting farmers, agricultural businesses and delivery partners.')}
+              Join thousands of farmers, store retailers, mandi managers, and delivery partners collaborating on AgroMitra today.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Link
               to="/register"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-bold text-sm shadow-md shadow-emerald-600/20 transition-all hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-heading font-bold text-sm shadow-md shadow-emerald-600/20 transition-all hover:-translate-y-0.5"
             >
-              <span>{t('joinAgroMitraBtn', 'Join AgroMitra')}</span>
+              <span>Join AgroMitra Free</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 
@@ -1186,7 +1272,7 @@ export const HomePage: React.FC = () => {
               to="/marketplace"
               className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-heading font-bold text-sm transition-all"
             >
-              <span>{t('explorePlatformBtn', 'Explore the Platform')}</span>
+              <span>Explore Marketplace</span>
             </Link>
           </div>
         </div>
