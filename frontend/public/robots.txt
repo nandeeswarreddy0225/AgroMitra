@@ -1,6 +1,8 @@
 # Robots.txt for AgroMitra (https://agro-mitra-frontend.vercel.app/)
 User-agent: *
 Allow: /
+Allow: /sitemap.xml
+Allow: /robots.txt
 Allow: /marketplace
 Allow: /schemes
 Allow: /market/prices
