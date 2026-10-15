@@ -827,4 +827,11 @@ export const mr: Record<string, string> = {
   errNetworkBackendUnreachable: 'अ‍ॅग्रोमित्र सर्व्हरशी कनेक्ट करण्यात अक्षम. कृपया तुमचे इंटरनेट कनेक्शन किंवा सर्व्हर स्थिती तपासा.',
   errInvalidCredentials: 'अवैध फोन नंबर किंवा पासवर्ड.',
   errLoginFailed: 'लॉगिन अयशस्वी झाले. कृपया तुमचे नेटवर्क कनेक्शन तपासा.',
+  step01Action: 'पीक सल्ला पहा',
+  step02Action: 'AI निदान सुरू करा',
+  step03Action: 'दुकान कॅटलॉग पहा',
+  step04Action: 'फार्म वितरण ट्रॅक करा',
+  carouselNextSlide: 'पुढील प्रतिमा',
+  carouselPrevSlide: 'मागील प्रतिमा',
+  carouselSlide: 'स्लाइड',
 };

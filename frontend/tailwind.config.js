@@ -8,8 +8,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        heading: ['"Space Grotesk"', 'system-ui', '-apple-system', 'sans-serif'],
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        heading: ['"Space Grotesk"', 'Inter', '"Noto Sans Devanagari"', '"Noto Sans Telugu"', '"Noto Sans Kannada"', '"Noto Sans Tamil"', '"Nirmala UI"', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Inter', '"Noto Sans Devanagari"', '"Noto Sans Telugu"', '"Noto Sans Kannada"', '"Noto Sans Tamil"', '"Nirmala UI"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
       },
       colors: {
         brand: {

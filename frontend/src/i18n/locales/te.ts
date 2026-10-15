@@ -827,4 +827,11 @@ export const te: Record<string, string> = {
   errNetworkBackendUnreachable: 'అగ్రోమిత్ర సర్వర్‌కి కనెక్ట్ కాలేకపోతున్నాము. దయచేసి మీ ఇంటర్నెట్ కనెక్షన్ లేదా సర్వర్ స్థితిని తనిఖీ చేయండి.',
   errInvalidCredentials: 'చెల్లని ఫోన్ నంబర్ లేదా పాస్‌వర్డ్.',
   errLoginFailed: 'లాగిన్ విఫలమైంది. దయచేసి మీ నెట్‌వర్క్ కనెక్షన్‌ని తనిఖీ చేయండి.',
+  step01Action: 'పంట సలహాలను చూడండి',
+  step02Action: 'AI రోగ నిర్ధారణను ప్రారంభించండి',
+  step03Action: 'స్టోర్ కేటలాగ్‌ను చూడండి',
+  step04Action: 'ఫార్మ్ డెలివరీని ట్రాక్ చేయండి',
+  carouselNextSlide: 'తదుపరి చిత్రం',
+  carouselPrevSlide: 'మునుపటి చిత్రం',
+  carouselSlide: 'స్లైడ్',
 };

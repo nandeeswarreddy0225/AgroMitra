@@ -827,4 +827,11 @@ export const ta: Record<string, string> = {
   errNetworkBackendUnreachable: 'அக்ரோமித்ரா சர்வரை இணைக்க முடியவில்லை. உங்கள் இணைய இணைப்பு அல்லது சர்வர் நிலையை சரிபார்க்கவும்.',
   errInvalidCredentials: 'தவறான தொலைபேசி எண் அல்லது கடவுச்சொல்.',
   errLoginFailed: 'உள்நுழைவு தோல்வியடைந்தது. உங்கள் நெட்வொர்க் இணைப்பை சரிபார்க்கவும்.',
+  step01Action: 'பயிர் ஆலோசனையைக் காண்க',
+  step02Action: 'AI நோயறிதலைத் தொடங்கு',
+  step03Action: 'கடை பட்டியலை உலாவு',
+  step04Action: 'பண்ணை டெலிவரியைக் கண்காணிக்கவும்',
+  carouselNextSlide: 'அடுத்த படம்',
+  carouselPrevSlide: 'முந்தைய படம்',
+  carouselSlide: 'ஸ்லைடு',
 };

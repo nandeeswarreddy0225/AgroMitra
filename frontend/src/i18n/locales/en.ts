@@ -827,4 +827,11 @@ export const en: Record<string, string> = {
   errNetworkBackendUnreachable: 'Unable to connect to the AgroMitra backend server. Please check your internet connection or server status.',
   errInvalidCredentials: 'Invalid phone number or password.',
   errLoginFailed: 'Login failed. Please check your network connection.',
+  step01Action: 'View Crop Advisory',
+  step02Action: 'Launch AI Diagnostic',
+  step03Action: 'Browse Store Catalog',
+  step04Action: 'Track Farm Delivery',
+  carouselNextSlide: 'Next slide',
+  carouselPrevSlide: 'Previous slide',
+  carouselSlide: 'Slide',
 };

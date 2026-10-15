@@ -827,4 +827,11 @@ export const hi: Record<string, string> = {
   errNetworkBackendUnreachable: 'एग्रोमित्र बैकएंड सर्वर से कनेक्ट करने में असमर्थ। कृपया अपना इंटरनेट कनेक्शन या सर्वर स्थिति जांचें।',
   errInvalidCredentials: 'अमान्य फ़ोन नंबर या पासवर्ड।',
   errLoginFailed: 'लॉगिन विफल रहा। कृपया अपना नेटवर्क कनेक्शन जांचें।',
+  step01Action: 'फसल सलाह देखें',
+  step02Action: 'AI निदान शुरू करें',
+  step03Action: 'स्टोर कैटलॉग देखें',
+  step04Action: 'फार्म डिलीवरी ट्रैक करें',
+  carouselNextSlide: 'अगली छवि',
+  carouselPrevSlide: 'पिछली छवि',
+  carouselSlide: 'स्लाइड',
 };

@@ -24,6 +24,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     localStorage.setItem('agromitra_language', language);
     localStorage.setItem('krishisetu_language', language);
     document.documentElement.lang = language;
+    document.documentElement.dataset.lang = language;
   }, [language]);
 
   const setLanguage = (lang: SupportedLanguage) => {

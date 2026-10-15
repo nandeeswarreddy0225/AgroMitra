@@ -46,10 +46,36 @@ const handleImageError = (
   }
 };
 
+const HERO_SLIDES = [
+  {
+    url: 'https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=1920&q=80',
+    alt: 'Indian farmer inspecting lush green agricultural crop field at golden sunrise',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1920&q=80',
+    alt: 'Vibrant green agricultural farm field in India with sunrise light',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=1920&q=80',
+    alt: 'High tech modern Indian agriculture with wheat field',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1920&q=80',
+    alt: 'Lush organic crop foliage under bright clear sky',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=1920&q=80',
+    alt: 'Golden ripe agricultural grain field ready for harvest',
+  },
+];
+
 export const HomePage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { addToCart } = useCart();
   const { t } = useTranslation();
+
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [isHeroPaused, setIsHeroPaused] = useState(false);
 
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
@@ -64,6 +90,21 @@ export const HomePage: React.FC = () => {
 
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [isLoadingSchemes, setIsLoadingSchemes] = useState(true);
+
+  // Auto-advance hero carousel every 6 seconds with reduced-motion support
+  useEffect(() => {
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion || isHeroPaused) return;
+
+    const timer = setInterval(() => {
+      setHeroIndex((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 6000);
+
+    return () => clearInterval(timer);
+  }, [isHeroPaused]);
 
   useEffect(() => {
     // 1. Fetch Real Featured Products from MongoDB
@@ -150,20 +191,44 @@ export const HomePage: React.FC = () => {
       {/* 1. HERO SECTION: Modern Indian Agriculture with Animated Alive Elements  */}
       {/* ========================================================================= */}
       <section className="relative min-h-[620px] lg:min-h-[700px] flex items-center bg-stone-950 text-white overflow-hidden rounded-3xl mx-2 sm:mx-4 lg:mx-8 mt-3 shadow-2xl border border-emerald-950">
-        {/* Real Indian Agriculture Hero Photograph with Ken-Burns Motion */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <img
-            src="https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=1920&q=80"
-            alt="Indian farmer inspecting lush green agricultural crop field at golden sunrise"
-            onError={(e) => handleImageError(e, 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1920&q=80')}
-            className="w-full h-full object-cover object-center animate-ken-burns opacity-75"
-          />
+        {/* Real Indian Agriculture Hero Photograph Carousel with Smooth Crossfade */}
+        <div
+          className="absolute inset-0 z-0 overflow-hidden"
+          onMouseEnter={() => setIsHeroPaused(true)}
+          onMouseLeave={() => setIsHeroPaused(false)}
+        >
+          {HERO_SLIDES.map((slide, idx) => (
+            <img
+              key={slide.url}
+              src={slide.url}
+              alt={slide.alt}
+              onError={(e) => handleImageError(e, 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1920&q=80')}
+              className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ease-in-out ${
+                idx === heroIndex ? 'opacity-75 animate-ken-burns' : 'opacity-0 pointer-events-none'
+              }`}
+            />
+          ))}
           {/* Multi-stop emerald & forest-green gradient overlay for text readability & contrast */}
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/95 via-stone-950/90 to-emerald-950/60" />
           <div className="absolute inset-0 bg-gradient-to-t from-stone-950/95 via-transparent to-stone-950/30" />
           {/* Subtle animated ambient light glow */}
           <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
           <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-teal-500/15 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
+
+          {/* Carousel Slide Indicators */}
+          <div className="absolute bottom-4 right-6 z-20 hidden sm:flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+            {HERO_SLIDES.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setHeroIndex(i)}
+                aria-label={`${t('carouselSlide', 'Slide')} ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === heroIndex ? 'w-6 bg-emerald-400' : 'w-2 bg-white/40 hover:bg-white/70'
+                }`}
+              />
+            ))}
+          </div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-24 w-full">
@@ -295,7 +360,10 @@ export const HomePage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
           
           {/* Feature 1: AI Crop Disease Scanner */}
-          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
+          <Link
+            to={isAuthenticated && user?.role === 'FARMER' ? '/ai/crop-disease' : (isAuthenticated ? '/ai/crop-disease' : '/login?role=FARMER')}
+            className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+          >
             <div>
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
@@ -321,18 +389,20 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
             <div className="p-6 pt-0">
-              <Link
-                to="/ai/crop-disease"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-600 text-emerald-800 dark:text-emerald-300 hover:text-white font-heading font-bold text-xs transition-all"
+              <span
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 group-hover:bg-emerald-600 text-emerald-800 dark:text-emerald-300 group-hover:text-white font-heading font-bold text-xs transition-all shadow-xs"
               >
                 <span>{t('cardScannerBtn', 'Launch Scanner')}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
             </div>
-          </div>
+          </Link>
 
           {/* Feature 2: Agricultural Marketplace */}
-          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
+          <Link
+            to="/marketplace"
+            className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-amber-400 dark:hover:border-amber-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+          >
             <div>
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
@@ -349,7 +419,7 @@ export const HomePage: React.FC = () => {
                 </span>
               </div>
               <div className="p-6 space-y-2">
-                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                   {t('cardMarketTitle', 'Agricultural Marketplace')}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -358,18 +428,20 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
             <div className="p-6 pt-0">
-              <Link
-                to="/marketplace"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-600 text-amber-800 dark:text-amber-300 hover:text-white font-heading font-bold text-xs transition-all"
+              <span
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 group-hover:bg-amber-600 text-amber-800 dark:text-amber-300 group-hover:text-white font-heading font-bold text-xs transition-all shadow-xs"
               >
                 <span>{t('cardMarketBtn', 'Browse Catalog')}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
             </div>
-          </div>
+          </Link>
 
           {/* Feature 3: Live Weather Information */}
-          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
+          <Link
+            to={isAuthenticated && user?.role === 'FARMER' ? '/dashboard' : (isAuthenticated ? '/dashboard' : '/login?role=FARMER')}
+            className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-teal-400 dark:hover:border-teal-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+          >
             <div>
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
@@ -386,7 +458,7 @@ export const HomePage: React.FC = () => {
                 </span>
               </div>
               <div className="p-6 space-y-2">
-                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
                   {t('cardWeatherTitle', 'Live Agro-Weather')}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -395,18 +467,20 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
             <div className="p-6 pt-0">
-              <Link
-                to="/dashboard"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-600 text-teal-800 dark:text-teal-300 hover:text-white font-heading font-bold text-xs transition-all"
+              <span
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/50 group-hover:bg-teal-600 text-teal-800 dark:text-teal-300 group-hover:text-white font-heading font-bold text-xs transition-all shadow-xs"
               >
                 <span>{t('cardWeatherBtn', 'View Live Weather')}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
             </div>
-          </div>
+          </Link>
 
           {/* Feature 4: APMC Mandi Spot Rates */}
-          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
+          <Link
+            to="/market/prices"
+            className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-indigo-400 dark:hover:border-indigo-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+          >
             <div>
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
@@ -423,7 +497,7 @@ export const HomePage: React.FC = () => {
                 </span>
               </div>
               <div className="p-6 space-y-2">
-                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                   {t('cardMandiTitle', 'APMC Mandi Spot Prices')}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -432,18 +506,20 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
             <div className="p-6 pt-0">
-              <Link
-                to="/market/prices"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-600 text-indigo-800 dark:text-indigo-300 hover:text-white font-heading font-bold text-xs transition-all"
+              <span
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 group-hover:bg-indigo-600 text-indigo-800 dark:text-indigo-300 group-hover:text-white font-heading font-bold text-xs transition-all shadow-xs"
               >
                 <span>{t('cardMandiBtn', 'Check Mandi Rates')}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
             </div>
-          </div>
+          </Link>
 
           {/* Feature 5: Government Welfare Schemes */}
-          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
+          <Link
+            to="/schemes"
+            className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+          >
             <div>
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
@@ -469,18 +545,20 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
             <div className="p-6 pt-0">
-              <Link
-                to="/schemes"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-700 text-emerald-800 dark:text-emerald-300 hover:text-white font-heading font-bold text-xs transition-all"
+              <span
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 group-hover:bg-emerald-700 text-emerald-800 dark:text-emerald-300 group-hover:text-white font-heading font-bold text-xs transition-all shadow-xs"
               >
                 <span>{t('cardSchemesBtn', 'Explore Schemes')}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
             </div>
-          </div>
+          </Link>
 
           {/* Feature 6: Farm Delivery Logistics */}
-          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
+          <Link
+            to={isAuthenticated && user?.role === 'FARMER' ? '/orders' : (isAuthenticated ? '/orders' : '/login?role=FARMER')}
+            className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-blue-400 dark:hover:border-blue-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          >
             <div>
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
@@ -497,7 +575,7 @@ export const HomePage: React.FC = () => {
                 </span>
               </div>
               <div className="p-6 space-y-2">
-                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {t('cardDeliveryTitle', 'Delivery Tracking')}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -506,15 +584,14 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
             <div className="p-6 pt-0">
-              <Link
-                to={isAuthenticated ? '/orders' : '/login?role=FARMER'}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-600 text-blue-800 dark:text-blue-300 hover:text-white font-heading font-bold text-xs transition-all"
+              <span
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 group-hover:bg-blue-600 text-blue-800 dark:text-blue-300 group-hover:text-white font-heading font-bold text-xs transition-all shadow-xs"
               >
                 <span>{t('cardDeliveryBtn', 'Track Orders')}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
             </div>
-          </div>
+          </Link>
 
         </div>
       </section>
@@ -734,88 +811,124 @@ export const HomePage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           
           {/* Step 01: PLAN */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-sm group hover:-translate-y-1">
-            <div className="flex justify-between items-start">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-700 dark:text-emerald-300 group-hover:scale-110 transition-transform">
-                <Compass className="w-6 h-6" />
+          <Link
+            to={isAuthenticated && user?.role === 'FARMER' ? '/dashboard' : (isAuthenticated ? '/dashboard' : '/login?role=FARMER')}
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between hover:border-emerald-400 dark:hover:border-emerald-600 transition-all shadow-sm group hover:-translate-y-1.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+          >
+            <div className="space-y-4">
+              <div className="flex justify-between items-start">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-700 dark:text-emerald-300 group-hover:scale-110 transition-transform">
+                  <Compass className="w-6 h-6" />
+                </div>
+                <span className="text-2xl font-mono font-black text-slate-300 dark:text-slate-700">01</span>
               </div>
-              <span className="text-2xl font-mono font-black text-slate-300 dark:text-slate-700">01</span>
-            </div>
-            <div>
-              <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
-                {t('step01Plan', '🌱 PLAN')}
+              <div>
+                <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
+                  {t('step01Plan', '🌱 PLAN')}
+                </div>
+                <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  {t('step01Title', 'Crop & Soil Guidance')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                  {t('step01Desc', 'Determine suitable seasonal crops based on soil morphology, geographic zone, and historical weather patterns.')}
+                </p>
               </div>
-              <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1">
-                {t('step01Title', 'Crop & Soil Guidance')}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                {t('step01Desc', 'Determine suitable seasonal crops based on soil morphology, geographic zone, and historical weather patterns.')}
-              </p>
             </div>
-          </div>
+            <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <span>{t('step01Action', 'View Crop Advisory')}</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
 
           {/* Step 02: GROW */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-purple-300 dark:hover:border-purple-700 transition-all shadow-sm group hover:-translate-y-1">
-            <div className="flex justify-between items-start">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-700 dark:text-purple-300 group-hover:scale-110 transition-transform">
-                <Sparkles className="w-6 h-6" />
+          <Link
+            to={isAuthenticated && user?.role === 'FARMER' ? '/ai/crop-disease' : (isAuthenticated ? '/ai/crop-disease' : '/login?role=FARMER')}
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between hover:border-purple-400 dark:hover:border-purple-600 transition-all shadow-sm group hover:-translate-y-1.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
+          >
+            <div className="space-y-4">
+              <div className="flex justify-between items-start">
+                <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-700 dark:text-purple-300 group-hover:scale-110 transition-transform">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <span className="text-2xl font-mono font-black text-slate-300 dark:text-slate-700">02</span>
               </div>
-              <span className="text-2xl font-mono font-black text-slate-300 dark:text-slate-700">02</span>
-            </div>
-            <div>
-              <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide">
-                {t('step02Grow', '🌿 GROW')}
+              <div>
+                <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide">
+                  {t('step02Grow', '🌿 GROW')}
+                </div>
+                <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                  {t('step02Title', 'Weather & AI Protection')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                  {t('step02Desc', 'Monitor field humidity, incoming rain showers, and run mobile leaf scans to arrest fungal and bacterial blights early.')}
+                </p>
               </div>
-              <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1">
-                {t('step02Title', 'Weather & AI Protection')}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                {t('step02Desc', 'Monitor field humidity, incoming rain showers, and run mobile leaf scans to arrest fungal and bacterial blights early.')}
-              </p>
             </div>
-          </div>
+            <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-purple-600 dark:text-purple-400">
+              <span>{t('step02Action', 'Launch AI Diagnostic')}</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
 
           {/* Step 03: BUY */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-amber-300 dark:hover:border-amber-700 transition-all shadow-sm group hover:-translate-y-1">
-            <div className="flex justify-between items-start">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-700 dark:text-amber-300 group-hover:scale-110 transition-transform">
-                <Store className="w-6 h-6" />
+          <Link
+            to="/marketplace"
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between hover:border-amber-400 dark:hover:border-amber-600 transition-all shadow-sm group hover:-translate-y-1.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+          >
+            <div className="space-y-4">
+              <div className="flex justify-between items-start">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-700 dark:text-amber-300 group-hover:scale-110 transition-transform">
+                  <Store className="w-6 h-6" />
+                </div>
+                <span className="text-2xl font-mono font-black text-slate-300 dark:text-slate-700">03</span>
               </div>
-              <span className="text-2xl font-mono font-black text-slate-300 dark:text-slate-700">03</span>
-            </div>
-            <div>
-              <div className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
-                {t('step03Buy', '🛒 BUY')}
+              <div>
+                <div className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+                  {t('step03Buy', '🛒 BUY')}
+                </div>
+                <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                  {t('step03Title', 'Certified Farm Inputs')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                  {t('step03Desc', 'Order genuine fertilizers, micronutrients, certified seeds, and bio-protection directly from local dealers.')}
+                </p>
               </div>
-              <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1">
-                {t('step03Title', 'Certified Farm Inputs')}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                {t('step03Desc', 'Order genuine fertilizers, micronutrients, certified seeds, and bio-protection directly from local dealers.')}
-              </p>
             </div>
-          </div>
+            <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-amber-600 dark:text-amber-400">
+              <span>{t('step03Action', 'Browse Store Catalog')}</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
 
           {/* Step 04: DELIVER */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-blue-300 dark:hover:border-blue-700 transition-all shadow-sm group hover:-translate-y-1">
-            <div className="flex justify-between items-start">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-700 dark:text-blue-300 group-hover:scale-110 transition-transform">
-                <Truck className="w-6 h-6" />
+          <Link
+            to={isAuthenticated && user?.role === 'FARMER' ? '/orders' : (isAuthenticated ? '/orders' : '/login?role=FARMER')}
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between hover:border-blue-400 dark:hover:border-blue-600 transition-all shadow-sm group hover:-translate-y-1.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          >
+            <div className="space-y-4">
+              <div className="flex justify-between items-start">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-700 dark:text-blue-300 group-hover:scale-110 transition-transform">
+                  <Truck className="w-6 h-6" />
+                </div>
+                <span className="text-2xl font-mono font-black text-slate-300 dark:text-slate-700">04</span>
               </div>
-              <span className="text-2xl font-mono font-black text-slate-300 dark:text-slate-700">04</span>
-            </div>
-            <div>
-              <div className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                {t('step04Deliver', '🚚 DELIVER')}
+              <div>
+                <div className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
+                  {t('step04Deliver', '🚚 DELIVER')}
+                </div>
+                <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  {t('step04Title', 'Farm-to-Gate Delivery')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                  {t('step04Desc', 'Dedicated delivery riders transport agricultural bags and products directly to farm gates without disrupting labor.')}
+                </p>
               </div>
-              <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1">
-                {t('step04Title', 'Farm-to-Gate Delivery')}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                {t('step04Desc', 'Dedicated delivery riders transport agricultural bags and products directly to farm gates without disrupting labor.')}
-              </p>
             </div>
-          </div>
+            <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
+              <span>{t('step04Action', 'Track Farm Delivery')}</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
 
         </div>
       </section>

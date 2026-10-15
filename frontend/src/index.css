@@ -39,6 +39,24 @@
     max-width: 100%;
     transition: background-color 0.15s ease, color 0.15s ease;
   }
+
+  /* Consistent typography and Indic script rendering for Indian languages */
+  :lang(te), [data-lang="te"], [lang="te"] {
+    font-family: 'Inter', 'Noto Sans Telugu', 'Nirmala UI', 'Gautami', system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  :lang(hi), [data-lang="hi"], [lang="hi"], :lang(mr), [data-lang="mr"], [lang="mr"] {
+    font-family: 'Inter', 'Noto Sans Devanagari', 'Nirmala UI', 'Mukta', system-ui, sans-serif;
+    line-height: 1.55;
+  }
+  :lang(kn), [data-lang="kn"], [lang="kn"] {
+    font-family: 'Inter', 'Noto Sans Kannada', 'Nirmala UI', 'Tunga', system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  :lang(ta), [data-lang="ta"], [lang="ta"] {
+    font-family: 'Inter', 'Noto Sans Tamil', 'Nirmala UI', 'Latha', system-ui, sans-serif;
+    line-height: 1.6;
+  }
 }
 
 @keyframes gentleFloat {

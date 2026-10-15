@@ -827,4 +827,11 @@ export const kn: Record<string, string> = {
   errNetworkBackendUnreachable: 'ಅಗ್ರೋಮಿತ್ರ ಸರ್ವರ್‌ಗೆ ಸಂಪರ್ಕಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕ ಅಥವಾ ಸರ್ವರ್ ಸ್ಥಿತಿಯನ್ನು ಪರಿಶೀಲಿಸಿ.',
   errInvalidCredentials: 'ಅಮಾನ್ಯ ಫೋನ್ ಸಂಖ್ಯೆ ಅಥವಾ ಪಾಸ್‌ವರ್ಡ್.',
   errLoginFailed: 'ಲಾಗಿನ್ ವಿಫಲವಾಗಿದೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ನೆಟ್‌ವರ್ಕ್ ಸಂಪರ್ಕವನ್ನು ಪರಿಶೀಲಿಸಿ.',
+  step01Action: 'ಬೆಳೆ ಸಲಹೆ ನೋಡಿ',
+  step02Action: 'AI ರೋಗ ಪತ್ತೆ ಪ್ರಾರಂಭಿಸಿ',
+  step03Action: 'ಸ್ಟೋರ್ ಕ್ಯಾಟಲಾಗ್ ವೀಕ್ಷಿಸಿ',
+  step04Action: 'ಫಾರ್ಮ್ ಡೆಲಿವರಿ ಟ್ರ್ಯಾಕ್ ಮಾಡಿ',
+  carouselNextSlide: 'ಮುಂದಿನ ಚಿತ್ರ',
+  carouselPrevSlide: 'ಹಿಂದಿನ ಚಿತ್ರ',
+  carouselSlide: 'ಸ್ಲೈಡ್',
 };
