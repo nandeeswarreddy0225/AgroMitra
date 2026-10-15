@@ -1,0 +1,26 @@
+# Robots.txt for AgroMitra (https://agro-mitra-frontend.vercel.app/)
+User-agent: *
+Allow: /
+Allow: /marketplace
+Allow: /schemes
+Allow: /market/prices
+Disallow: /dashboard
+Disallow: /farmer/
+Disallow: /shop-owner/
+Disallow: /agri-partner/
+Disallow: /store-dashboard
+Disallow: /admin/
+Disallow: /delivery/
+Disallow: /delivery-boy/
+Disallow: /market-owner/
+Disallow: /market-dashboard
+Disallow: /cart
+Disallow: /checkout
+Disallow: /orders
+Disallow: /profile
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /ai/
+Disallow: /crop-disease
+
+Sitemap: https://agro-mitra-frontend.vercel.app/sitemap.xml
