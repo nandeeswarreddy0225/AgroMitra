@@ -49,14 +49,15 @@ export const getApiBaseUrl = (): string => {
     return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
   }
 
-  return '/api';
+  // Fallback to live Render production backend for production cloud deployments
+  return 'https://agromitra-ytqb.onrender.com/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 45000,
 });
 
 // Attach dynamic baseURL and Authorization header

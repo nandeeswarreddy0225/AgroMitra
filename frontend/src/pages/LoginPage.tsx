@@ -74,12 +74,13 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setErrorMsg(null);
 
     const cleanIdentifier = phone.trim();
     const cleanPassword = password.trim();
     if (!cleanIdentifier || !cleanPassword) {
-      setErrorMsg('Please provide your phone number (or email) and password.');
+      setErrorMsg(t('errMissingIdentifierOrPassword', 'Please provide your phone number (or email) and password.'));
       return;
     }
 
@@ -104,7 +105,7 @@ export const LoginPage: React.FC = () => {
       // Strict enforcement: The authenticated account MUST match the selected portal
       if (userRole !== selectedPortal) {
         logout();
-        setErrorMsg('These credentials are not registered for the selected portal. Please select the correct portal or use the matching account.');
+        setErrorMsg(t('errRolePortalMismatch', 'These credentials are not registered for the selected portal. Please select the correct portal or use the matching account.'));
         return;
       }
 
@@ -115,15 +116,15 @@ export const LoginPage: React.FC = () => {
       if (axios.isAxiosError(err)) {
         if (err.response?.data?.message) {
           setErrorMsg(err.response.data.message);
-        } else if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
-          setErrorMsg('Unable to connect to the AgroMitra backend server. Please verify that the backend is running on port 5000.');
+        } else if (err.code === 'ERR_NETWORK' || err.message === 'Network Error' || err.code === 'ECONNABORTED') {
+          setErrorMsg(t('errNetworkBackendUnreachable', 'Unable to connect to the AgroMitra backend server. Please check your internet connection or server status.'));
         } else {
-          setErrorMsg(err.message || 'Login failed. Please check your network connection.');
+          setErrorMsg(err.message || t('errLoginFailed', 'Login failed. Please check your network connection.'));
         }
       } else if (err instanceof Error) {
         setErrorMsg(err.message);
       } else {
-        setErrorMsg('Invalid phone number or password.');
+        setErrorMsg(t('errInvalidCredentials', 'Invalid phone number or password.'));
       }
     } finally {
       setIsSubmitting(false);
@@ -160,16 +161,16 @@ export const LoginPage: React.FC = () => {
             <div className="space-y-3 pt-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold tracking-wide">
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Next-Gen Agricultural Portal</span>
+                <span>{t('nextGenPortalBadge', 'Next-Gen Agricultural Portal')}</span>
               </span>
               <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white leading-tight">
-                Your Farm. Your Future.<br />
+                {t('loginHeroHeading', 'Your Farm. Your Future.')}<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-300">
-                  Connected.
+                  {t('loginHeroConnected', 'Connected.')}
                 </span>
               </h2>
               <p className="text-xs sm:text-sm text-stone-200 leading-relaxed max-w-md">
-                AgroMitra unites rural agriculture into one intelligent platform — providing AI crop health, genuine inputs, and transparent mandi spot prices.
+                {t('loginHeroDescription', 'AgroMitra unites rural agriculture into one intelligent platform — providing AI crop health, genuine inputs, and transparent mandi spot prices.')}
               </p>
             </div>
           </div>
@@ -181,8 +182,8 @@ export const LoginPage: React.FC = () => {
                 <Sparkles className="w-5 h-5 text-amber-300" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider">AI-Powered Diagnostics</h4>
-                <p className="text-[11px] text-stone-300 mt-0.5">Instant foliar pathology analysis and organic cure recommendations.</p>
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider">{t('loginFeatAiTitle', 'AI-Powered Diagnostics')}</h4>
+                <p className="text-[11px] text-stone-300 mt-0.5">{t('loginFeatAiDesc', 'Instant foliar pathology analysis and organic cure recommendations.')}</p>
               </div>
             </div>
 
@@ -191,8 +192,8 @@ export const LoginPage: React.FC = () => {
                 <TrendingUp className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider">APMC Mandi Spot Prices</h4>
-                <p className="text-[11px] text-stone-300 mt-0.5">Real-time modal and minimum spot rates across authorized market yards.</p>
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider">{t('loginFeatMandiTitle', 'APMC Mandi Spot Prices')}</h4>
+                <p className="text-[11px] text-stone-300 mt-0.5">{t('loginFeatMandiDesc', 'Real-time modal and minimum spot rates across authorized market yards.')}</p>
               </div>
             </div>
 
@@ -201,8 +202,8 @@ export const LoginPage: React.FC = () => {
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider">Verified Agricultural Supply</h4>
-                <p className="text-[11px] text-stone-300 mt-0.5">Certified seeds, bio-protection, and direct-to-farm dispatch logistics.</p>
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider">{t('loginFeatSupplyTitle', 'Verified Agricultural Supply')}</h4>
+                <p className="text-[11px] text-stone-300 mt-0.5">{t('loginFeatSupplyDesc', 'Certified seeds, bio-protection, and direct-to-farm dispatch logistics.')}</p>
               </div>
             </div>
           </div>
@@ -211,9 +212,9 @@ export const LoginPage: React.FC = () => {
           <div className="relative z-10 pt-4 border-t border-white/15 flex items-center justify-between text-xs text-stone-300">
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Role-Isolated Security</span>
+              <span>{t('roleIsolatedSecurity', 'Role-Isolated Security')}</span>
             </span>
-            <span className="font-mono text-[11px] text-stone-400">v2.0 SSL Protected</span>
+            <span className="font-mono text-[11px] text-stone-400">{t('sslProtected', 'v2.0 SSL Protected')}</span>
           </div>
 
         </div>
@@ -285,7 +286,7 @@ export const LoginPage: React.FC = () => {
               </label>
               <div className="relative rounded-xl shadow-xs flex">
                 <span className="inline-flex items-center px-3.5 rounded-l-xl border border-r-0 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs">
-                  {isEmailInput ? '📧 Email' : '🇮🇳 +91'}
+                  {isEmailInput ? `📧 ${t('emailPrefix', 'Email')}` : '🇮🇳 +91'}
                 </span>
                 <div className="relative flex-1">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -346,7 +347,7 @@ export const LoginPage: React.FC = () => {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none"
-                  aria-label="Toggle password visibility"
+                  aria-label={showPassword ? t('hidePassword', 'Hide password') : t('showPassword', 'Show password')}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
