@@ -7,6 +7,7 @@ import {
   Save,
 } from 'lucide-react';
 import { MarketOwnerNav } from './MarketOwnerNav';
+import { useTranslation } from '../../context/LanguageContext';
 import { AgroMitraLogo } from '../../components/common/AgroMitraLogo';
 import {
   getMarketOwnerDashboardApi,
@@ -18,6 +19,7 @@ import { MarketOwnerDashboardData } from '../../types/marketOwner';
 import axios from 'axios';
 
 export const MarketOwnerMarketPage: React.FC = () => {
+  const { t } = useTranslation();
   const [dashboardData, setDashboardData] = useState<MarketOwnerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -166,11 +168,11 @@ export const MarketOwnerMarketPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                APMC Yard Profile & Geolocation
+                {t('mandiInfoCoordinatesTitle', 'APMC Yard Profile & Geolocation')}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
-              Authorized Mandi Information
+              {t('mandiInfoCoordinatesTitle', 'Authorized Mandi Information')}
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Manage mandi address, operating hours, and verified coordinates for accurate proximity calculations.
@@ -217,7 +219,7 @@ export const MarketOwnerMarketPage: React.FC = () => {
             {/* Market Name */}
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Authorized Mandi Name <span className="text-rose-500">*</span>
+                {t('mandiNameLabel', 'Authorized Mandi Name')} <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -231,7 +233,7 @@ export const MarketOwnerMarketPage: React.FC = () => {
             {/* Operating Hours */}
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Trading & Auction Hours
+                {t('tradingHoursLabel', 'Trading & Auction Hours')}
               </label>
               <input
                 type="text"
@@ -246,7 +248,7 @@ export const MarketOwnerMarketPage: React.FC = () => {
           {/* Address */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Yard Street Address
+              {t('streetAddressLabel', 'Yard Street Address')}
             </label>
             <input
               type="text"
@@ -308,7 +310,7 @@ export const MarketOwnerMarketPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                District <span className="text-rose-500">*</span>
+                {t('districtLabel', 'District')} <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -321,7 +323,7 @@ export const MarketOwnerMarketPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                State <span className="text-rose-500">*</span>
+                {t('stateLabel', 'State')} <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -406,7 +408,7 @@ export const MarketOwnerMarketPage: React.FC = () => {
               className="px-6 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm"
             >
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              <span>Save Mandi Profile</span>
+              <span>{t('saveMarketProfileBtn', 'Save Mandi Profile')}</span>
             </button>
           </div>
         </form>

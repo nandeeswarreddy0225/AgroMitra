@@ -39,9 +39,11 @@ import { DeliveryBoy } from '../../types/delivery';
 import { DeliveryTrackingModal } from '../../components/orders/DeliveryTrackingModal';
 import { OrderChatDrawer } from '../../components/orders/OrderChatDrawer';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../context/LanguageContext';
 import axios from 'axios';
 
 export const ShopOwnerOrdersPage: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [orders, setOrders] = useState<ShopOwnerOrderView[]>([]);
   const [deliveryBoys, setDeliveryBoys] = useState<DeliveryBoy[]>([]);
@@ -345,7 +347,7 @@ export const ShopOwnerOrdersPage: React.FC = () => {
         <div>
           <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white flex items-center gap-3">
             <Package className="w-8 h-8 text-amber-600 dark:text-amber-400" />
-            <span>{user?.role === 'AGRI_PARTNER' ? 'Agri Partner Orders & Fulfillment' : 'Shop Owner Orders & Fulfillment'}</span>
+            <span>{user?.role === 'AGRI_PARTNER' ? t('navFulfillOrders', 'Agri Partner Orders & Fulfillment') : t('navFulfillOrders', 'Shop Owner Orders & Fulfillment')}</span>
           </h1>
 
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -359,7 +361,7 @@ export const ShopOwnerOrdersPage: React.FC = () => {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold shadow-sm transition-colors self-start sm:self-auto"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>Refresh Orders</span>
+          <span>{t('refreshBtn', 'Refresh Orders')}</span>
         </button>
       </div>
 
@@ -367,7 +369,7 @@ export const ShopOwnerOrdersPage: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
           <div className="flex items-center justify-between text-slate-400 dark:text-slate-500">
-            <span className="text-xs font-bold uppercase tracking-wider">Store Sales</span>
+            <span className="text-xs font-bold uppercase tracking-wider">{t('storeSalesMetric', 'Store Sales')}</span>
             <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="text-2xl font-heading font-black text-slate-900 dark:text-white">
@@ -378,7 +380,7 @@ export const ShopOwnerOrdersPage: React.FC = () => {
 
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
           <div className="flex items-center justify-between text-slate-400 dark:text-slate-500">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Orders</span>
+            <span className="text-xs font-bold uppercase tracking-wider">{t('totalOrdersMetric', 'Total Orders')}</span>
             <Package className="w-4 h-4 text-amber-600 dark:text-amber-400" />
           </div>
           <div className="text-2xl font-heading font-black text-slate-900 dark:text-white">
@@ -389,7 +391,7 @@ export const ShopOwnerOrdersPage: React.FC = () => {
 
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
           <div className="flex items-center justify-between text-slate-400 dark:text-slate-500">
-            <span className="text-xs font-bold uppercase tracking-wider">Pending Review</span>
+            <span className="text-xs font-bold uppercase tracking-wider">{t('pendingReviewMetric', 'Pending Review')}</span>
             <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           </div>
           <div className="text-2xl font-heading font-black text-blue-600 dark:text-blue-400">
@@ -400,7 +402,7 @@ export const ShopOwnerOrdersPage: React.FC = () => {
 
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
           <div className="flex items-center justify-between text-slate-400 dark:text-slate-500">
-            <span className="text-xs font-bold uppercase tracking-wider">Need Dispatch</span>
+            <span className="text-xs font-bold uppercase tracking-wider">{t('needDispatchMetric', 'Need Dispatch')}</span>
             <Truck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
           </div>
           <div className="text-2xl font-heading font-black text-purple-600 dark:text-purple-400">
@@ -419,7 +421,7 @@ export const ShopOwnerOrdersPage: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by Order #, Farmer Name, Phone Number, or Product Name..."
+            placeholder={t('searchOrdersPlaceholder', 'Search by Order #, Farmer Name, Phone Number, or Product Name...')}
             className="w-full pl-11 pr-10 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"
           />
           {searchQuery && (
@@ -435,11 +437,11 @@ export const ShopOwnerOrdersPage: React.FC = () => {
         {/* Filter Tabs */}
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
           {[
-            { key: 'ALL', label: 'All Orders', count: counts.ALL },
-            { key: 'PENDING', label: 'Pending Approval', count: counts.PENDING },
-            { key: 'IN_PROGRESS', label: 'In Progress', count: counts.IN_PROGRESS },
-            { key: 'DELIVERED', label: 'Delivered', count: counts.DELIVERED },
-            { key: 'CANCELLED', label: 'Rejected / Cancelled', count: counts.CANCELLED },
+            { key: 'ALL', label: t('allOrdersTab', 'All Orders'), count: counts.ALL },
+            { key: 'PENDING', label: t('pendingApprovalTab', 'Pending Approval'), count: counts.PENDING },
+            { key: 'IN_PROGRESS', label: t('inProgressTab', 'In Progress'), count: counts.IN_PROGRESS },
+            { key: 'DELIVERED', label: t('deliveredTab', 'Delivered'), count: counts.DELIVERED },
+            { key: 'CANCELLED', label: t('rejectedCancelledTab', 'Rejected / Cancelled'), count: counts.CANCELLED },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -609,7 +611,7 @@ export const ShopOwnerOrdersPage: React.FC = () => {
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors disabled:opacity-50"
                           >
                             <Check className="w-3.5 h-3.5" />
-                            <span>Accept Order</span>
+                            <span>{t('acceptOrderBtn', 'Accept Order')}</span>
                           </button>
                           <button
                             onClick={() => setRejectModalOrder({ id: order.id, orderNumber: order.orderNumber })}

@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { MarketOwnerNav } from './MarketOwnerNav';
+import { useTranslation } from '../../context/LanguageContext';
 import { AgroMitraLogo } from '../../components/common/AgroMitraLogo';
 import {
   getMarketOwnerDashboardApi,
@@ -28,6 +29,7 @@ import {
 import axios from 'axios';
 
 export const MarketOwnerPricesPage: React.FC = () => {
+  const { t } = useTranslation();
 
   const [dashboardData, setDashboardData] = useState<MarketOwnerDashboardData | null>(null);
   const [allCommodities, setAllCommodities] = useState<Commodity[]>([]);
@@ -242,14 +244,14 @@ export const MarketOwnerPricesPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Daily Mandi Price Management
+                {t('dailyPriceMgmtTitle', 'Daily Mandi Price Management')}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
-              Commodity Price Quotes
+              {t('dailyPriceMgmtTitle', 'Commodity Price Quotes')}
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Publish and update wholesale rates for {dashboardData?.todayDate || 'today'}. Changes sync instantly to farmers.
+              {t('dailyPriceMgmtSubtitle', 'Publish and update wholesale rates. Changes sync instantly to farmers.')} ({dashboardData?.todayDate || 'today'})
             </p>
           </div>
         </div>
@@ -260,7 +262,7 @@ export const MarketOwnerPricesPage: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all"
           >
             <Plus className="w-3.5 h-3.5 text-emerald-600" />
-            <span>New Commodity</span>
+            <span>{t('addNewCommodityTitle', 'New Commodity')}</span>
           </button>
           <button
             onClick={() => loadData(true)}
@@ -268,7 +270,7 @@ export const MarketOwnerPricesPage: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
+            <span>{t('refreshBtn', 'Refresh')}</span>
           </button>
         </div>
       </div>
@@ -302,7 +304,7 @@ export const MarketOwnerPricesPage: React.FC = () => {
             <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
             <input
               type="text"
-              placeholder="Search commodity (e.g. Paddy, Tomato, Chilli)..."
+              placeholder={t('searchCommodityPlaceholder', 'Search commodity (e.g. Paddy, Tomato, Chilli)...')}
               value={searchCommodity}
               onChange={(e) => setSearchCommodity(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
@@ -317,7 +319,7 @@ export const MarketOwnerPricesPage: React.FC = () => {
             >
               {categoriesList.map((cat) => (
                 <option key={cat} value={cat}>
-                  {cat === 'ALL' ? 'All Categories' : cat}
+                  {cat === 'ALL' ? t('allCategoriesOption', 'All Categories') : cat}
                 </option>
               ))}
             </select>
@@ -345,8 +347,8 @@ export const MarketOwnerPricesPage: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 uppercase font-bold tracking-wider text-[10px] border-b border-slate-100 dark:border-slate-800">
                 <tr>
-                  <th className="py-3 px-4">Commodity</th>
-                  <th className="py-3 px-4">Category</th>
+                  <th className="py-3 px-4">{t('thCommodity', 'Commodity')}</th>
+                  <th className="py-3 px-4">{t('thCategory', 'Category')}</th>
                   <th className="py-3 px-4">Min Price</th>
                   <th className="py-3 px-4">Max Price</th>
                   <th className="py-3 px-4">Modal Price (Current)</th>

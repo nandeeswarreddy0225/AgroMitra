@@ -160,7 +160,7 @@ export const ShopOwnerDashboard: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                {isAgriPartner ? 'AgroMitra Partner Ecosystem' : 'AgroMitra Store Ecosystem'}
+                {isAgriPartner ? t('partnerEcosystem', 'AgroMitra Partner Ecosystem') : t('storeEcosystem', 'AgroMitra Store Ecosystem')}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
@@ -236,10 +236,10 @@ export const ShopOwnerDashboard: React.FC = () => {
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
           <div>
             <h2 className="text-xl font-heading font-extrabold text-slate-900 dark:text-white">
-              Store Partner Payment & Profile Settings
+              {t('storePartnerPaymentTitle', 'Store Partner Payment & Profile Settings')}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Configure your store's UPI ID. Farmers purchasing your products will generate dynamic UPI QR codes and payment intents linked directly to this UPI address.
+              {t('storePartnerPaymentDesc', "Configure your store's UPI ID. Farmers purchasing your products will generate dynamic UPI QR codes and payment intents linked directly to this UPI address.")}
             </p>
           </div>
 
@@ -358,7 +358,7 @@ export const ShopOwnerDashboard: React.FC = () => {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white font-heading font-bold text-xs shadow-md transition-all"
               >
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                <span>{t('save', 'Save Changes')}</span>
+                <span>{t('saveChangesBtn', 'Save Changes')}</span>
               </button>
             </div>
           </form>
@@ -368,10 +368,10 @@ export const ShopOwnerDashboard: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 flex flex-col justify-between">
           <div className="space-y-2">
             <h3 className="font-heading font-bold text-base text-slate-900 dark:text-white">
-              Dynamic UPI QR Preview
+              {t('dynamicUpiQrPreview', 'Dynamic UPI QR Preview')}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Live preview of the dynamic payment QR generated for your store on farmer checkout screens.
+              {t('dynamicUpiQrPreviewDesc', 'Live preview of the dynamic payment QR generated for your store on farmer checkout screens.')}
             </p>
 
             {previewQrDataUrl ? (
@@ -385,19 +385,19 @@ export const ShopOwnerDashboard: React.FC = () => {
                   {upiId}
                 </div>
                 <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                  QR Active
+                  {t('qrActiveBadge', 'QR Active')}
                 </span>
               </div>
             ) : (
               <div className="h-44 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-xs text-slate-400 p-4 text-center">
-                Enter your UPI ID to generate your dynamic store QR code.
+                {t('enterUpiPrompt', 'Enter your UPI ID to generate your dynamic store QR code.')}
               </div>
             )}
           </div>
 
           <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-1 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <p>✓ All payments settle directly to your UPI bank account.</p>
-            <p>✓ No commission deducted on direct QR transfers.</p>
+            <p>✓ {t('settleDirectNote', 'All payments settle directly to your UPI bank account.')}</p>
+            <p>✓ {t('noCommissionNote', 'No commission deducted on direct QR transfers.')}</p>
           </div>
         </div>
 

@@ -398,14 +398,14 @@ export const FarmerMarketPricesPage: React.FC = () => {
             {t('selectCommodity', 'Select Commodity')}
           </span>
           <span className="text-xs text-slate-400">
-            {commodities.length} active commodities
+            {commodities.length} {t('activeCatalogCommodities', 'active commodities')}
           </span>
         </div>
 
         {isLoadingCommodities ? (
           <div className="py-4 flex items-center justify-center text-slate-400 text-xs">
             <Loader2 className="w-4 h-4 animate-spin text-emerald-600 mr-2" />
-            <span>Loading commodities...</span>
+            <span>{t('loadingCommoditiesPrices', 'Loading commodities...')}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
@@ -437,7 +437,7 @@ export const FarmerMarketPricesPage: React.FC = () => {
           <div className="p-5 rounded-3xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 shadow-xs flex flex-col justify-between space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
-                Highest Rate Mandi
+                {t('highestRateMandi', 'Highest Rate Mandi')}
               </span>
               <Trophy className="w-4 h-4 text-emerald-600" />
             </div>
@@ -449,14 +449,14 @@ export const FarmerMarketPricesPage: React.FC = () => {
                 {comparisonResponse.highestPriceMarket?.marketName || 'APMC Yard'} ({comparisonResponse.highestPriceMarket?.district})
               </p>
             </div>
-            <span className="text-[10px] text-emerald-600 font-bold">⭐ Recommended selling mandi</span>
+            <span className="text-[10px] text-emerald-600 font-bold">⭐ {t('recommendedSellingMandi', 'Recommended selling mandi')}</span>
           </div>
 
           {/* Lowest Price Mandi */}
           <div className="p-5 rounded-3xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col justify-between space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                Lowest Rate Mandi
+                {t('lowestRateMandi', 'Lowest Rate Mandi')}
               </span>
               <Building2 className="w-4 h-4 text-slate-400" />
             </div>
@@ -468,14 +468,14 @@ export const FarmerMarketPricesPage: React.FC = () => {
                 {comparisonResponse.lowestPriceMarket?.marketName || 'APMC Yard'} ({comparisonResponse.lowestPriceMarket?.district})
               </p>
             </div>
-            <span className="text-[10px] text-slate-400">Regional baseline rate</span>
+            <span className="text-[10px] text-slate-400">{t('regionalBaselineRate', 'Regional baseline rate')}</span>
           </div>
 
           {/* Inter-Mandi Price Spread */}
           <div className="p-5 rounded-3xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 shadow-xs flex flex-col justify-between space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider">
-                Market Price Spread
+                {t('marketPriceSpread', 'Market Price Spread')}
               </span>
               <Sparkles className="w-4 h-4 text-amber-600" />
             </div>
@@ -487,10 +487,10 @@ export const FarmerMarketPricesPage: React.FC = () => {
                 Max gain across markets
               </p>
             </div>
-            <span className="text-[10px] text-amber-600 font-bold">Arbitrage advantage for farmers</span>
+            <span className="text-[10px] text-amber-600 font-bold">{t('arbitrageAdvantage', 'Arbitrage advantage for farmers')}</span>
           </div>
 
-          {/* Average Market Modal */}
+          {/* {t('averageMarketModal', 'Average Market Modal')} */}
           <div className="p-5 rounded-3xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 shadow-xs flex flex-col justify-between space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-purple-800 dark:text-purple-300 uppercase tracking-wider">
