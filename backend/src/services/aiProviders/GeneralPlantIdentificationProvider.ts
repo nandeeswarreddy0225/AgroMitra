@@ -1003,10 +1003,17 @@ export class PythonFastAPIVisionPlugin implements GeneralPlantVisionPlugin {
     }
 
     // Successful prediction from Python service
-    const plantName: string = data?.plant?.name || data?.crop || 'Unknown';
-    const speciesConf: number = Number(data?.plant?.confidence ?? data?.confidence ?? 0) / 100;
+    const plantName: string = data?.plant?.name || data?.species || data?.crop || 'Unknown';
+    const rawConf = data?.speciesConfidence ?? data?.species_confidence ?? data?.confidence ?? (Number(data?.plant?.confidence ?? 0) / 100);
+    const speciesConf: number = typeof rawConf === 'number' && rawConf > 1 ? rawConf / 100 : Number(rawConf || 0);
     const isHealthy: boolean = Boolean(data?.is_healthy);
-    const diseaseName: string | null = data?.condition || (isHealthy ? null : data?.diagnosis?.name || null);
+    const diseaseName: string | null = data?.condition || (isHealthy ? null : data?.diagnosis?.name || data?.disease || null);
+    const detectedOrgan: string = data?.organ || 'leaf';
+    const isSupported: boolean = data?.isSupportedSpecies !== undefined
+      ? Boolean(data.isSupportedSpecies)
+      : data?.is_supported_species !== undefined
+      ? Boolean(data.is_supported_species)
+      : false;
 
     if (!plantName || plantName === 'Unknown' || plantName === 'Unknown Plant') {
       return {
@@ -1015,6 +1022,7 @@ export class PythonFastAPIVisionPlugin implements GeneralPlantVisionPlugin {
         confidence: speciesConf,
         source: 'GENERAL_PLANT_MODEL',
         isSupportedSpecies: false,
+        organ: detectedOrgan as any,
         error: 'UNKNOWN_SPECIES',
       };
     }
@@ -1024,12 +1032,19 @@ export class PythonFastAPIVisionPlugin implements GeneralPlantVisionPlugin {
       species: plantName,
       confidence: Number(speciesConf.toFixed(4)),
       source: 'GENERAL_PLANT_MODEL',
-      isSupportedSpecies: true,
+      isSupportedSpecies: isSupported,
+      organ: detectedOrgan as any,
       rawDetails: {
         isHealthy,
         disease: diseaseName,
+        organ: detectedOrgan,
+        candidates: data?.candidates || [],
+        scientificName: data?.scientific_name,
+        commonName: data?.common_name,
+        diagnosisStatus: data?.diagnosis_status || data?.diagnosisStatus,
+        diseaseConfidence: data?.disease_confidence ?? data?.diseaseConfidence,
         symptoms: data?.symptoms || [],
-        healthStatus: data?.health?.status || (isHealthy ? 'Healthy' : 'Diseased'),
+        healthStatus: data?.health?.status || data?.healthStatus || (isHealthy ? 'Healthy' : 'Diseased'),
         provider: 'PythonFastAPI',
         severity: data?.severity,
         recommendation: data?.recommendation,

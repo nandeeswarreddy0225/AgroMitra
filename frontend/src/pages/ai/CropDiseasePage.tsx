@@ -408,7 +408,7 @@ export const CropDiseasePage: React.FC = () => {
           crop: res.crop || speciesName,
           disease: res.condition || res.disease || baseAnalysis.disease || 'Healthy Crop',
           species: speciesName,
-          isSupportedSpecies: true,
+          isSupportedSpecies: res.isSupportedSpecies !== undefined ? res.isSupportedSpecies : (baseAnalysis.isSupportedSpecies ?? true),
           confidence: res.confidence !== undefined ? res.confidence : (baseAnalysis.confidence ?? 0),
           speciesConfidence: res.speciesConfidence ?? (res.confidence !== undefined ? res.confidence : (baseAnalysis.confidence ?? 0)),
           diseaseConfidence: res.diseaseConfidence ?? 0,

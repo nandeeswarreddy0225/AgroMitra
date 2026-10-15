@@ -56,9 +56,12 @@ AgroMitra is a modern, full-stack digital agriculture platform designed to seaml
 ### 11. 🧪 Seasonal Soil-to-Crop Advisor
 - Agronomic recommendation engine evaluating soil texture, seasonal calendar (Kharif, Rabi, Zaid), and regional climate to suggest suitable crops, expected yields, and cultivation practices.
 
-### 12. 🔬 AI Crop Disease & Leaf Scanner
-- Deep-learning plant pathology diagnostic engine powered by FastAPI and PyTorch.
-- Analyzes uploaded leaf imagery to detect crop diseases, assess confidence levels, flag low-confidence predictions, and provide actionable chemical and organic treatment remedies.
+### 12. 🔬 AI Universal Plant Pathology & Botanical Scanner
+- Deep-learning dual-tier vision service powered by FastAPI, PyTorch (MobileNetV3), and official Pl@ntNet API botanical integration.
+- Identifies broad plant, fruit, flower, and tree species (50,000+ flora species).
+- Diagnoses 49 disease and health classes across 18 specialist crops with certified pathology remedies.
+- Organ gating: strictly blocks foliar disease models on non-leaf plant organs (fruits, flowers, bark).
+- Anti-hallucination safeguard: guarantees unsupported open-world species never default to Tomato and never fabricate false diagnoses.
 
 ### 13. 🌐 Multi-Language & Theme Support
 - Dynamic language switching across 6 regional Indian languages: **English**, **Telugu (తెలుగు)**, **Hindi (हिन्दी)**, **Kannada (ಕನ್ನಡ)**, **Tamil (தமிழ்)**, and **Marathi (मराठी)**.
@@ -161,12 +164,15 @@ AgroMitra/
 │   │   └── tests/                # Automated verification & audit test suites
 │   └── .env.example              # Backend environment template
 │
-├── ai-service/                   # FastAPI + PyTorch Plant Pathology Microservice
-│   ├── main.py                   # FastAPI application & endpoints
-│   ├── model.py                  # PyTorch model definition & inference pipeline
-│   ├── disease_info.py           # Pathology symptoms, causes, and treatment data
+├── ai-service/                   # FastAPI + PyTorch Plant Pathology & Botanical Vision Microservice
+│   ├── README.md                 # Complete AI service documentation & run guide
+│   ├── main.py                   # FastAPI REST application & endpoints
+│   ├── model.py                  # PyTorch MobileNetV3 multi-task inference & compatibility gating
+│   ├── plant_id_provider.py      # Pl@ntNet API integration & Local Botanical Vision Engine
 │   ├── requirements.txt          # Python package dependencies
-│   └── .env.example              # AI service environment template
+│   ├── .env.example              # AI service environment template
+│   └── tests/
+│       └── test_ai_scanner.py    # Comprehensive 19-test automated test suite
 │
 ├── DEMO_GUIDE.md                 # Complete demonstration & evaluation walkthrough guide
 ├── .env.example                  # Root unified environment template
@@ -216,14 +222,14 @@ npm run dev
 - **Service URL**: `http://localhost:5000`
 - **Health Check**: `http://localhost:5000/api/health`
 
-### Terminal 2: AI Diagnostics Microservice
+### Terminal 2: AI Diagnostics Microservice (`ai-service/`)
 ```bash
 cd ai-service
 
 # Create and activate virtual environment
 # Windows:
 python -m venv .venv
-.venv\Scripts\activate
+.\.venv\Scripts\activate
 
 # Linux / macOS:
 python3 -m venv .venv
@@ -231,11 +237,15 @@ source .venv/bin/activate
 
 # Install dependencies and start service
 pip install -r requirements.txt
-python main.py
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 - **Service URL**: `http://localhost:8000`
 - **Interactive OpenAPI Documentation**: `http://localhost:8000/docs`
 - **Health Check**: `http://localhost:8000/health`
+- **Run Automated Test Suite**:
+  ```powershell
+  python -m unittest tests/test_ai_scanner.py
+  ```
 
 ### Terminal 3: Frontend Web Application
 ```bash

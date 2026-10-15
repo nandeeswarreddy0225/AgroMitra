@@ -1109,6 +1109,8 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         ? null
         : 'Pathology Detected');
 
+    const isSupportedBySpecialist = speciesName ? ExistingModelProvider.isSupportedSpecies(speciesName) : false;
+
     let analysisRecord: any;
     if (req.user && req.user._id) {
       analysisRecord = await CropAnalysis.create({
@@ -1127,7 +1129,7 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       analysisRecord = analysisRecord.toObject ? analysisRecord.toObject() : analysisRecord;
       analysisRecord.isValid = true;
       analysisRecord.is_valid = true;
-      analysisRecord.isSupportedSpecies = true;
+      analysisRecord.isSupportedSpecies = isSupportedBySpecialist;
       analysisRecord.species = speciesName;
       analysisRecord.organ = detectedOrgan;
       analysisRecord.diagnosisStatus = diagnosisStatus;
@@ -1145,7 +1147,7 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
         healthStatus,
         isValid: true,
         is_valid: true,
-        isSupportedSpecies: true,
+        isSupportedSpecies: isSupportedBySpecialist,
         species: speciesName,
         is_tomato: speciesName === 'Tomato',
         isHealthy,
@@ -1200,7 +1202,7 @@ export const analyzeCropHealth = async (req: AuthenticatedRequest, res: Response
       analysis: analysisRecord,
       is_tomato: speciesName === 'Tomato',
       is_valid: true,
-      isSupportedSpecies: true,
+      isSupportedSpecies: isSupportedBySpecialist,
       message:
         detectedOrgan !== 'leaf'
           ? `${speciesName} (${detectedOrgan}) analyzed successfully. Certified disease pathology requires a foliar leaf image.`

@@ -1,13 +1,15 @@
 import os
 from typing import List, Optional
 from datetime import datetime, timedelta
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import uvicorn
-from model import ai_classifier
+
+from model import ai_classifier, SPECIALIST_SUPPORTED_CROPS
+from plant_id_provider import broad_plant_identifier
 
 # Load environment variables
 load_dotenv()
@@ -15,9 +17,9 @@ load_dotenv()
 PORT = int(os.getenv("PORT", 8000))
 
 app = FastAPI(
-    title="KrishiSetu AI Market Intelligence & Pathology Service",
-    description="Deep Learning Computer Vision & Agricultural Market Analytics Service",
-    version="2.1.0"
+    title="AgroMitra AI Plant Pathology & Botanical Identification Service",
+    description="Deep Learning Computer Vision, PlantNet Botanical Identification & Mandi Market Intelligence Service",
+    version="2.2.0"
 )
 
 # Configure CORS
@@ -45,10 +47,12 @@ class MarketAnalysisRequest(BaseModel):
 @app.get("/")
 def root():
     return {
-        "service": "KrishiSetu AI Market Intelligence & Pathology Service",
-        "version": "2.1.0",
+        "service": "AgroMitra AI Plant Pathology & Botanical Identification Service",
+        "version": "2.2.0",
         "status": "online",
-        "models": ["MobileNetV3-PlantPathology", "MandiPrice-TimeSeries-Engine"],
+        "models": ["MobileNetV3-PlantPathology", "PlantNet-Botanical-Engine", "MandiPrice-TimeSeries-Engine"],
+        "supported_organs": ["leaf", "fruit", "flower", "bark"],
+        "specialist_crops_count": len(SPECIALIST_SUPPORTED_CROPS),
         "docs_url": "/docs"
     }
 
@@ -56,15 +60,23 @@ def root():
 def health_check():
     return {
         "status": "healthy",
-        "service": "KrishiSetu AI Service",
+        "service": "AgroMitra AI Service",
         "model_loaded": True,
         "classes_count": ai_classifier.num_classes,
+        "specialist_crops": sorted(list(SPECIALIST_SUPPORTED_CROPS)),
+        "specialist_crops_count": len(SPECIALIST_SUPPORTED_CROPS),
+        "plantnet_configured": broad_plant_identifier.pnet_provider.is_configured(),
+        "identification_providers": ["Pl@ntNet API", "Local Botanical Vision Engine"],
+        "organs_supported": ["leaf", "fruit", "flower", "bark"],
         "model_version": getattr(ai_classifier, "version", 3)
     }
 
 @app.post("/predict")
-async def predict_crop_disease(image: UploadFile = File(...)):
-    allowed_types = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
+async def predict_crop_disease(
+    image: UploadFile = File(...),
+    organ: Optional[str] = Form(None)
+):
+    allowed_types = ["image/jpeg", "image/png", "image/webp", "image/jpg", "application/octet-stream"]
     if image.content_type and image.content_type.lower() not in allowed_types:
         raise HTTPException(
             status_code=400,
@@ -83,12 +95,53 @@ async def predict_crop_disease(image: UploadFile = File(...)):
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File size exceeds the 10MB limit.")
 
-    result = ai_classifier.predict(contents, filename=image.filename or "upload.jpg", mimetype=image.content_type or "image/jpeg")
+    result = ai_classifier.predict(
+        contents,
+        filename=image.filename or "upload.jpg",
+        mimetype=image.content_type or "image/jpeg",
+        organ=organ
+    )
 
     if not result.get("success", True) and "error" in result:
+        err = result.get("error")
+        # Standard client error codes for invalid inputs, empty images, or non-plants
+        if err in ["EMPTY_FILE", "IMAGE_DECODE_FAILED", "INVALID_IMAGE_QUALITY", "NON_PLANT"]:
+            return JSONResponse(status_code=400, content=result)
         return JSONResponse(status_code=422, content=result)
 
     return result
+
+@app.post("/identify")
+async def identify_plant(
+    image: UploadFile = File(...),
+    organ: Optional[str] = Form(None)
+):
+    """
+    Dedicated broad plant, fruit, flower, and bark identification endpoint.
+    Returns scientific name, common name, candidates, and organ assessment.
+    """
+    try:
+        contents = await image.read()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to read image stream: {str(e)}")
+
+    if len(contents) == 0:
+        raise HTTPException(status_code=400, detail="Uploaded image is empty.")
+
+    MAX_FILE_SIZE = 10 * 1024 * 1024
+    if len(contents) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File size exceeds the 10MB limit.")
+
+    res = broad_plant_identifier.identify_plant_or_fruit(
+        contents,
+        filename=image.filename or "specimen.jpg",
+        organ_hint=organ
+    )
+
+    if not res.get("success", True) and res.get("error") in ["IMAGE_DECODE_FAILED", "NON_PLANT_IMAGE"]:
+        return JSONResponse(status_code=400, content=res)
+
+    return res
 
 @app.post("/analyze-market")
 async def analyze_market(req: MarketAnalysisRequest):
@@ -192,7 +245,6 @@ async def analyze_market(req: MarketAnalysisRequest):
         for step in range(1, 6):
             proj_x = n - 1 + step
             predicted_raw = intercept + slope * proj_x
-            # Add reasonable bound
             predicted_val = round(max(lowest_obs.price * 0.85, min(highest_obs.price * 1.25, predicted_raw)), 2)
             proj_date_str = (base_date + timedelta(days=step)).strftime("%d/%m")
 
@@ -248,11 +300,10 @@ async def analyze_market(req: MarketAnalysisRequest):
             "trend": forecast_trend,
             "confidenceScore": forecast_confidence,
             "forecastSummary": forecast_summary,
-            "projectionPoints": forecast_points,
-            "disclaimer": "Forecast is a statistical projection based on past APMC auction trends, not a guaranteed future price."
-        } if has_enough_data else None,
-        "forecastMessage": forecast_summary if not has_enough_data else None
+            "points": forecast_points
+        }
     }
 
+
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=PORT, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=PORT, reload=False)
