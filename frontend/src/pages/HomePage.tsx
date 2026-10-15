@@ -102,13 +102,13 @@ export const HomePage: React.FC = () => {
           setMandiPrices(res.records.slice(0, 4));
         }
       } catch (err) {
-        console.warn('Could not fetch mandi rates:', err);
+        console.warn('Could not fetch homepage mandi prices:', err);
       } finally {
         setIsLoadingMandi(false);
       }
     };
 
-    // 4. Fetch Verified Government Schemes from API
+    // 4. Fetch Real Government Schemes from API
     const fetchSchemes = async () => {
       try {
         const res = await getSchemesApi({});
@@ -116,7 +116,7 @@ export const HomePage: React.FC = () => {
           setSchemes(res.schemes.slice(0, 3));
         }
       } catch (err) {
-        console.warn('Could not fetch schemes:', err);
+        console.warn('Could not fetch homepage schemes:', err);
       } finally {
         setIsLoadingSchemes(false);
       }
@@ -147,91 +147,128 @@ export const HomePage: React.FC = () => {
     <div className="space-y-20 pb-24 overflow-hidden">
       
       {/* ========================================================================= */}
-      {/* 1. HERO SECTION: Modern Indian Agriculture with Tasteful Dark Green Overlay */}
+      {/* 1. HERO SECTION: Modern Indian Agriculture with Animated Alive Elements  */}
       {/* ========================================================================= */}
-      <section className="relative min-h-[600px] lg:min-h-[660px] flex items-center bg-stone-950 text-white overflow-hidden rounded-3xl mx-2 sm:mx-4 lg:mx-8 mt-3 shadow-2xl border border-emerald-950">
-        {/* Real Indian Agriculture Hero Photograph */}
-        <div className="absolute inset-0 z-0">
+      <section className="relative min-h-[620px] lg:min-h-[700px] flex items-center bg-stone-950 text-white overflow-hidden rounded-3xl mx-2 sm:mx-4 lg:mx-8 mt-3 shadow-2xl border border-emerald-950">
+        {/* Real Indian Agriculture Hero Photograph with Ken-Burns Motion */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
           <img
             src="https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=1920&q=80"
             alt="Indian farmer inspecting lush green agricultural crop field at golden sunrise"
             onError={(e) => handleImageError(e, 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1920&q=80')}
-            className="w-full h-full object-cover object-center scale-105 transform animate-in fade-in duration-700"
+            className="w-full h-full object-cover object-center animate-ken-burns opacity-75"
           />
           {/* Multi-stop emerald & forest-green gradient overlay for text readability & contrast */}
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/95 via-stone-950/90 to-emerald-950/60" />
           <div className="absolute inset-0 bg-gradient-to-t from-stone-950/95 via-transparent to-stone-950/30" />
+          {/* Subtle animated ambient light glow */}
+          <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
+          <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-teal-500/15 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-24 w-full">
           <div className="max-w-3xl space-y-7">
             
-            {/* Brand Pill with Subtle Gold Accents */}
-            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-emerald-900/40 backdrop-blur-md border border-emerald-400/30 text-emerald-300 text-xs font-bold tracking-wide shadow-sm">
-              <AgroMitraLogo variant="mark" size="sm" />
-              <span>AgroMitra</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-              <span className="text-amber-300 font-semibold">{t('brandTagline', 'Smart Farming. Better Crops. Better Future.')}</span>
+            {/* Live Network & Brand Pill with Glowing Green Beacon */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/80 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-xs font-bold tracking-wide shadow-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span>{t('liveNetworkPill', 'Live Network Active • APMC + Weather Synced')}</span>
+              </div>
+
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-semibold">
+                <AgroMitraLogo variant="mark" size="sm" />
+                <span>{t('heroBadge', 'Smart Farming • High-Tech Agri Platform')}</span>
+              </div>
             </div>
 
             {/* Main Headline: Grow Smarter. Harvest Better. */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-heading font-extrabold tracking-tight leading-[1.12] text-white">
-              Grow Smarter.<br />
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-heading font-extrabold tracking-tight leading-[1.14] text-white">
+              {t('heroTitleMain', 'Grow Smarter.')}<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-300">
-                Harvest Better.
+                {t('heroTitleHighlight', 'Harvest Better.')}
               </span>
             </h1>
 
             {/* Supporting Platform Description */}
             <p className="text-base sm:text-lg text-stone-200 leading-relaxed max-w-2xl font-normal">
-              AgroMitra connects farmers, verified agricultural input retailers, APMC mandi yards, and logistics partners into one unified digital ecosystem. Empowering rural agriculture with computer vision disease diagnosis, transparent spot market pricing, and doorstep delivery.
+              {t(
+                'heroDescription',
+                'AgroMitra connects farmers, verified agricultural input retailers, APMC mandi yards, and logistics partners into one unified digital ecosystem. Empowering rural agriculture with computer vision disease diagnosis, transparent spot market pricing, and doorstep delivery.'
+              )}
             </p>
+
+            {/* Live Telemetry Ticker (Real Live Weather & APMC Indicators) */}
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              {liveWeather && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-emerald-400/25 text-emerald-300 text-xs font-medium">
+                  <CloudSun className="w-4 h-4 text-amber-300" />
+                  <span>
+                    {liveWeather.location.city || liveWeather.location.state || 'India'}:{' '}
+                    <strong className="text-white font-bold">{liveWeather.temperature}°C</strong> ({liveWeather.condition})
+                  </span>
+                </div>
+              )}
+
+              {mandiPrices.length > 0 && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-amber-400/25 text-amber-300 text-xs font-medium">
+                  <TrendingUp className="w-4 h-4 text-amber-400" />
+                  <span>
+                    {mandiPrices[0].commodity}:{' '}
+                    <strong className="text-white font-bold">₹{mandiPrices[0].modalPrice}/Qtl</strong> ({mandiPrices[0].market})
+                  </span>
+                </div>
+              )}
+            </div>
 
             {/* Primary Action Buttons */}
             <div className="pt-2 flex flex-wrap items-center gap-4">
               <Link
                 to="/marketplace"
-                className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-heading font-bold text-sm shadow-xl shadow-emerald-950/50 hover:shadow-emerald-900/70 transition-all hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-heading font-bold text-sm shadow-xl shadow-emerald-950/50 hover:shadow-emerald-900/70 transition-all hover:-translate-y-0.5 active:translate-y-0"
               >
                 <Store className="w-4 h-4 text-emerald-200" />
-                <span>Explore Marketplace</span>
+                <span>{t('heroExploreMarket', 'Explore Marketplace')}</span>
                 <ArrowRight className="w-4 h-4 text-emerald-200" />
               </Link>
 
               <Link
                 to="/ai/crop-disease"
-                className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-heading font-bold text-sm transition-all hover:-translate-y-0.5 shadow-md"
+                className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/25 text-white font-heading font-bold text-sm transition-all hover:-translate-y-0.5 shadow-md active:translate-y-0"
               >
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Scan Your Crop</span>
+                <Sparkles className="w-4 h-4 text-amber-300 animate-spin-slow" />
+                <span>{t('heroScanCrop', 'Scan Your Crop')}</span>
               </Link>
             </div>
 
             {/* Trust Indicators Bar */}
             <div className="pt-8 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold text-stone-200">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-300">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-300 shrink-0">
                   <Leaf className="w-4 h-4" />
                 </div>
-                <span>Smart Crop AI</span>
+                <span>{t('trustCropAi', 'Smart Crop AI')}</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-300">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-300 shrink-0">
                   <TrendingUp className="w-4 h-4" />
                 </div>
-                <span>APMC Spot Rates</span>
+                <span>{t('trustApmcSpot', 'APMC Spot Rates')}</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-300">
+                <div className="w-7 h-7 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-300 shrink-0">
                   <CloudSun className="w-4 h-4" />
                 </div>
-                <span>Hyperlocal Weather</span>
+                <span>{t('trustHyperlocalWeather', 'Hyperlocal Weather')}</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-300">
+                <div className="w-7 h-7 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-300 shrink-0">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
-                <span>100% Genuine Inputs</span>
+                <span>{t('trustGenuineInputs', '100% Genuine Inputs')}</span>
               </div>
             </div>
 
@@ -245,20 +282,20 @@ export const HomePage: React.FC = () => {
       <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
           <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            Intelligent Agro-Tech
+            {t('corePlatformSuper', 'Intelligent Agro-Tech')}
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
-            Core Platform Capabilities
+            {t('corePlatformTitle', 'Core Platform Capabilities')}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Everything your agricultural operation requires — from real-time field diagnostics to direct marketplace commerce.
+            {t('corePlatformSubtitle', 'Everything your agricultural operation requires — from real-time field diagnostics to direct marketplace commerce.')}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
           
           {/* Feature 1: AI Crop Disease Scanner */}
-          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between">
+          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
             <div>
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
@@ -271,15 +308,15 @@ export const HomePage: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
                 <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-600 text-white shadow-sm flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Computer Vision</span>
+                  <span>{t('cardScannerTag', 'Computer Vision')}</span>
                 </span>
               </div>
               <div className="p-6 space-y-2">
                 <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  AI Crop Disease Scanner
+                  {t('cardScannerTitle', 'AI Crop Disease Scanner')}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Capture or upload leaf specimens for instantaneous botanical identification and foliar disease diagnosis, paired with verified curative and organic treatment recommendations.
+                  {t('cardScannerDesc', 'Capture or upload leaf specimens for instantaneous botanical identification and foliar disease diagnosis, paired with verified curative and organic treatment recommendations.')}
                 </p>
               </div>
             </div>
@@ -288,14 +325,14 @@ export const HomePage: React.FC = () => {
                 to="/ai/crop-disease"
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-600 text-emerald-800 dark:text-emerald-300 hover:text-white font-heading font-bold text-xs transition-all"
               >
-                <span>Launch Scanner</span>
+                <span>{t('cardScannerBtn', 'Launch Scanner')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
 
           {/* Feature 2: Agricultural Marketplace */}
-          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between">
+          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
             <div>
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
@@ -308,15 +345,15 @@ export const HomePage: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
                 <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-600 text-white shadow-sm flex items-center gap-1.5">
                   <Store className="w-3.5 h-3.5" />
-                  <span>Direct Inputs</span>
+                  <span>{t('cardMarketTag', 'Direct Inputs')}</span>
                 </span>
               </div>
               <div className="p-6 space-y-2">
                 <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  Agricultural Marketplace
+                  {t('cardMarketTitle', 'Agricultural Marketplace')}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Browse verified certified seeds, bio-pesticides, organic nutrients, and farming tools listed by trusted local agricultural dealers with transparent pricing and live stock.
+                  {t('cardMarketDesc', 'Browse verified certified seeds, bio-pesticides, organic nutrients, and farming tools listed by trusted local agricultural dealers with transparent pricing and live stock.')}
                 </p>
               </div>
             </div>
@@ -325,14 +362,14 @@ export const HomePage: React.FC = () => {
                 to="/marketplace"
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-600 text-amber-800 dark:text-amber-300 hover:text-white font-heading font-bold text-xs transition-all"
               >
-                <span>Browse Catalog</span>
+                <span>{t('cardMarketBtn', 'Browse Catalog')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
 
           {/* Feature 3: Live Weather Information */}
-          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between">
+          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
             <div>
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
@@ -345,15 +382,15 @@ export const HomePage: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
                 <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-teal-600 text-white shadow-sm flex items-center gap-1.5">
                   <CloudSun className="w-3.5 h-3.5" />
-                  <span>Hyperlocal Telemetry</span>
+                  <span>{t('cardWeatherTag', 'Hyperlocal Telemetry')}</span>
                 </span>
               </div>
               <div className="p-6 space-y-2">
                 <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  Live Agro-Weather
+                  {t('cardWeatherTitle', 'Live Agro-Weather')}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Real-time temperature, precipitation probability, humidity, and wind speed tailored to the farmer's GPS coordinates, enabling proactive irrigation and spraying decisions.
+                  {t('cardWeatherDesc', "Real-time temperature, precipitation probability, humidity, and wind speed tailored to the farmer's GPS coordinates, enabling proactive irrigation and spraying decisions.")}
                 </p>
               </div>
             </div>
@@ -362,14 +399,14 @@ export const HomePage: React.FC = () => {
                 to="/dashboard"
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-600 text-teal-800 dark:text-teal-300 hover:text-white font-heading font-bold text-xs transition-all"
               >
-                <span>View Live Weather</span>
+                <span>{t('cardWeatherBtn', 'View Live Weather')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
 
           {/* Feature 4: APMC Mandi Spot Rates */}
-          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between">
+          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
             <div>
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
@@ -382,15 +419,15 @@ export const HomePage: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
                 <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-indigo-600 text-white shadow-sm flex items-center gap-1.5">
                   <TrendingUp className="w-3.5 h-3.5" />
-                  <span>Spot Transparency</span>
+                  <span>{t('cardMandiTag', 'Spot Transparency')}</span>
                 </span>
               </div>
               <div className="p-6 space-y-2">
                 <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  APMC Mandi Spot Prices
+                  {t('cardMandiTitle', 'APMC Mandi Spot Prices')}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Daily commodity modal, minimum, and maximum rates synchronized from authorized market yards across districts, ensuring fair price discovery for farmers.
+                  {t('cardMandiDesc', 'Daily commodity modal, minimum, and maximum rates synchronized from authorized market yards across districts, ensuring fair price discovery for farmers.')}
                 </p>
               </div>
             </div>
@@ -399,14 +436,14 @@ export const HomePage: React.FC = () => {
                 to="/market/prices"
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-600 text-indigo-800 dark:text-indigo-300 hover:text-white font-heading font-bold text-xs transition-all"
               >
-                <span>Check Mandi Rates</span>
+                <span>{t('cardMandiBtn', 'Check Mandi Rates')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
 
           {/* Feature 5: Government Welfare Schemes */}
-          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between">
+          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
             <div>
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
@@ -419,15 +456,15 @@ export const HomePage: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
                 <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-700 text-white shadow-sm flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Verified Subsidies</span>
+                  <span>{t('cardSchemesTag', 'Verified Subsidies')}</span>
                 </span>
               </div>
               <div className="p-6 space-y-2">
                 <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  Government Schemes
+                  {t('cardSchemesTitle', 'Government Schemes')}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Verified central and state agricultural subsidies, crop insurance eligibility, direct benefit transfer schemes, and application guidelines curated for Indian farmers.
+                  {t('cardSchemesDesc', 'Verified central and state agricultural subsidies, crop insurance eligibility, direct benefit transfer schemes, and application guidelines curated for Indian farmers.')}
                 </p>
               </div>
             </div>
@@ -436,14 +473,14 @@ export const HomePage: React.FC = () => {
                 to="/schemes"
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-700 text-emerald-800 dark:text-emerald-300 hover:text-white font-heading font-bold text-xs transition-all"
               >
-                <span>Explore Schemes</span>
+                <span>{t('cardSchemesBtn', 'Explore Schemes')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
 
           {/* Feature 6: Farm Delivery Logistics */}
-          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between">
+          <div className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1">
             <div>
               <div className="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img
@@ -456,15 +493,15 @@ export const HomePage: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent" />
                 <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-600 text-white shadow-sm flex items-center gap-1.5">
                   <Truck className="w-3.5 h-3.5" />
-                  <span>Farm Dispatch</span>
+                  <span>{t('cardDeliveryTag', 'Farm Dispatch')}</span>
                 </span>
               </div>
               <div className="p-6 space-y-2">
                 <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  Delivery Tracking
+                  {t('cardDeliveryTitle', 'Delivery Tracking')}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  End-to-end milestone tracking from local retailer acceptance to field delivery. Includes phone coordination and proof of delivery verification.
+                  {t('cardDeliveryDesc', 'End-to-end milestone tracking from local retailer acceptance to field delivery. Includes phone coordination and proof of delivery verification.')}
                 </p>
               </div>
             </div>
@@ -473,7 +510,7 @@ export const HomePage: React.FC = () => {
                 to={isAuthenticated ? '/orders' : '/login?role=FARMER'}
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-600 text-blue-800 dark:text-blue-300 hover:text-white font-heading font-bold text-xs transition-all"
               >
-                <span>Track Orders</span>
+                <span>{t('cardDeliveryBtn', 'Track Orders')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -488,35 +525,41 @@ export const HomePage: React.FC = () => {
       <section id="portals" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
           <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            Dedicated Stakeholder Workspaces
+            {t('portalsSuper', 'Dedicated Stakeholder Workspaces')}
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
-            Built for Every Pillar of Agriculture
+            {t('portalsTitle', 'Built for Every Pillar of Agriculture')}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Specialized portals engineered specifically for farmers, retail store owners, agricultural partners, field logistics, and APMC yard managers.
+            {t('portalsSubtitle', 'Specialized portals engineered specifically for farmers, retail store owners, agricultural partners, field logistics, and APMC yard managers.')}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
           
           {/* Portal 1: FARMER */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-emerald-100 dark:border-emerald-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-emerald-100 dark:border-emerald-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5 hover:-translate-y-1">
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-700 dark:text-emerald-300">
                 <Sprout className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Primary Producer</span>
-                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">Farmer</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Smart tools for crop diagnostics, schemes & marketplace orders.</p>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  {t('portalFarmerRole', 'Primary Producer')}
+                </span>
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">
+                  {t('portalFarmerTitle', 'Farmer')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {t('portalFarmerDesc', 'Smart tools for crop diagnostics, schemes & marketplace orders.')}
+                </p>
               </div>
 
               <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>AI Leaf Disease Scanner</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>APMC Mandi Spot Prices</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>Hyperlocal Weather Advisory</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>Direct Input Ordering</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>{t('portalFarmerF1', 'AI Leaf Disease Scanner')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>{t('portalFarmerF2', 'APMC Mandi Spot Prices')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>{t('portalFarmerF3', 'Hyperlocal Weather Advisory')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /><span>{t('portalFarmerF4', 'Direct Input Ordering')}</span></li>
               </ul>
             </div>
 
@@ -524,86 +567,104 @@ export const HomePage: React.FC = () => {
               to={isAuthenticated && user?.role === 'FARMER' ? '/dashboard' : '/login?role=FARMER'}
               className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
             >
-              <span>{isAuthenticated && user?.role === 'FARMER' ? 'Open Dashboard' : 'Farmer Sign In'}</span>
+              <span>{isAuthenticated && user?.role === 'FARMER' ? t('openDashboard', 'Open Dashboard') : t('portalFarmerSignIn', 'Farmer Sign In')}</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
           {/* Portal 2: SHOP OWNER */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-amber-100 dark:border-amber-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-amber-100 dark:border-amber-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5 hover:-translate-y-1">
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-700 dark:text-amber-300">
                 <Store className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Retail Merchant</span>
-                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">Shop Owner</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage physical store inventory, orders, and customer billing.</p>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                  {t('portalShopRole', 'Retail Merchant')}
+                </span>
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">
+                  {t('portalShopTitle', 'Shop Owner')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {t('portalShopDesc', 'Manage physical store inventory, orders, and customer billing.')}
+                </p>
               </div>
 
               <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>Catalog & Live Stock</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>Order Processing & Pickup</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>Store UPI QR Integration</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>Delivery Assignment</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>{t('portalShopF1', 'Catalog & Live Stock')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>{t('portalShopF2', 'Order Processing & Pickup')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>{t('portalShopF3', 'Store UPI QR Integration')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>{t('portalShopF4', 'Delivery Assignment')}</span></li>
               </ul>
             </div>
 
             <Link
-              to={isAuthenticated && user?.role === 'SHOP_OWNER' ? '/shop-owner/dashboard' : '/login?role=SHOP_OWNER'}
+              to={isAuthenticated && user?.role === 'SHOP_OWNER' ? '/shop/products' : '/login?role=SHOP_OWNER'}
               className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
             >
-              <span>{isAuthenticated && user?.role === 'SHOP_OWNER' ? 'Open Dashboard' : 'Shop Sign In'}</span>
+              <span>{isAuthenticated && user?.role === 'SHOP_OWNER' ? t('openDashboard', 'Open Dashboard') : t('portalShopSignIn', 'Shop Sign In')}</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
           {/* Portal 3: AGRI PARTNER */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-teal-100 dark:border-teal-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-teal-100 dark:border-teal-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5 hover:-translate-y-1">
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 flex items-center justify-center text-teal-700 dark:text-teal-300">
                 <HeartHandshake className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">Ecosystem Services</span>
-                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">Agri Partner</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Institutional distributors, advisors, and corporate partners.</p>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+                  {t('portalPartnerRole', 'Ecosystem Services')}
+                </span>
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">
+                  {t('portalPartnerTitle', 'Agri Partner')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {t('portalPartnerDesc', 'Institutional distributors, advisors, and corporate partners.')}
+                </p>
               </div>
 
               <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" /><span>Bulk Input Distribution</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" /><span>Partner Advisory Ops</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" /><span>Supply Chain Fulfillment</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" /><span>Partner Portal Analytics</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" /><span>{t('portalPartnerF1', 'Bulk Input Distribution')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" /><span>{t('portalPartnerF2', 'Partner Advisory Ops')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" /><span>{t('portalPartnerF3', 'Supply Chain Fulfillment')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" /><span>{t('portalPartnerF4', 'Partner Portal Analytics')}</span></li>
               </ul>
             </div>
 
             <Link
-              to={isAuthenticated && user?.role === 'AGRI_PARTNER' ? '/agri-partner/dashboard' : '/login?role=AGRI_PARTNER'}
+              to={isAuthenticated && user?.role === 'AGRI_PARTNER' ? '/shop/products' : '/login?role=AGRI_PARTNER'}
               className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
             >
-              <span>{isAuthenticated && user?.role === 'AGRI_PARTNER' ? 'Open Dashboard' : 'Partner Sign In'}</span>
+              <span>{isAuthenticated && user?.role === 'AGRI_PARTNER' ? t('openDashboard', 'Open Dashboard') : t('portalPartnerSignIn', 'Partner Sign In')}</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
           {/* Portal 4: DELIVERY BOY */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-blue-100 dark:border-blue-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-blue-100 dark:border-blue-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5 hover:-translate-y-1">
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-700 dark:text-blue-300">
                 <Truck className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Field Logistics</span>
-                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">Delivery Boy</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Accept store pickups and deliver agricultural supplies to farms.</p>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                  {t('portalDeliveryRole', 'Field Logistics')}
+                </span>
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">
+                  {t('portalDeliveryTitle', 'Delivery Boy')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {t('portalDeliveryDesc', 'Accept store pickups and deliver agricultural supplies to farms.')}
+                </p>
               </div>
 
               <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" /><span>Instant Order Notifications</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" /><span>Pickup & Drop Routing</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" /><span>Delivery Status Milestone</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" /><span>Delivery History Logs</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" /><span>{t('portalDeliveryF1', 'Instant Order Notifications')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" /><span>{t('portalDeliveryF2', 'Pickup & Drop Routing')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" /><span>{t('portalDeliveryF3', 'Delivery Status Milestone')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" /><span>{t('portalDeliveryF4', 'Delivery History Logs')}</span></li>
               </ul>
             </div>
 
@@ -611,28 +672,34 @@ export const HomePage: React.FC = () => {
               to={isAuthenticated && user?.role === 'DELIVERY_BOY' ? '/delivery/dashboard' : '/login?role=DELIVERY_BOY'}
               className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
             >
-              <span>{isAuthenticated && user?.role === 'DELIVERY_BOY' ? 'Open Dashboard' : 'Rider Sign In'}</span>
+              <span>{isAuthenticated && user?.role === 'DELIVERY_BOY' ? t('openDashboard', 'Open Dashboard') : t('portalDeliverySignIn', 'Rider Sign In')}</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
           {/* Portal 5: MARKET OWNER */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-indigo-100 dark:border-indigo-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-indigo-100 dark:border-indigo-950/80 p-6 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all space-y-5 hover:-translate-y-1">
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-700 dark:text-indigo-300">
                 <Building2 className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">APMC Mandi</span>
-                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">Market Owner</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Publish daily arrivals, commodity spot rates, and yard updates.</p>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                  {t('portalMandiRole', 'APMC Mandi')}
+                </span>
+                <h3 className="text-lg font-heading font-extrabold text-slate-900 dark:text-white">
+                  {t('portalMandiTitle', 'Market Owner')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {t('portalMandiDesc', 'Publish daily arrivals, commodity spot rates, and yard updates.')}
+                </p>
               </div>
 
               <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" /><span>Daily Price Publishing</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" /><span>Min/Max Modal Rates</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" /><span>Mandi Profile & Hours</span></li>
-                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" /><span>Arrival Volume Logs</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" /><span>{t('portalMandiF1', 'Daily Price Publishing')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" /><span>{t('portalMandiF2', 'Min/Max Modal Rates')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" /><span>{t('portalMandiF3', 'Mandi Profile & Hours')}</span></li>
+                <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" /><span>{t('portalMandiF4', 'Arrival Volume Logs')}</span></li>
               </ul>
             </div>
 
@@ -640,7 +707,7 @@ export const HomePage: React.FC = () => {
               to={isAuthenticated && user?.role === 'MARKET_OWNER' ? '/market-owner/dashboard' : '/login?role=MARKET_OWNER'}
               className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-bold text-xs shadow-sm transition-all"
             >
-              <span>{isAuthenticated && user?.role === 'MARKET_OWNER' ? 'Open Dashboard' : 'Mandi Sign In'}</span>
+              <span>{isAuthenticated && user?.role === 'MARKET_OWNER' ? t('openDashboard', 'Open Dashboard') : t('portalMandiSignIn', 'Mandi Sign In')}</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -654,20 +721,20 @@ export const HomePage: React.FC = () => {
       <section id="ecosystem" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
           <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            Lifecycle Ecosystem
+            {t('lifecycleSuper', 'Lifecycle Ecosystem')}
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
-            From Seed to Market
+            {t('lifecycleTitle', 'From Seed to Market')}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            An integrated agricultural workflow supporting every stage of seasonal cultivation.
+            {t('lifecycleSubtitle', 'An integrated agricultural workflow supporting every stage of seasonal cultivation.')}
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           
           {/* Step 01: PLAN */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-sm group">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-sm group hover:-translate-y-1">
             <div className="flex justify-between items-start">
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-700 dark:text-emerald-300 group-hover:scale-110 transition-transform">
                 <Compass className="w-6 h-6" />
@@ -676,19 +743,19 @@ export const HomePage: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
-                🌱 PLAN
+                {t('step01Plan', '🌱 PLAN')}
               </div>
               <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1">
-                Crop & Soil Guidance
+                {t('step01Title', 'Crop & Soil Guidance')}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                Determine suitable seasonal crops based on soil morphology, geographic zone, and historical weather patterns.
+                {t('step01Desc', 'Determine suitable seasonal crops based on soil morphology, geographic zone, and historical weather patterns.')}
               </p>
             </div>
           </div>
 
           {/* Step 02: GROW */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-sm group">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-purple-300 dark:hover:border-purple-700 transition-all shadow-sm group hover:-translate-y-1">
             <div className="flex justify-between items-start">
               <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-700 dark:text-purple-300 group-hover:scale-110 transition-transform">
                 <Sparkles className="w-6 h-6" />
@@ -697,19 +764,19 @@ export const HomePage: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide">
-                🌿 GROW
+                {t('step02Grow', '🌿 GROW')}
               </div>
               <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1">
-                Weather & AI Protection
+                {t('step02Title', 'Weather & AI Protection')}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                Monitor field humidity, incoming rain showers, and run mobile leaf scans to arrest fungal and bacterial blights early.
+                {t('step02Desc', 'Monitor field humidity, incoming rain showers, and run mobile leaf scans to arrest fungal and bacterial blights early.')}
               </p>
             </div>
           </div>
 
           {/* Step 03: BUY */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-sm group">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-amber-300 dark:hover:border-amber-700 transition-all shadow-sm group hover:-translate-y-1">
             <div className="flex justify-between items-start">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-700 dark:text-amber-300 group-hover:scale-110 transition-transform">
                 <Store className="w-6 h-6" />
@@ -718,19 +785,19 @@ export const HomePage: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
-                🛒 BUY
+                {t('step03Buy', '🛒 BUY')}
               </div>
               <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1">
-                Certified Farm Inputs
+                {t('step03Title', 'Certified Farm Inputs')}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                Order genuine fertilizers, micronutrients, certified seeds, and bio-protection directly from local dealers.
+                {t('step03Desc', 'Order genuine fertilizers, micronutrients, certified seeds, and bio-protection directly from local dealers.')}
               </p>
             </div>
           </div>
 
           {/* Step 04: DELIVER */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-sm group">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-blue-300 dark:hover:border-blue-700 transition-all shadow-sm group hover:-translate-y-1">
             <div className="flex justify-between items-start">
               <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-700 dark:text-blue-300 group-hover:scale-110 transition-transform">
                 <Truck className="w-6 h-6" />
@@ -739,13 +806,13 @@ export const HomePage: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                🚚 DELIVER
+                {t('step04Deliver', '🚚 DELIVER')}
               </div>
               <h3 className="text-base font-heading font-bold text-slate-900 dark:text-white mt-1">
-                Farm-to-Gate Delivery
+                {t('step04Title', 'Farm-to-Gate Delivery')}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                Dedicated delivery riders transport agricultural bags and products directly to farm gates without disrupting labor.
+                {t('step04Desc', 'Dedicated delivery riders transport agricultural bags and products directly to farm gates without disrupting labor.')}
               </p>
             </div>
           </div>
@@ -760,20 +827,20 @@ export const HomePage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 pb-4 border-b border-slate-200 dark:border-slate-800">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-              Direct Input Marketplace
+              {t('featuredSuper', 'Direct Input Marketplace')}
             </span>
             <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
-              Essential Inputs for Your Farm
+              {t('featuredTitle', 'Essential Inputs for Your Farm')}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Certified seeds, bio-pesticides, and crop care formulations from verified local agricultural store partners.
+              {t('featuredSubtitle', 'Certified seeds, bio-pesticides, and crop care formulations from verified local agricultural store partners.')}
             </p>
           </div>
           <Link
             to="/marketplace"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 whitespace-nowrap"
           >
-            <span>Explore Full Catalog →</span>
+            <span>{t('featuredExploreCatalog', 'Explore Full Catalog →')}</span>
           </Link>
         </div>
 
@@ -825,7 +892,9 @@ export const HomePage: React.FC = () => {
 
                   <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-semibold">Price</span>
+                      <span className="text-[10px] text-slate-400 block font-semibold">
+                        {t('featuredPriceLabel', 'Price')}
+                      </span>
                       <span className="text-base font-heading font-black text-emerald-600 dark:text-emerald-400">
                         ₹{Number(product.price).toFixed(2)}
                       </span>
@@ -839,12 +908,12 @@ export const HomePage: React.FC = () => {
                       {isAdded ? (
                         <>
                           <Check className="w-3.5 h-3.5" />
-                          <span>Added</span>
+                          <span>{t('featuredAdded', 'Added')}</span>
                         </>
                       ) : (
                         <>
                           <ShoppingCart className="w-3.5 h-3.5" />
-                          <span>Add to Cart</span>
+                          <span>{t('featuredAddToCart', 'Add to Cart')}</span>
                         </>
                       )}
                     </button>
@@ -855,7 +924,9 @@ export const HomePage: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-12 bg-slate-50 dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
-            <p className="text-xs text-slate-500 dark:text-slate-400">Verified agricultural products are syncing from store partners.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {t('featuredEmpty', 'Verified agricultural products are syncing from store partners.')}
+            </p>
           </div>
         )}
       </section>
@@ -871,17 +942,17 @@ export const HomePage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 block">
-                  APMC Daily Spot Rates
+                  {t('dualMandiSuper', 'APMC Daily Spot Rates')}
                 </span>
                 <h3 className="text-lg sm:text-xl font-heading font-extrabold text-slate-900 dark:text-white">
-                  Market Transparency
+                  {t('dualMandiTitle', 'Market Transparency')}
                 </h3>
               </div>
               <Link
                 to="/market/prices"
                 className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
               >
-                View All Mandi Rates →
+                {t('dualMandiViewAll', 'View All Mandi Rates →')}
               </Link>
             </div>
 
@@ -896,7 +967,7 @@ export const HomePage: React.FC = () => {
                 {mandiPrices.map((item, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 rounded-2xl bg-stone-50 dark:bg-slate-800/60 border border-stone-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs"
+                    className="p-3.5 rounded-2xl bg-stone-50 dark:bg-slate-800/60 border border-stone-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs hover:border-amber-300 dark:hover:border-amber-700 transition-colors"
                   >
                     <div>
                       <span className="font-bold text-slate-900 dark:text-white block text-sm">{item.commodity}</span>
@@ -904,7 +975,7 @@ export const HomePage: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <span className="text-sm font-mono font-black text-emerald-700 dark:text-emerald-400 block">
-                        ₹{item.modalPrice} / Qtl
+                        ₹{item.modalPrice} {t('dualMandiPerQtl', '/ Qtl')}
                       </span>
                       <span className="text-[10px] text-slate-500 font-semibold">
                         {item.priceDate}
@@ -914,7 +985,9 @@ export const HomePage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 py-6 text-center">Live market arrivals syncing from national APMC network.</p>
+              <p className="text-xs text-slate-500 py-6 text-center">
+                {t('dualMandiEmpty', 'Live market arrivals syncing from national APMC network.')}
+              </p>
             )}
           </div>
 
@@ -923,17 +996,17 @@ export const HomePage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block">
-                  Field Agro-Weather
+                  {t('dualWeatherSuper', 'Field Agro-Weather')}
                 </span>
                 <h3 className="text-lg sm:text-xl font-heading font-extrabold text-slate-900 dark:text-white">
-                  Field Conditions & Advisory
+                  {t('dualWeatherTitle', 'Field Conditions & Advisory')}
                 </h3>
               </div>
               <Link
                 to="/dashboard"
                 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
               >
-                Detailed Weather →
+                {t('dualWeatherDetail', 'Detailed Weather →')}
               </Link>
             </div>
 
@@ -944,7 +1017,7 @@ export const HomePage: React.FC = () => {
                 <div className="p-4 rounded-2xl bg-gradient-to-tr from-emerald-50 via-teal-50 to-stone-50 dark:from-slate-800 dark:to-emerald-950/40 border border-emerald-200/60 dark:border-slate-700 flex items-center justify-between">
                   <div>
                     <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
-                      Location: {liveWeather.location.city || liveWeather.location.state || 'India'}
+                      {t('dualWeatherLocation', 'Location:')} {liveWeather.location.city || liveWeather.location.state || 'India'}
                     </span>
                     <span className="text-3xl font-heading font-black text-slate-900 dark:text-white mt-1 block">
                       {liveWeather.temperature}°C
@@ -953,29 +1026,31 @@ export const HomePage: React.FC = () => {
                       {liveWeather.condition}
                     </span>
                   </div>
-                  <CloudSun className="w-14 h-14 text-emerald-600 dark:text-emerald-400 opacity-90" />
+                  <CloudSun className="w-14 h-14 text-emerald-600 dark:text-emerald-400 opacity-90 animate-float" />
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
                     <Droplets className="w-4 h-4 text-blue-500 mx-auto mb-1" />
-                    <span className="text-[10px] text-slate-400 block">Humidity</span>
+                    <span className="text-[10px] text-slate-400 block">{t('dualWeatherHumidity', 'Humidity')}</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200">{liveWeather.humidity}%</span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
                     <Wind className="w-4 h-4 text-teal-500 mx-auto mb-1" />
-                    <span className="text-[10px] text-slate-400 block">Wind</span>
+                    <span className="text-[10px] text-slate-400 block">{t('dualWeatherWind', 'Wind')}</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200">{liveWeather.windSpeed} km/h</span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
                     <Thermometer className="w-4 h-4 text-amber-500 mx-auto mb-1" />
-                    <span className="text-[10px] text-slate-400 block">Rain Chance</span>
+                    <span className="text-[10px] text-slate-400 block">{t('dualWeatherRainChance', 'Rain Chance')}</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200">{liveWeather.rainProbability}%</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-500 py-6 text-center">Fetching live weather telemetry.</p>
+              <p className="text-xs text-slate-500 py-6 text-center">
+                {t('dualWeatherFetching', 'Fetching live weather telemetry.')}
+              </p>
             )}
           </div>
 
@@ -989,20 +1064,20 @@ export const HomePage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 pb-4 border-b border-slate-200 dark:border-slate-800">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-              Institutional Welfare
+              {t('schemesSuper', 'Institutional Welfare')}
             </span>
             <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white">
-              Farmer Support & Welfare Schemes
+              {t('schemesSectionTitle', 'Farmer Support & Welfare Schemes')}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Verified Central and State agricultural subsidy programs, equipment incentives, and financial welfare.
+              {t('schemesSectionSubtitle', 'Verified Central and State agricultural subsidy programs, equipment incentives, and financial welfare.')}
             </p>
           </div>
           <Link
             to="/schemes"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline whitespace-nowrap"
           >
-            <span>Explore All Schemes →</span>
+            <span>{t('schemesViewAll', 'Explore All Schemes →')}</span>
           </Link>
         </div>
 
@@ -1017,7 +1092,7 @@ export const HomePage: React.FC = () => {
             {schemes.map((s) => (
               <div
                 key={s.id}
-                className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-sm group"
+                className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between hover:border-emerald-300 dark:hover:border-emerald-700 transition-all shadow-sm group hover:-translate-y-1"
               >
                 <div className="space-y-2.5">
                   <div className="flex justify-between items-center">
@@ -1040,7 +1115,7 @@ export const HomePage: React.FC = () => {
                     to="/schemes"
                     className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-emerald-600 group-hover:translate-x-0.5 transition-transform shrink-0"
                   >
-                    <span>View Details</span>
+                    <span>{t('schemesViewDetails', 'View Details')}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -1056,20 +1131,20 @@ export const HomePage: React.FC = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
           <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            Field Photography
+            {t('tributeSuper', 'Field Photography')}
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
-            Life Behind Every Harvest
+            {t('tributeTitle', 'Life Behind Every Harvest')}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Honoring the resilience, dedication, and agronomy driving Indian agricultural fields forward every day.
+            {t('tributeSubtitle', 'Honoring the resilience, dedication, and agronomy driving Indian agricultural fields forward every day.')}
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           
           {/* Photo 1: Sowing */}
-          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
+          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md hover:-translate-y-1 transition-all">
             <img
               src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80"
               alt="Indian farmer preparing soil and sowing crops in rich agricultural ground"
@@ -1079,16 +1154,16 @@ export const HomePage: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
               <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
-                Precision Sowing
+                {t('tributeCaption1Title', 'Precision Sowing')}
               </span>
               <p className="text-xs text-stone-200 mt-1 font-medium">
-                Early morning field preparation and seedbed planning.
+                {t('tributeCaption1Desc', 'Early morning field preparation and seedbed planning.')}
               </p>
             </div>
           </div>
 
           {/* Photo 2: Water Irrigation */}
-          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
+          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md hover:-translate-y-1 transition-all">
             <img
               src="https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=800&q=80"
               alt="Farmer managing farm water irrigation channel"
@@ -1098,16 +1173,16 @@ export const HomePage: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
               <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
-                Water Management
+                {t('tributeCaption2Title', 'Water Management')}
               </span>
               <p className="text-xs text-stone-200 mt-1 font-medium">
-                Optimal hydration for maximum seasonal crop vitality.
+                {t('tributeCaption2Desc', 'Optimal hydration for maximum seasonal crop vitality.')}
               </p>
             </div>
           </div>
 
           {/* Photo 3: Foliar Health Inspection */}
-          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
+          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md hover:-translate-y-1 transition-all">
             <img
               src="https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80"
               alt="Farmer inspecting crop foliage and leaf pathology"
@@ -1117,16 +1192,16 @@ export const HomePage: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
               <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
-                Crop Health Monitoring
+                {t('tributeCaption3Title', 'Crop Health Monitoring')}
               </span>
               <p className="text-xs text-stone-200 mt-1 font-medium">
-                Proactive leaf scouting and diagnostic protection.
+                {t('tributeCaption3Desc', 'Proactive leaf scouting and diagnostic protection.')}
               </p>
             </div>
           </div>
 
           {/* Photo 4: Abundant Harvest */}
-          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
+          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md hover:-translate-y-1 transition-all">
             <img
               src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=800&q=80"
               alt="Abundant agricultural grain harvest in rural field"
@@ -1136,16 +1211,16 @@ export const HomePage: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
               <span className="text-xs font-bold text-amber-400 uppercase tracking-wide">
-                Abundant Harvest
+                {t('tributeCaption4Title', 'Abundant Harvest')}
               </span>
               <p className="text-xs text-stone-200 mt-1 font-medium">
-                Reaping the rewards of disciplined agronomic practices.
+                {t('tributeCaption4Desc', 'Reaping the rewards of disciplined agronomic practices.')}
               </p>
             </div>
           </div>
 
           {/* Photo 5: Retail Store Fulfillment */}
-          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
+          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md hover:-translate-y-1 transition-all">
             <img
               src="https://images.unsplash.com/photo-1605000797499-95a51c5269ae?auto=format&fit=crop&w=800&q=80"
               alt="Agri store partner preparing genuine inputs and certified seeds"
@@ -1155,16 +1230,16 @@ export const HomePage: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
               <span className="text-xs font-bold text-teal-400 uppercase tracking-wide">
-                Store Fulfillment
+                {t('tributeCaption5Title', 'Store Fulfillment')}
               </span>
               <p className="text-xs text-stone-200 mt-1 font-medium">
-                Agri Store Partners preparing genuine farmer orders.
+                {t('tributeCaption5Desc', 'Agri Store Partners preparing genuine farmer orders.')}
               </p>
             </div>
           </div>
 
           {/* Photo 6: Field Technology */}
-          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md">
+          <div className="group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-md hover:-translate-y-1 transition-all">
             <img
               src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80"
               alt="Green agricultural farmland with digital technology connection"
@@ -1174,10 +1249,10 @@ export const HomePage: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/30 to-transparent flex flex-col justify-end p-5 text-white">
               <span className="text-xs font-bold text-emerald-300 uppercase tracking-wide">
-                Digital Field Agriculture
+                {t('tributeCaption6Title', 'Digital Field Agriculture')}
               </span>
               <p className="text-xs text-stone-200 mt-1 font-medium">
-                Farmers leveraging mobile computer vision directly in the field.
+                {t('tributeCaption6Desc', 'Farmers leveraging mobile computer vision directly in the field.')}
               </p>
             </div>
           </div>
@@ -1192,13 +1267,13 @@ export const HomePage: React.FC = () => {
         <div className="bg-gradient-to-r from-emerald-950 via-teal-950 to-stone-950 rounded-3xl p-8 sm:p-12 text-white shadow-2xl relative overflow-hidden border border-emerald-900/60">
           <div className="max-w-2xl space-y-2 mb-10">
             <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">
-              Supply Chain Synergy
+              {t('supplySuper', 'Supply Chain Synergy')}
             </span>
             <h2 className="text-2xl sm:text-3xl font-heading font-extrabold">
-              Connected Agricultural Delivery
+              {t('supplyTitle', 'Connected Agricultural Delivery')}
             </h2>
             <p className="text-xs sm:text-sm text-slate-300">
-              A transparent digital supply chain linking farmers, registered retail stores, and field delivery riders.
+              {t('supplySubtitle', 'A transparent digital supply chain linking farmers, registered retail stores, and field delivery riders.')}
             </p>
           </div>
 
@@ -1209,8 +1284,12 @@ export const HomePage: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center mx-auto">
                 <Sprout className="w-5 h-5" />
               </div>
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider">1. Farmer Order</h4>
-              <p className="text-[11px] text-slate-300">Farmer places an order for certified inputs or curative products.</p>
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                {t('supplyStep1Title', '1. Farmer Order')}
+              </h4>
+              <p className="text-[11px] text-slate-300">
+                {t('supplyStep1Desc', 'Farmer places an order for certified inputs or curative products.')}
+              </p>
             </div>
 
             <div className="hidden md:flex items-center justify-center text-emerald-400">
@@ -1221,8 +1300,12 @@ export const HomePage: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center mx-auto">
                 <Store className="w-5 h-5" />
               </div>
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider">2. Store Dispatch</h4>
-              <p className="text-[11px] text-slate-300">Nearest eligible retail store verifies inventory and assigns rider.</p>
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                {t('supplyStep2Title', '2. Store Dispatch')}
+              </h4>
+              <p className="text-[11px] text-slate-300">
+                {t('supplyStep2Desc', 'Nearest eligible retail store verifies inventory and assigns rider.')}
+              </p>
             </div>
 
             <div className="hidden md:flex items-center justify-center text-emerald-400">
@@ -1233,8 +1316,12 @@ export const HomePage: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center mx-auto">
                 <Truck className="w-5 h-5" />
               </div>
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider">3. Field Delivery</h4>
-              <p className="text-[11px] text-slate-300">Delivery partner picks up inputs and fulfills directly to the farm.</p>
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                {t('supplyStep3Title', '3. Field Delivery')}
+              </h4>
+              <p className="text-[11px] text-slate-300">
+                {t('supplyStep3Desc', 'Delivery partner picks up inputs and fulfills directly to the farm.')}
+              </p>
             </div>
 
           </div>
@@ -1252,27 +1339,27 @@ export const HomePage: React.FC = () => {
 
           <div className="max-w-xl mx-auto space-y-2">
             <h2 className="text-2xl sm:text-4xl font-heading font-extrabold text-slate-900 dark:text-white">
-              Let's Build a Smarter Agricultural Future.
+              {t('ctaHeading', "Let's Build a Smarter Agricultural Future.")}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Join thousands of farmers, store retailers, mandi managers, and delivery partners collaborating on AgroMitra today.
+              {t('ctaSubtitle', 'Join thousands of farmers, store retailers, mandi managers, and delivery partners collaborating on AgroMitra today.')}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Link
               to="/register"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-heading font-bold text-sm shadow-md shadow-emerald-600/20 transition-all hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-heading font-bold text-sm shadow-md shadow-emerald-600/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
             >
-              <span>Join AgroMitra Free</span>
+              <span>{t('ctaJoinFree', 'Join AgroMitra Free')}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 
             <Link
               to="/marketplace"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-heading font-bold text-sm transition-all"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-heading font-bold text-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
             >
-              <span>Explore Marketplace</span>
+              <span>{t('ctaExploreMarket', 'Explore Marketplace')}</span>
             </Link>
           </div>
         </div>

@@ -14,9 +14,11 @@ import {
   AppNotification,
 } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../context/LanguageContext';
 
 export const NotificationBell: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -115,7 +117,7 @@ export const NotificationBell: React.FC = () => {
             <div className="flex items-center gap-2">
               <Bell className="w-4 h-4 text-emerald-600" />
               <h4 className="font-heading font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider">
-                Notifications & Alerts
+                {t('notificationsTitle', 'Notifications & Alerts')}
               </h4>
             </div>
             {unreadCount > 0 && (
@@ -124,7 +126,7 @@ export const NotificationBell: React.FC = () => {
                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
-                <span>Mark all read</span>
+                <span>{t('notificationsMarkAll', 'Mark all read')}</span>
               </button>
             )}
           </div>
@@ -133,8 +135,8 @@ export const NotificationBell: React.FC = () => {
             {notifications.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-400 space-y-1">
                 <Bell className="w-6 h-6 mx-auto opacity-30 text-slate-400" />
-                <p>No notifications right now.</p>
-                <p className="text-[10px] text-slate-500">Mandi price revisions & weather alerts will appear here.</p>
+                <p>{t('notificationsEmpty', 'No notifications right now.')}</p>
+                <p className="text-[10px] text-slate-500">{t('notificationsEmptySub', 'Mandi price revisions & weather alerts will appear here.')}</p>
               </div>
             ) : (
               notifications.map((n) => (
